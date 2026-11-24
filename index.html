@@ -170,7 +170,7 @@ let busy = false;        // tallennus käynnissä
 let editing = null;      // { key, value }  – avoin syöttökenttä
 const touched = new Set(); // tällä käyntikerralla muokatut vuorot pysyvät näkyvissä Avoimet-suodattimessa
 let tab = TABS.some(t => t[0] === location.hash.slice(1)) ? location.hash.slice(1) : "koti";
-const F = { games: "tulevat", sec: "", talkoot: "avoimet", kal: "kaikki", kalPast: false };
+const F = { games: "tulevat", sec: "", talkoot: "avoimet", kal: "kaikki", kalPast: false, mePast: false };
 
 // ─── Apufunktiot ─────────────────────────────────────────────────────────
 const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -461,7 +461,7 @@ function rideBlock(target) {
 }
 
 function miniRow(it) {
-  const icon = it.kind === "game" ? "⚾" : it.kind === "talkoo" ? "🙋" : eventIcon(it.ref);
+  const icon = it.kind === "game" ? "⚾" : it.kind === "talkoo" ? "🙋" : it.kind === "ride" ? "🚗" : eventIcon(it.ref);
   return `<div class="mini"><span class="md">${dayLabel(it.date)}${it.time ? "<br>" + esc(it.time) : ""}</span>
           <span class="mt">${icon} ${esc(it.title)}${it.extra ? `<br><span class="small muted">${it.extra}</span>` : ""}</span></div>`;
 }
@@ -509,23 +509,9 @@ function viewKoti() {
       <div class="title">📣 ${esc(n.title)}</div>${n.text ? `<div class="sub">${esc(n.text)}</div>` : ""}</div></div>`;
   });
 
+  h += myBlock();
   sectionList().forEach((s, i) => h += sectionBlock(s, s === OTHER ? 3 : i % 3));
 
-  // Omat vuorot
-  const me = myName();
-  h += `<div class="h2 navy">Omat vuoroni</div><div class="box">`;
-  if (editing && editing.key === "me|") {
-    h += `<div class="rrow">${inlineInput("Kirjoita nimesi")}</div>`;
-  } else if (!me) {
-    h += `<p class="small muted">Kirjoita nimesi, niin näet tästä omat tulevat talkoo- ja kyytivuorosi. Nimi muistetaan tällä laitteella.</p>
-          <div style="margin-top:6px;"><button class="btn navy" data-act="edit" data-key="me|" data-val="">Kirjoita nimi</button></div>`;
-  } else {
-    const mine = myShifts(me);
-    h += `<div class="small muted" style="margin-bottom:4px;">Haetaan nimellä <b style="color:var(--text);">${esc(me)}</b> ·
-          <a class="lnk navy" href="#" data-act="edit" data-key="me|" data-val="${esc(me)}">vaihda</a></div>`;
-    h += mine.length ? mine.map(miniRow).join("") : `<p class="small muted">Ei tulevia vuoroja tällä nimellä.</p>`;
-  }
-  h += `</div>`;
   return h;
 }
 
@@ -596,24 +582,64 @@ function sectionBlock(s, color) {
     <div class="secb">${b}</div></section>`;
 }
 
-function myShifts(me) {
-  const q = me.trim().toLowerCase();
-  if (q.length < 2) return [];
-  const hit = n => n && n.toLowerCase().includes(q);
-  const t = todayIso(), out = [];
-  D.games.filter(g => g.date >= t).forEach(g => Object.keys(g.roles).forEach(r => {
-    if (hit(g.roles[r])) out.push({ kind: "game", date: g.date, time: g.time, title: g.teams, ref: g, extra: `<b>${esc(r)}</b>${g.field ? " · " + esc(g.field) : ""}` });
+// ─── Minun tehtävät ──────────────────────────────────────────────────────
+function allNames() {
+  const m = new Map();
+  const add = n => { n = String(n || "").trim(); if (n && !m.has(n.toLowerCase())) m.set(n.toLowerCase(), n); };
+  D.games.forEach(g => Object.values(g.roles).forEach(add));
+  D.talkoot.forEach(x => x.names.forEach(add));
+  (D.rides || []).forEach(r => { add(r.driver); r.passengers.forEach(add); });
+  return [...m.values()].sort((a, b) => a.localeCompare(b, "fi"));
+}
+function placeLink(name) {
+  if (!name) return "";
+  const f = fieldByName(name);
+  return `📍 <a class="lnk" href="${esc(mapUrl(f && f.address ? f.address : name))}" target="_blank" rel="noopener">${esc(name)}</a>`;
+}
+function myShifts(me, withPast) {
+  const q = String(me || "").trim().toLowerCase();
+  if (!q) return [];
+  const hit = n => String(n || "").trim().toLowerCase() === q;
+  const t = todayIso(), ok = d => withPast || d >= t, out = [];
+  const where = (x, place, pre) => [pre, secName(x) !== OTHER ? esc(secName(x)) : "", placeLink(place)].filter(Boolean).join(" · ");
+  D.games.filter(g => ok(g.date)).forEach(g => Object.keys(g.roles).forEach(r => {
+    if (hit(g.roles[r])) out.push({ kind: "game", id: g.id + "-" + r, date: g.date, time: g.time, title: g.teams, icsTitle: `${r}: ${g.teams}`,
+      place: g.field, ref: g, extra: where(g, g.field, `<b>${esc(r)}</b>`) });
   }));
-  D.talkoot.filter(x => x.date >= t && x.names.some(hit)).forEach(x =>
-    out.push({ kind: "talkoo", date: x.date, time: x.time, title: (x.task || "Talkoot") + (x.event ? " – " + x.event : ""), ref: x, extra: esc(x.place || "") }));
+  D.talkoot.filter(x => ok(x.date) && x.names.some(hit)).forEach(x => out.push({ kind: "talkoo", id: x.id, date: x.date, time: x.time, end: x.end,
+    title: (x.task || "Talkoot") + (x.event ? " – " + x.event : ""), place: x.place, ref: x,
+    extra: where(x, x.place, x.time ? `klo ${esc(x.time)}${x.end ? "–" + esc(x.end) : ""}` : "") }));
   const targets = rideTargets();
   (D.rides || []).forEach(r => {
     const tg = targets.find(x => x.id === r.target);
-    if (!tg || tg.date < t) return;
-    if (hit(r.driver)) out.push({ kind: "event", date: tg.date, time: tg.time, title: "Kuljettajana: " + tg.title, ref: { type: "" }, extra: esc(`${r.passengers.length}/${r.seats} kyytiläistä` + (r.depart ? " · lähtö " + r.depart : "")) });
-    r.passengers.filter(hit).forEach(p => out.push({ kind: "event", date: tg.date, time: tg.time, title: "Kyydissä: " + tg.title, ref: { type: "" }, extra: esc(`${p} · kuljettaja ${r.driver}` + (r.depart ? " · lähtö " + r.depart : "")) }));
+    if (!tg || !ok(tg.date)) return;
+    const dep = r.depart ? " · lähtö " + esc(r.depart) : "";
+    if (hit(r.driver)) out.push({ kind: "ride", id: r.id, date: tg.date, time: tg.time, title: "Kuljettajana: " + tg.title, place: tg.place, ref: tg.ref,
+      extra: `<b>${r.passengers.length}/${r.seats} kyytiläistä</b>${r.passengers.length ? " (" + esc(r.passengers.join(", ")) + ")" : ""}${dep}` });
+    r.passengers.filter(hit).forEach(() => out.push({ kind: "ride", id: r.id + "-p", date: tg.date, time: tg.time, title: "Kyydissä: " + tg.title, place: tg.place, ref: tg.ref,
+      extra: `Kuljettaja <b>${esc(r.driver)}</b>${dep}` }));
   });
   return out.sort(byWhen);
+}
+function myBlock() {
+  const me = myName(), names = allNames();
+  if (me && !names.some(n => n.toLowerCase() === me.toLowerCase())) names.unshift(me);
+  let h = `<div class="h2 navy">👤 Minun tehtävät</div><div class="box">`;
+  if (!names.length) return h + `<p class="small muted">Kun vuoroja on jaettu tai kyytejä sovittu, valitse tästä nimesi ja näet omat tehtäväsi.</p></div>`;
+  h += `<label class="small muted" for="meSel" style="font-weight:700;">Valitse nimesi</label>
+        <select id="meSel" class="inp wide" style="margin:3px 0 6px;background:#fff;">
+          <option value="">— valitse —</option>
+          ${names.map(n => `<option value="${esc(n)}" ${n.toLowerCase() === me.toLowerCase() ? "selected" : ""}>${esc(n)}</option>`).join("")}
+        </select>`;
+  if (!me) return h + `<p class="small muted">Nimi muistetaan tällä laitteella.</p></div>`;
+  const list = myShifts(me, F.mePast);
+  const upcoming = F.mePast ? list.filter(x => x.date >= todayIso()) : list;
+  h += `<div class="chips" style="margin:2px 0 4px;"><button class="chip ${F.mePast ? "on" : ""}" data-act="mePast">Näytä myös menneet</button>
+        ${list.length ? `<button class="chip" data-act="icsMine">📅 Omat kalenteriin</button>` : ""}</div>`;
+  if (!list.length) return h + `<p class="small muted">Ei ${F.mePast ? "" : "tulevia "}tehtäviä nimellä ${esc(me)}.</p></div>`;
+  h += `<div class="small" style="margin:4px 2px 2px;"><b>${upcoming.length}</b> tulevaa tehtävää${upcoming.length ? ` · seuraava ${relDay(upcoming[0].date, upcoming[0].time).toLowerCase() || dayLabel(upcoming[0].date)}` : ""}</div>`;
+  h += list.map(it => miniRow(it).replace('<div class="mini">', `<div class="mini" style="${it.date < todayIso() ? "opacity:.5;" : ""}">`)).join("");
+  return h + `</div>`;
 }
 
 function viewOttelut() {
@@ -742,6 +768,7 @@ function viewInfo() {
     <b>Kyydit:</b> Kyydit-välilehdellä kuljettaja tarjoaa paikkoja ja pelaajat liittyvät kyytiin.<br>
     <b>Lukitut osiot (🔒):</b> Näissä talkoovastaava jakaa vuorot, ja sivulla näet oman vuorosi. Kyydit voi silti sopia sivulla.<br>
     <b>Muutokset:</b> Oman nimen voi vaihtaa tai poistaa (✕). Jos lista on lukittu, sovi muutoksesta talkoovastaavan kanssa.<br>
+    <b>Minun tehtävät:</b> Valitse etusivulla nimesi, niin näet omat talkoovuorosi ja kyytisi paikkoineen. 📅-napilla saat ne kaikki kerralla kalenteriin.<br>
     <b>Kalenteri:</b> 📅-napilla saat tapahtuman puhelimen kalenteriin.</div>`;
   return h;
 }
@@ -846,6 +873,12 @@ const ACTIONS = {
     const it = allItems().find(x => x.kind + "|" + x.id === k);
     if (it) downloadIcs([it], (it.title || "tapahtuma").replace(/[^\wåäöÅÄÖ -]/g, "").slice(0, 40) + ".ics");
   },
+  mePast() { F.mePast = !F.mePast; render(); },
+  icsMine() {
+    const items = myShifts(myName(), false).map(x => Object.assign({}, x, { title: x.icsTitle || x.title }));
+    if (!items.length) { toast("Ei tulevia tehtäviä"); return; }
+    downloadIcs(items, "omat-tehtavat.ics");
+  },
   icsAll() {
     const t = todayIso(), items = allItems().filter(x => x.date >= t);
     if (!items.length) { toast("Ei tulevia tapahtumia"); return; }
@@ -857,6 +890,9 @@ document.addEventListener("click", ev => {
   if (!el || (busy && el.dataset.act !== "tab")) return;
   const fn = ACTIONS[el.dataset.act];
   if (fn) fn(el.dataset.key || "", el, ev);
+});
+document.addEventListener("change", ev => {
+  if (ev.target.id === "meSel") { setMyName(ev.target.value); render(); }
 });
 document.addEventListener("keydown", ev => {
   if (ev.target.id === "inl") {
