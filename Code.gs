@@ -24,7 +24,7 @@ var SHEETS = {
   "Tapahtumat":   ["ID", "Osio", "Pvm", "Klo", "Loppu", "Otsikko", "Tyyppi", "Paikka", "Lisätiedot", "Linkki", "Kyydit"],
   "Kyydit":       ["ID", "KohdeID", "Kuljettaja", "Paikat", "Kyytiläiset", "Lähtö", "Lisätiedot"],
   "Tiedotteet":   ["Pvm", "Otsikko", "Teksti", "Näytä asti"],
-  "Leirit":       ["Osio", "Alkaa", "Päättyy", "Paikkakunta", "Lisätiedot", "Linkki"],
+  "Leirit":       ["Osio", "Nimi", "Alkaa", "Päättyy", "Paikkakunta", "Lisätiedot", "Linkki"],
   "Ruokalista":   ["Osio", "Pvm", "Ateria", "Klo", "Ruoka", "Paikka"],
   "Ohjeet":       ["Osio", "Otsikko", "Teksti", "Linkki"],
   "Kentät":       ["Nimi", "Osoite", "Pinta"],
@@ -42,6 +42,12 @@ var DEFAULT_SETTINGS = [
   ["Leiri etusivulla", "14", "Montako päivää ennen leirin alkua leiri nousee etusivulle. Muulloin leirisivu löytyy ☰-valikosta"],
   ["Lukitut osiot", "Aluesarja", "Näiden osioiden talkoovuoroihin ei voi ilmoittautua sivustolla: talkoovastaava kirjoittaa nimet Sheetiin ja sivu näyttää ne. Pilkulla erotettu lista (esim. Aluesarja, Alueleiri, Valtakunnallinen leiri). Tyhjä = kaikki auki. Kyytejä voi aina sopia sivustolla"],
   ["Lukko", "AUKI", "AUKI = ilmoittautuminen sivustolla toimii. LUKITTU = mitään (myöskään kyytejä) ei voi muuttaa sivustolla"]
+];
+
+// Kauden leirit: kirjoitetaan Leirit-välilehdelle setupissa, jos välilehti on vielä tyhjä.
+var DEFAULT_CAMPS = [
+  { "Osio": "Alueleiri", "Nimi": "Alueleiri Loimaa", "Alkaa": new Date(2027, 5, 11), "Päättyy": new Date(2027, 5, 13), "Paikkakunta": "Loimaa" },
+  { "Osio": "Valtakunnallinen leiri", "Nimi": "Naperoleiri Laitila", "Alkaa": new Date(2027, 7, 2), "Päättyy": new Date(2027, 7, 6), "Paikkakunta": "Laitila" }
 ];
 
 // ─── Valikko ja välilehtien luonti ────────────────────────────────────────
@@ -89,6 +95,16 @@ function setup() {
   tap.getRange(2, th["Kyydit"] + 1, Math.max(tap.getMaxRows() - 1, 1), 1).setDataValidation(
     SpreadsheetApp.newDataValidation().requireValueInList(["Kyllä"], true).setAllowInvalid(true).build());
   var osiot = splitList_(settings["Osiot"]);
+  var lei = ss.getSheetByName("Leirit");
+  if (lei.getLastRow() < 2) {
+    var lh = headerMap_(lei), width = lei.getLastColumn();
+    DEFAULT_CAMPS.forEach(function (c) {
+      var row = []; for (var i = 0; i < width; i++) row.push("");
+      Object.keys(c).forEach(function (k) { if (k in lh) row[lh[k]] = c[k]; });
+      lei.appendRow(row);
+    });
+    lei.getRange(2, lh["Alkaa"] + 1, DEFAULT_CAMPS.length, 2).setNumberFormat("d.M.yyyy");
+  }
   var rl = ss.getSheetByName("Ruokalista");
   rl.getRange(2, headerMap_(rl)["Ateria"] + 1, Math.max(rl.getMaxRows() - 1, 1), 1).setDataValidation(
     SpreadsheetApp.newDataValidation().requireValueInList(["Aamupala", "Lounas", "Välipala", "Päivällinen", "Iltapala"], true).setAllowInvalid(true).build());
@@ -309,7 +325,7 @@ function buildPayload_() {
 
   // Leirit: osion päivät ja tiedot. Ruokalista: ateriat päivittäin.
   var camps = readTable_("Leirit").map(function (r) {
-    return { section: sectionOf_(r["Osio"], "", sections), start: fmtDate_(r["Alkaa"], year), end: fmtDate_(r["Päättyy"], year),
+    return { section: sectionOf_(r["Osio"], "", sections), name: str_(r["Nimi"]), start: fmtDate_(r["Alkaa"], year), end: fmtDate_(r["Päättyy"], year),
              town: str_(r["Paikkakunta"]), info: str_(r["Lisätiedot"]), link: str_(r["Linkki"]) };
   }).filter(function (c) { return c.section; });
   var menu = readTable_("Ruokalista").map(function (r) {

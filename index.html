@@ -595,7 +595,7 @@ function sectionTile(s) {
   const camp = isCamp(s), live = camp && campLive(s);
   return `<button class="tile c${secColor(s)} ${live ? "live" : ""}" data-act="${camp ? "openLeiri" : "openSec"}" data-key="${esc(s)}">
     <span class="ti">${secIcon(s)}</span>
-    <span class="tb"><span class="tn">${esc(s)}${live ? " · käynnissä" : ""}</span><span class="tx">${live ? "Avaa leirin ohjelma ja ruokalista" : camp ? esc([campRange(s), campInfo(s).town].filter(Boolean).join(" · ")) + (daysUntil(campInfo(s).start) > 0 ? ` · alkaa ${daysUntil(campInfo(s).start) === 1 ? "huomenna" : daysUntil(campInfo(s).start) + " pv päästä"}` : "") : line}</span></span>
+    <span class="tb"><span class="tn">${esc(s)}${live ? " · käynnissä" : ""}</span><span class="tx">${live ? "Avaa leirin ohjelma ja ruokalista" : camp ? esc([campLabel(s), campRange(s)].filter(Boolean).join(" · ")) + (daysUntil(campInfo(s).start) > 0 ? ` · alkaa ${daysUntil(campInfo(s).start) === 1 ? "huomenna" : daysUntil(campInfo(s).start) + " pv päästä"}` : "") : line}</span></span>
     ${pill}<span class="chev">›</span></button>`;
 }
 function viewOsio() {
@@ -831,8 +831,10 @@ function isCamp(s) { return s !== OTHER && ((D.camps || []).some(c => c.section 
 function campInfo(s) {
   const c = (D.camps || []).find(x => x.section === s) || {};
   const dates = [].concat(D.games, D.talkoot, D.events, D.menu || []).filter(x => secName(x) === s).map(x => x.date).sort();
-  return Object.assign({ info: "", link: "", town: "" }, c, { start: c.start || dates[0] || "", end: c.end || c.start || dates[dates.length - 1] || "" });
+  return Object.assign({ name: "", info: "", link: "", town: "" }, c, { start: c.start || dates[0] || "", end: c.end || c.start || dates[dates.length - 1] || "" });
 }
+// Leirin nimi + paikkakunta ilman toistoa (esim. "Naperoleiri Laitila", ei "Naperoleiri Laitila · Laitila")
+function campLabel(s) { const c = campInfo(s); return [c.name, c.town && !c.name.toLowerCase().includes(c.town.toLowerCase()) ? c.town : ""].filter(Boolean).join(", "); }
 function campRange(s) { const c = campInfo(s); return !c.start ? "" : c.start === c.end ? dayLabel(c.start) : dm(c.start) + "–" + dm(c.end); }
 function campLive(s) { const c = campInfo(s), t = todayIso(); return !!c.start && c.start <= t && t <= c.end; }
 function campVisible(s) {
@@ -895,7 +897,7 @@ function viewLeiri() {
   let h = statusBanners();
   h += `<div class="back"><button class="btn ghost sm" data-act="tab" data-key="koti">← Etusivu</button></div>`;
   h += `<div class="sec sec-${secColor(s)} camphead"><div class="sech"><div><div class="sect">⛺ ${esc(s)}</div>
-        <div class="secm">${esc([campRange(s), c.town].filter(Boolean).join(" · "))}${campLive(s) ? " · käynnissä" : c.start > t ? ` · alkaa ${daysUntil(c.start) === 1 ? "huomenna" : daysUntil(c.start) + " päivän päästä"}` : ""}</div></div>
+        <div class="secm">${esc([campLabel(s), campRange(s)].filter(Boolean).join(" · "))}${campLive(s) ? " · käynnissä" : c.start > t ? ` · alkaa ${daysUntil(c.start) === 1 ? "huomenna" : daysUntil(c.start) + " päivän päästä"}` : ""}</div></div>
         ${st.has ? `<span class="secpill ${st.open && !st.locked ? "" : "ok"}">${st.locked ? (st.open ? `🔒 ${st.open} jakamatta` : "🔒 jaettu") : st.open ? `🙋 ${st.open} avointa` : "✓ täynnä"}</span>` : ""}</div></div>`;
   if (days.length) h += chips("lday", days.map(d => [d, dayLabel(d) + (d === t ? " •" : "")]), F.lday);
   h += chips("lday", infoTabs, F.lday);
@@ -941,7 +943,7 @@ function renderMenu() {
   if (!F.menu || !D) { m.hidden = true; return; }
   const camps = sectionList().filter(isCamp);
   m.innerHTML = `<button data-act="tab" data-key="koti">🏠 Etusivu</button>`
-    + (camps.length ? `<div class="mh">Leirit</div>` + camps.map(x => `<button data-act="openLeiri" data-key="${esc(x)}">⛺ ${esc(x)}${campLive(x) ? " · käynnissä" : ""}<small>${esc(campRange(x) || "päivät tulossa")}</small></button>`).join("") : "")
+    + (camps.length ? `<div class="mh">Leirit</div>` + camps.map(x => `<button data-act="openLeiri" data-key="${esc(x)}">⛺ ${esc(x)}${campLive(x) ? " · käynnissä" : ""}<small>${esc([campLabel(x), campRange(x) || "päivät tulossa"].filter(Boolean).join(" · "))}</small></button>`).join("") : "")
     + `<div class="mh">Muut</div><button data-act="tab" data-key="kalenteri">📅 Kalenteri</button><button data-act="tab" data-key="ohjeet">📖 Ohjeet</button>`;
   m.hidden = false;
 }
@@ -1193,8 +1195,8 @@ function makeDemo() {
       { date: day(-1), title: "Tervetuloa kauden sivustolle", text: "Täältä löydät kaikki ottelut, talkoot ja kyydit. Ilmoittaudu avoimiin vuoroihin suoraan sivulla.", until: "" },
     ],
     camps: [
-      { section: AL, start: day(13), end: day(13), town: "Tampere", info: "Esimerkki: alueleiri pelataan kotikentällä. Ota mukaan eväät, juomapullo ja pelivarusteet.", link: "" },
-      { section: VL, start: day(30), end: day(32), town: "Esimerkkilä", info: "Esimerkki: majoitus leirikoululla luokissa, ruokailut leiriruokalassa.\nPelaajat ovat aikuisten valvonnassa koko leirin ajan.", link: "" },
+      { section: AL, name: "Alueleiri Loimaa", start: day(13), end: day(13), town: "Loimaa", info: "Esimerkki: alueleiri pelataan kotikentällä. Ota mukaan eväät, juomapullo ja pelivarusteet.", link: "" },
+      { section: VL, name: "Naperoleiri Laitila", start: day(30), end: day(32), town: "Laitila", info: "Esimerkki: majoitus leirikoululla luokissa, ruokailut leiriruokalassa.\nPelaajat ovat aikuisten valvonnassa koko leirin ajan.", link: "" },
     ],
     menu: [
       { section: VL, date: day(30), meal: "Lounas", time: "12:30–13:30", food: "Lihapullat, perunat, salaatti", place: "Leiriruokala" },
