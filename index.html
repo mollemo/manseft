@@ -652,7 +652,7 @@ function viewInfo() {
   }
   h += `<div class="h2 navy">Näin ilmoittaudut</div><div class="box small" style="line-height:1.6;">
     <b>Ottelutalkoot:</b> Ottelut- tai Talkoot-välilehdellä paina avoimen roolin kohdalla <i>Ilmoittaudu</i> ja kirjoita nimesi.
-    Kotipeleissä ja vieraspeleissä tarvittavat roolit näkyvät pelin alla.<br>
+    Kotipelien talkoovuorot näkyvät pelin alla. Vieraspeleissä ei ole talkoita, vaan niissä sovitaan kyydit.<br>
     <b>Muut talkoot:</b> Talkoot-välilehdellä näkyy, montako tekijää vuoroon tarvitaan ja ketkä ovat jo ilmoittautuneet.<br>
     <b>Kyydit:</b> Kyydit-välilehdellä kuljettaja tarjoaa paikkoja ja pelaajat liittyvät kyytiin.<br>
     <b>Muutokset:</b> Oman nimen voi vaihtaa tai poistaa (✕). Jos lista on lukittu, sovi muutoksesta talkoovastaavan kanssa.<br>
@@ -783,20 +783,21 @@ document.addEventListener("visibilitychange", () => { if (document.visibilitySta
 function makeDemo() {
   const t0 = dOf(todayIso());
   const day = n => isoOf(new Date(t0.getTime() + n * 864e5));
-  const R = (a, b) => ({ "Kirjuri": a || "", "Takarajatuomari": b || "", "2. tuomari": "" });
-  const A = (a) => ({ "3. tuomari": a || "", "Tulostaulu": "" });
+  const HOME_ROLES = ["Kirjuri", "Tulostaulu / ottelun vanhin", "2. tuomari", "3. tuomari", "Takarajatuomari", "Kioski 1", "Kioski 2", "Kentän piirtäjä"];
+  const R = (filled) => Object.fromEntries(HOME_ROLES.map(r => [r, (filled || {})[r] || ""]));
+  const A = () => ({});
   return {
     ok: true, locked: false, today: todayIso(),
     settings: { team: "Manse F-tytöt", season: String(t0.getFullYear()), homeTag: "Manse",
-                homeRoles: ["Kirjuri", "Takarajatuomari", "2. tuomari"], awayRoles: ["3. tuomari", "Tulostaulu"] },
+                homeRoles: HOME_ROLES, awayRoles: [] },
     games: [
-      { id: "o1", date: day(-9), time: "18:00", teams: "Manse – Esimerkki PP", field: "Kotikenttä", series: "F-tytöt alue", home: true, result: "2–0", link: "", info: "", roles: { "Kirjuri": "Liisa M.", "Takarajatuomari": "Pekka K.", "2. tuomari": "Anna V." } },
-      { id: "o2", date: day(-4), time: "17:30", teams: "Esimerkki Kiri – Manse", field: "Vieraskenttä", series: "F-tytöt alue", home: false, result: "1–1", link: "", info: "", roles: { "3. tuomari": "Mikko L.", "Tulostaulu": "Sanna R." } },
-      { id: "o3", date: day(2), time: "18:00", teams: "Manse – Esimerkki Jymy", field: "Kotikenttä", series: "F-tytöt alue", home: true, result: "", link: "", info: "Kokoontuminen klo 17.15.", roles: R("Liisa M.") },
+      { id: "o1", date: day(-9), time: "18:00", teams: "Manse – Esimerkki PP", field: "Kotikenttä", series: "F-tytöt alue", home: true, result: "2–0", link: "", info: "", roles: R({ "Kirjuri": "Liisa M.", "Tulostaulu / ottelun vanhin": "Jari H.", "2. tuomari": "Anna V.", "3. tuomari": "Timo S.", "Takarajatuomari": "Pekka K.", "Kioski 1": "Sanna R.", "Kioski 2": "Mari T.", "Kentän piirtäjä": "Mikko L." }) },
+      { id: "o2", date: day(-4), time: "17:30", teams: "Esimerkki Kiri – Manse", field: "Vieraskenttä", series: "F-tytöt alue", home: false, result: "1–1", link: "", info: "", roles: A() },
+      { id: "o3", date: day(2), time: "18:00", teams: "Manse – Esimerkki Jymy", field: "Kotikenttä", series: "F-tytöt alue", home: true, result: "", link: "", info: "Kokoontuminen klo 17.15.", roles: R({ "Kirjuri": "Liisa M.", "Kioski 1": "Sanna R.", "Kentän piirtäjä": "Mikko L." }) },
       { id: "o4", date: day(6), time: "10:30", teams: "Esimerkki Pesis – Manse", field: "Vieraskenttä", series: "F-tytöt alue", home: false, result: "", link: "", info: "", roles: A() },
-      { id: "o5", date: day(9), time: "18:00", teams: "Manse – Esimerkki Puhti", field: "Kotikenttä", series: "F-tytöt alue", home: true, result: "", link: "", info: "", roles: R("", "Pekka K.") },
+      { id: "o5", date: day(9), time: "18:00", teams: "Manse – Esimerkki Puhti", field: "Kotikenttä", series: "F-tytöt alue", home: true, result: "", link: "", info: "", roles: R({ "Takarajatuomari": "Pekka K." }) },
       { id: "o6", date: day(13), time: "09:00", teams: "Manse – Esimerkki Roihu", field: "Kotikenttä", series: "Kevätturnaus", home: true, result: "", link: "", info: "", roles: R() },
-      { id: "o7", date: day(13), time: "11:00", teams: "Esimerkki Virkiä – Manse", field: "Kotikenttä", series: "Kevätturnaus", home: false, result: "", link: "", info: "", roles: A("Anna V.") },
+      { id: "o7", date: day(13), time: "11:00", teams: "Esimerkki Virkiä – Manse", field: "Kotikenttä", series: "Kevätturnaus", home: false, result: "", link: "", info: "", roles: A() },
       { id: "o8", date: day(20), time: "17:00", teams: "Esimerkki Jyske – Manse", field: "Vieraskenttä", series: "F-tytöt alue", home: false, result: "", link: "", info: "", roles: A() },
     ],
     talkoot: [

@@ -33,8 +33,8 @@ var DEFAULT_SETTINGS = [
   ["Joukkue", "Manse F-tytöt", "Näkyy sivun otsikossa"],
   ["Kausi", "2027", "Vuosi. Käytetään, jos päivämäärä on kirjoitettu ilman vuotta (esim. 16.5.)"],
   ["Kotijoukkueen tunniste", "Manse", "Jos Joukkueet alkaa tällä sanalla, peli on kotipeli (ellei Koti/Vieras-sarakkeessa toisin lue)"],
-  ["Kotipelin talkoot", "Kirjuri, Takarajatuomari, 2. tuomari", "Pilkulla erotettu lista. Jokaiselle tulee oma sarake Ottelut-välilehdelle"],
-  ["Vieraspelin talkoot", "3. tuomari, Tulostaulu", "Pilkulla erotettu lista"],
+  ["Kotipelin talkoot", "Kirjuri, Tulostaulu / ottelun vanhin, 2. tuomari, 3. tuomari, Takarajatuomari, Kioski 1, Kioski 2, Kentän piirtäjä", "Pilkulla erotettu lista. Jokaiselle tulee oma sarake Ottelut-välilehdelle. Kaksi samaa tehtävää = kaksi riviä (esim. Kioski 1, Kioski 2)"],
+  ["Vieraspelin talkoot", "", "Pilkulla erotettu lista. Tyhjä = vieraspeleissä ei talkoita, vain kyydit"],
   ["Lukko", "AUKI", "AUKI = ilmoittautuminen sivustolla toimii. LUKITTU = muutoksia ei voi tehdä sivustolla"]
 ];
 
