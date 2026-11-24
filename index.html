@@ -9,191 +9,274 @@
 <link rel="apple-touch-icon" href="logo.png">
 <style>
   :root {
-    --red: #CC1F1F; --darkred: #991515; --deep: #7E1111;
-    --green: #1A7A40; --navy: #1A1A44; --blue: #333399;
-    --bg: #F7F2F2; --card: #FFFFFF; --text: #1A1A2E; --sub: #6B6B76; --border: #EADADA;
-    --now-bg: #FFF7E0; --now-border: #E8A800; --amber: #A87800;
+    --bg: #EEEFEB; --card: #FFFFFF; --soft: #F4F5F1; --text: #1D2019; --sub: #8A8D85; --border: #E7E8E3;
+    --ac: #6E8E2E; --ac2: #97B54C; --acd: #55711F; --acs: #EDF2E0;
+    --red: #D8483E; --darkred: #B23A30; --deep: #7A2A22; --green: #6E8E2E; --navy: #38432F; --blue: #56708F;
+    --now-bg: #FFF6DC; --now-border: #E2B13C; --amber: #A97A12;
+    --r: 20px; --sh: 0 1px 2px rgba(30,35,25,.04), 0 8px 24px rgba(30,35,25,.06);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-         background: var(--bg); color: var(--text); padding-bottom: 48px; -webkit-text-size-adjust: 100%; }
-  button, input, select { font: inherit; }
+  body { font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+         background: linear-gradient(180deg, #F5F6F3 0%, #E7E9E3 100%) fixed; color: var(--text);
+         padding-bottom: 116px; -webkit-text-size-adjust: 100%; -webkit-font-smoothing: antialiased; }
+  button, input, select { font: inherit; color: inherit; }
 
-  .topbar { position: sticky; top: 0; z-index: 10; box-shadow: 0 2px 8px rgba(0,0,0,.15); }
-  header { background: var(--red); color: #fff; padding: 12px 16px; display: flex; align-items: center; gap: 12px; }
-  header .logo { width: 48px; height: 48px; min-width: 48px; border-radius: 50%; box-shadow: 0 1px 4px rgba(0,0,0,.25); background: #fff; }
-  header h1 { font-size: 19px; font-weight: 700; line-height: 1.2; }
-  header .clock { font-size: 12.5px; opacity: .9; margin-top: 2px; }
-
-  .tabs { display: flex; background: var(--darkred); overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
-  .tabs::-webkit-scrollbar { display: none; }
-  .tab { flex: 1 0 auto; white-space: nowrap; padding: 11px 13px; color: rgba(255,255,255,.72); font-weight: 600;
-         font-size: 13.5px; border: none; background: transparent; border-bottom: 3px solid transparent; cursor: pointer; }
-  .tab.active { color: #fff; border-bottom-color: #fff; background: rgba(255,255,255,.08); }
-  .tab .cnt { display: inline-block; min-width: 17px; padding: 0 5px; margin-left: 4px; border-radius: 9px;
-              background: #FFD24A; color: var(--deep); font-size: 10.5px; font-weight: 800; line-height: 17px; }
-  @media (max-width: 430px) { .tab { font-size: 12.5px; padding: 10px 10px; } }
-
-  main { max-width: 600px; margin: 0 auto; padding: 14px 12px; }
+  /* Yläosa */
+  header.top { max-width: 560px; margin: 0 auto; padding: 14px 16px 0; display: flex; align-items: center; gap: 10px; position: relative; }
+  .brand { display: flex; align-items: center; gap: 9px; font-weight: 600; font-size: 15.5px; letter-spacing: -.1px; }
+  .brand .logo { width: 30px; height: 30px; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.15); object-fit: cover; }
+  .tbtns { margin-left: auto; display: flex; gap: 8px; }
+  .ibtn { position: relative; width: 44px; height: 44px; border-radius: 50%; border: none; background: #fff; box-shadow: var(--sh);
+          display: grid; place-items: center; cursor: pointer; color: var(--text); }
+  .ibtn svg { width: 20px; height: 20px; }
+  .ibtn .dot { position: absolute; top: 10px; right: 11px; width: 9px; height: 9px; border-radius: 50%; background: var(--red); border: 2px solid #fff; }
+  .phead { max-width: 560px; margin: 0 auto; padding: 18px 18px 2px; }
+  .phead h1 { font-size: 30px; font-weight: 500; letter-spacing: -.7px; line-height: 1.15; }
+  .clock { font-size: 12.5px; color: var(--sub); margin-top: 5px; }
+  main { max-width: 560px; margin: 0 auto; padding: 12px 14px; }
   main.busy button { pointer-events: none; opacity: .6; }
 
-  .h2 { font-size: 16px; font-weight: 700; color: var(--red); margin: 18px 4px 8px; display: flex; align-items: center; gap: 8px; }
-  .h2.navy { color: var(--navy); }
-  .h3 { font-size: 12.5px; font-weight: 700; color: var(--sub); margin: 12px 4px 5px; text-transform: uppercase; letter-spacing: .4px; }
+  /* Kelluva alapalkki */
+  .bnav { position: fixed; left: 50%; bottom: calc(14px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 20;
+          display: flex; gap: 2px; padding: 6px; background: rgba(255,255,255,.84); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+          border-radius: 999px; box-shadow: 0 10px 30px rgba(30,35,25,.18), inset 0 0 0 1px rgba(255,255,255,.8); max-width: calc(100vw - 16px); }
+  .bnav button { position: relative; height: 48px; min-width: 48px; padding: 0 12px; border: none; background: transparent; border-radius: 999px;
+                 display: flex; align-items: center; justify-content: center; gap: 7px; color: #3F433B; cursor: pointer; font-weight: 600; font-size: 13.5px; }
+  .bnav button svg { width: 21px; height: 21px; flex: none; }
+  .bnav button .lb { display: none; }
+  .bnav button.active { background: linear-gradient(180deg, var(--ac2), var(--ac)); color: #fff; padding: 0 17px;
+                        box-shadow: 0 4px 14px rgba(110,142,46,.38), inset 0 1px 0 rgba(255,255,255,.3); }
+  .bnav button.active .lb { display: inline; }
+  .bnav .cnt { position: absolute; top: 6px; right: 6px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: var(--red);
+               color: #fff; font-size: 10px; font-weight: 800; line-height: 16px; text-align: center; }
+  .bnav button.active .cnt { display: none; }
+  @media (max-width: 390px) { .bnav button { min-width: 42px; padding: 0 9px; } .bnav button.active { padding: 0 13px; } }
+
+  /* Typografia */
+  .h2 { font-size: 17px; font-weight: 600; color: var(--text); margin: 24px 4px 10px; display: flex; align-items: center; gap: 8px; letter-spacing: -.2px; }
+  .h2.navy { color: var(--text); }
+  .h3 { font-size: 12px; font-weight: 700; color: var(--sub); margin: 16px 6px 8px; text-transform: uppercase; letter-spacing: .5px; }
   .muted { color: var(--sub); }
   .small { font-size: 12.5px; }
-  .note { font-size: 13px; color: var(--sub); margin: 4px 4px 10px; line-height: 1.5; }
+  .note { font-size: 13px; color: var(--sub); margin: 6px 6px 12px; line-height: 1.5; }
 
-  .banner { border-radius: 12px; padding: 10px 14px; margin-bottom: 12px; font-size: 13.5px; font-weight: 600; line-height: 1.45; border: 2px solid; }
-  .banner.warn  { background: var(--now-bg); border-color: var(--now-border); color: var(--amber); }
-  .banner.ok    { background: #E8F5EC; border-color: var(--green); color: var(--green); }
-  .banner.err   { background: #FCEBEB; border-color: var(--red); color: var(--darkred); }
-  .banner.lock  { background: #EDEEF3; border-color: var(--navy); color: var(--navy); }
-  .banner.demo  { background: #EEF2FF; border-color: #8C9BE0; color: #2D3A8C; font-weight: 500; }
-  .banner b { font-weight: 800; }
+  .banner { border-radius: 16px; padding: 11px 14px; margin-bottom: 12px; font-size: 13.5px; font-weight: 500; line-height: 1.45; border: 1px solid transparent; }
+  .banner.warn { background: var(--now-bg); color: #7A5A0E; border-color: #F2DFA6; }
+  .banner.ok   { background: var(--acs); color: var(--acd); border-color: #DCE7C4; }
+  .banner.err  { background: #FCEAE8; color: var(--darkred); border-color: #F5D0CC; }
+  .banner.lock { background: #F1F2EE; color: var(--navy); border-color: #E2E4DD; }
+  .banner.demo { background: rgba(255,255,255,.7); color: var(--sub); font-size: 12.5px; }
+  .banner b { font-weight: 700; }
 
-  .card { display: flex; gap: 12px; align-items: flex-start; background: var(--card); border: 1px solid var(--border);
-          border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; }
-  .card.past { opacity: .55; }
-  .card.today { border: 2px solid var(--now-border); background: var(--now-bg); }
-  .card.hero { border: 2px solid var(--red); box-shadow: 0 3px 12px rgba(204,31,31,.12); }
-  .datebox { width: 46px; min-width: 46px; text-align: center; border-radius: 10px; padding: 5px 0; color: #fff; background: var(--red); }
-  .datebox.away { background: var(--navy); }
-  .datebox.talkoo { background: var(--green); }
-  .datebox.event { background: var(--blue); }
-  .datebox .wd { font-size: 11px; font-weight: 700; text-transform: uppercase; opacity: .9; }
-  .datebox .dm { font-size: 15px; font-weight: 800; line-height: 1.15; }
-  .datebox .ic { font-size: 13px; margin-top: 1px; }
+  /* Kortit */
+  .card { display: flex; gap: 12px; align-items: flex-start; background: var(--card); border-radius: var(--r); padding: 13px 14px; margin-bottom: 10px; box-shadow: var(--sh); }
+  .card.past { opacity: .6; }
+  .card.today { box-shadow: 0 0 0 2px var(--now-border), var(--sh); }
+  .datebox { width: 48px; min-width: 48px; text-align: center; border-radius: 14px; padding: 6px 0; background: var(--soft); color: var(--text); }
+  .datebox.talkoo { background: var(--acs); }
+  .datebox.event { background: #EEF1F5; }
+  .datebox .wd { font-size: 11px; font-weight: 600; color: var(--sub); text-transform: uppercase; }
+  .datebox .dm { font-size: 15px; font-weight: 700; line-height: 1.2; }
+  .datebox .ic { font-size: 13px; margin-top: 2px; }
   .cbody { flex: 1; min-width: 0; }
-  .meta { font-size: 12px; font-weight: 700; color: var(--red); display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; }
-  .title { font-size: 15.5px; font-weight: 700; line-height: 1.35; margin-top: 1px; }
+  .meta { font-size: 12px; font-weight: 600; color: var(--sub); display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; }
+  .title { font-size: 15.5px; font-weight: 600; line-height: 1.35; margin-top: 2px; letter-spacing: -.1px; }
   .sub { font-size: 12.8px; color: var(--sub); margin-top: 3px; line-height: 1.5; }
-  .badge { display: inline-block; font-size: 10.5px; font-weight: 700; padding: 1px 7px; border-radius: 9px; text-transform: uppercase; letter-spacing: .3px; }
-  .b-home { background: #FBE3E3; color: var(--darkred); }
-  .b-away { background: #E3E4F2; color: var(--navy); }
-  .b-ser  { background: #F1EEE6; color: #6B5A2E; }
-  .b-today { background: var(--now-border); color: #fff; }
-  .b-res  { background: var(--navy); color: #fff; font-size: 12px; }
+  .badge { display: inline-flex; align-items: center; font-size: 11px; font-weight: 600; padding: 2px 9px; border-radius: 999px; white-space: nowrap; }
+  .b-home { background: var(--acs); color: var(--acd); }
+  .b-away { background: #EEF0EA; color: #5A5F55; }
+  .b-ser  { background: #F3F4F0; color: #6B6F66; box-shadow: inset 0 0 0 1px var(--border); }
+  .b-today, .b-now { background: linear-gradient(180deg, #F0C25A, #DDA531); color: #fff; }
+  .b-up   { background: linear-gradient(180deg, var(--ac2), var(--ac)); color: #fff; }
+  .b-res  { background: var(--text); color: #fff; font-size: 12px; }
+  a.lnk { color: var(--acd); font-weight: 600; text-decoration: none; border-bottom: 1px solid rgba(85,113,31,.28); }
+  a.lnk.navy { color: var(--navy); border-bottom-color: rgba(56,67,47,.25); }
 
-  a.lnk { color: var(--red); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
-  a.lnk.navy { color: var(--navy); }
-
-  .roles { margin-top: 7px; border-top: 1px dashed var(--border); padding-top: 4px; }
-  .rrow { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 6px; margin-top: 5px; font-size: 13.5px; }
-  .rrow .rl { font-weight: 700; min-width: 0; }
-  .open { color: var(--red); font-weight: 700; }
-  .btn { font-size: 12.5px; font-weight: 700; color: #fff; background: var(--red); border: 1px solid var(--red);
-         border-radius: 8px; padding: 4px 11px; cursor: pointer; }
-  .btn.ghost { color: var(--red); background: #fff; font-weight: 600; }
-  .btn.navy { background: var(--navy); border-color: var(--navy); }
-  .btn.navy.ghost { color: var(--navy); background: #fff; }
-  .btn.sm { padding: 2px 8px; font-size: 11.5px; }
-  .x { border: none; background: none; color: var(--sub); font-size: 15px; cursor: pointer; padding: 0 3px; line-height: 1; }
-  .inp { font-size: 15px; padding: 5px 9px; border: 1px solid var(--red); border-radius: 8px; width: 160px; max-width: 100%; }
+  .roles { margin-top: 10px; border-top: 1px solid var(--border); padding-top: 4px; }
+  .rrow { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; padding: 5px 0; font-size: 13.5px; }
+  .rrow .rl { font-weight: 600; min-width: 0; color: #4A4E45; }
+  .open { color: var(--red); font-weight: 600; }
+  .btn { font-size: 12.5px; font-weight: 600; color: #fff; background: linear-gradient(180deg, var(--ac2), var(--ac)); border: none; border-radius: 999px;
+         padding: 7px 15px; cursor: pointer; box-shadow: 0 3px 10px rgba(110,142,46,.25); }
+  .btn.ghost { color: var(--text); background: #fff; box-shadow: inset 0 0 0 1px var(--border); }
+  .btn.navy { background: var(--navy); box-shadow: none; }
+  .btn.navy.ghost { color: var(--navy); background: #fff; box-shadow: inset 0 0 0 1px var(--border); }
+  .btn.sm { padding: 4px 12px; font-size: 12px; }
+  .x { border: none; background: none; color: var(--sub); font-size: 14px; cursor: pointer; padding: 0 3px; line-height: 1; }
+  .inp { font-size: 15px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 12px; width: 170px; max-width: 100%; background: #fff; outline: none; }
+  .inp:focus { border-color: var(--ac); box-shadow: 0 0 0 3px var(--acs); }
   .inp.wide { width: 100%; }
+  select.inp { appearance: none; -webkit-appearance: none; padding-right: 36px;
+    background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238A8D85' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 13px center; }
 
-  .chips { display: flex; gap: 6px; flex-wrap: wrap; margin: 2px 2px 10px; }
-  .chip { font-size: 12.5px; font-weight: 600; padding: 5px 11px; border-radius: 16px; border: 1px solid var(--border);
-          background: #fff; color: var(--text); cursor: pointer; }
-  .chip.on { background: var(--red); color: #fff; border-color: var(--red); }
+  /* Suodattimet: pillerit ja alleviivatut välilehdet */
+  .chips { display: flex; gap: 7px; overflow-x: auto; scrollbar-width: none; margin: 0 -2px 12px; padding: 2px; }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip { flex: none; font-size: 12.5px; font-weight: 600; padding: 7px 13px; border-radius: 999px; border: none; background: #fff; color: #454941;
+          cursor: pointer; box-shadow: var(--sh); white-space: nowrap; }
+  .chip.on { background: var(--text); color: #fff; }
+  .seg { display: flex; border-bottom: 1px solid #D9DBD4; margin: 0 2px 14px; }
+  .seg button { flex: 1; border: none; background: none; padding: 10px 4px 11px; font-size: 14.5px; color: var(--sub); cursor: pointer; position: relative; font-weight: 500; }
+  .seg button.on { color: var(--text); }
+  .seg button.on::after { content: ""; position: absolute; left: 14%; right: 14%; bottom: -1px; height: 2.5px; border-radius: 2px; background: var(--ac); }
 
-  .mini { display: flex; gap: 10px; align-items: baseline; padding: 7px 2px; border-bottom: 1px solid var(--border); font-size: 13.5px; }
+  .mini { display: flex; gap: 10px; align-items: center; padding: 10px 2px; border-bottom: 1px solid var(--border); font-size: 13.5px; }
   .mini:last-child { border-bottom: none; }
-  .mini .md { min-width: 66px; font-weight: 700; color: var(--red); font-size: 12.5px; }
-  .mini .mt { flex: 1; min-width: 0; }
-  .box { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px; margin-bottom: 10px; }
+  .mini .md { min-width: 56px; font-weight: 600; color: var(--text); font-size: 12.5px; line-height: 1.35; }
+  .mini .md em { display: block; font-style: normal; font-weight: 500; color: var(--sub); }
+  .mini .mt { flex: 1; min-width: 0; line-height: 1.4; }
+  .mic { width: 32px; height: 32px; border-radius: 50%; background: var(--soft); display: grid; place-items: center; color: var(--acd); flex: none; }
+  .mic svg { width: 16px; height: 16px; }
+  .box { background: var(--card); border-radius: var(--r); padding: 6px 14px; margin-bottom: 10px; box-shadow: var(--sh); }
 
-  .ride { border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px; margin-top: 7px; background: #FBFAFF; font-size: 13.5px; }
+  .ride { border-radius: 14px; padding: 10px 12px; margin-top: 8px; background: var(--soft); font-size: 13.5px; }
   .ride .rh { display: flex; justify-content: space-between; gap: 6px; align-items: baseline; flex-wrap: wrap; }
-  .seats { font-size: 12px; font-weight: 700; color: var(--green); }
+  .seats { font-size: 12px; font-weight: 700; color: var(--acd); }
   .seats.full { color: var(--sub); }
-  .pas { display: inline-flex; align-items: center; background: #EEF0F8; border-radius: 12px; padding: 1px 4px 1px 9px; margin: 4px 4px 0 0; font-size: 12.5px; }
-  .form { display: grid; gap: 7px; margin-top: 8px; }
-  .form label { font-size: 12px; font-weight: 700; color: var(--sub); }
+  .pas { display: inline-flex; align-items: center; background: #fff; border-radius: 999px; padding: 2px 5px 2px 10px; margin: 5px 5px 0 0; font-size: 12.5px; box-shadow: inset 0 0 0 1px var(--border); }
+  .form { display: grid; gap: 8px; margin-top: 8px; }
+  .form label { font-size: 12px; font-weight: 600; color: var(--sub); }
 
-  .sec { border-radius: 14px; overflow: hidden; margin: 16px 0; background: #FCFAFA; border: 1px solid var(--border); }
-  .sech { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 11px 14px; color: #fff; background: var(--red); }
-  .sec-1 .sech { background: var(--green); }
-  .sec-2 .sech { background: var(--navy); }
-  .sec-3 .sech { background: #5C5C66; }
-  .sect { font-size: 17px; font-weight: 800; line-height: 1.2; }
-  .secm { font-size: 12px; opacity: .9; margin-top: 2px; }
-  .secpill { background: #FFD24A; color: var(--deep); font-weight: 800; font-size: 12px; padding: 3px 9px; border-radius: 12px; white-space: nowrap; }
-  .secpill.ok { background: rgba(255,255,255,.22); color: #fff; }
-  .secb { padding: 2px 10px 12px; }
-  .secb .h3 { margin-top: 12px; }
-  .secb .box { margin-bottom: 4px; }
+  /* Etusivun kenttäkuvitus ja seuraava ottelu */
+  .hero { position: relative; margin: 2px 0 6px; }
+  .hero .field { display: block; width: 100%; height: auto; border-radius: 26px; box-shadow: var(--sh); }
+  .glass { position: relative; margin: -58px 10px 0; background: rgba(255,255,255,.8); backdrop-filter: blur(18px) saturate(1.2); -webkit-backdrop-filter: blur(18px) saturate(1.2);
+           border-radius: 20px; padding: 12px 14px; box-shadow: 0 10px 30px rgba(30,35,25,.16); border: 1px solid rgba(255,255,255,.75); }
+  .gh { display: flex; align-items: center; gap: 8px; font-size: 14.5px; font-weight: 500; margin-bottom: 2px; }
+  .gh .gp { margin-left: auto; font-size: 12px; color: var(--sub); text-align: right; }
+  .grow { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,.06); font-size: 14.5px; }
+  .grow .gn { flex: 1; min-width: 0; }
+  .grow .gn small { color: var(--sub); font-size: 12px; margin-left: 4px; }
+  .grow .gv { font-size: 19px; font-weight: 500; letter-spacing: -.3px; }
+  .grow .gv small { font-size: 12px; color: var(--sub); font-weight: 500; margin-left: 4px; }
+  .gfoot { display: flex; align-items: center; gap: 10px; padding-top: 9px; font-size: 12.8px; color: #4A4E45; cursor: pointer; background: none; border: none; width: 100%; text-align: left; }
+  .gfoot .bar { flex: 1; }
+  .av { width: 30px; height: 30px; border-radius: 50%; flex: none; display: inline-grid; place-items: center; font-size: 11px; font-weight: 700; color: #fff;
+        overflow: hidden; background: #8A8D85; box-shadow: 0 0 0 2px #fff, 0 1px 4px rgba(0,0,0,.15); }
+  .av img { width: 100%; height: 100%; object-fit: cover; background: #fff; }
+
+  .bar { height: 5px; border-radius: 3px; background: #E6E8E1; overflow: hidden; }
+  .bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--ac2), var(--ac)); border-radius: 3px; }
+  .stats .srow { display: grid; grid-template-columns: 1fr auto; gap: 6px 10px; padding: 11px 0; border-bottom: 1px solid var(--border); font-size: 13.5px; }
+  .stats .srow:last-child { border-bottom: none; }
+  .stats .srow b { font-weight: 600; }
+  .stats .bar { grid-column: 1 / -1; }
+
+  /* Otteluohjelma */
+  details.dgrp { background: rgba(255,255,255,.5); border-radius: 24px; padding: 2px 8px 6px; margin-bottom: 12px; box-shadow: var(--sh); }
+  details.dgrp > summary { list-style: none; display: flex; justify-content: space-between; align-items: center; padding: 13px 8px 11px; cursor: pointer; font-size: 16.5px; font-weight: 500; letter-spacing: -.2px; }
+  details.dgrp > summary::-webkit-details-marker { display: none; }
+  .dn { font-size: 12.5px; color: var(--sub); display: flex; align-items: center; gap: 4px; font-weight: 500; }
+  .dn svg { width: 14px; height: 14px; transition: transform .15s; transform: rotate(90deg); }
+  details.dgrp:not([open]) .dn svg { transform: none; }
+  .mcard { background: #fff; border-radius: 18px; margin-bottom: 8px; box-shadow: var(--sh); overflow: hidden; }
+  .mcard.past { opacity: .62; }
+  .mcard.today { box-shadow: 0 0 0 2px var(--now-border), var(--sh); }
+  .mcard.hero { box-shadow: 0 0 0 2px var(--ac), var(--sh); }
+  .mmain { display: grid; grid-template-columns: 74px 1fr 76px; align-items: center; gap: 6px; padding: 12px; }
+  .mdate { font-size: 11.5px; color: var(--sub); font-weight: 600; text-transform: uppercase; letter-spacing: .2px; }
+  .mtime { font-size: 18px; font-weight: 500; letter-spacing: -.3px; line-height: 1.2; }
+  .mplace { font-size: 11.5px; color: var(--sub); margin: 1px 0 6px; line-height: 1.3; word-break: break-word; }
+  .mplace a { color: inherit; text-decoration: none; }
+  .mteams { display: grid; grid-template-columns: 1fr auto 1fr; align-items: stretch; gap: 4px; text-align: center; }
+  .mteam { background: var(--soft); border-radius: 14px; padding: 8px 3px 7px; min-width: 0; }
+  .mteam .av { width: 40px; height: 40px; margin: 0 auto 5px; font-size: 13px; display: grid; }
+  .mteam .tn { font-size: 12px; font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
+  .mteam .ts { font-size: 10.5px; color: var(--sub); margin-top: 1px; }
+  .vs { align-self: center; font-size: 12px; color: var(--sub); font-weight: 500; padding: 0 2px; }
+  .vs.res { font-size: 15px; color: var(--text); font-weight: 700; }
+  .mright { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; text-align: right; }
+  .mright .badge { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+  .mright .mi { font-size: 11px; color: var(--sub); line-height: 1.3; }
+  .mfoot { border-top: 1px solid var(--border); padding: 6px 12px 9px; font-size: 12.8px; color: var(--sub); }
+  .mfoot .roles { border: none; margin: 0; padding: 0; }
+  .mfoot .sub { margin-top: 4px; }
+  .mlink { display: flex; align-items: center; gap: 6px; background: none; border: none; color: #4A4E45; font-size: 12.8px; cursor: pointer; padding: 4px 0; width: 100%; text-align: left; }
+  .mlink .bar { flex: 1; max-width: 120px; }
+  @media (max-width: 370px) { .mmain { grid-template-columns: 64px 1fr 64px; gap: 4px; padding: 10px; } .mteam .av { width: 34px; height: 34px; } }
+
+  .news { border-left: none; }
+  .news .title { font-size: 14.5px; }
+  .news .sub { white-space: pre-line; color: var(--text); }
+
+  /* Osiot ja leirit */
+  .sec { margin: 4px 0 16px; }
+  .sech { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 16px; color: #fff; border-radius: 22px; box-shadow: var(--sh);
+          background: linear-gradient(135deg, #85A43E, #5B7A21); }
+  .sec-1 .sech { background: linear-gradient(135deg, #5B8C68, #2F5E40); }
+  .sec-2 .sech { background: linear-gradient(135deg, #5F6D86, #333E55); }
+  .sec-3 .sech { background: linear-gradient(135deg, #92958C, #63665E); }
+  .sect { font-size: 18px; font-weight: 600; line-height: 1.2; letter-spacing: -.2px; }
+  .secm { font-size: 12.5px; opacity: .88; margin-top: 3px; }
+  .secpill { background: rgba(255,255,255,.95); color: var(--text); font-weight: 700; font-size: 12px; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
+  .secpill.ok { background: rgba(255,255,255,.2); color: #fff; }
+  .secb { padding: 4px 0 0; }
+  .secb .h3 { margin-top: 18px; }
   .more { margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap; }
-
-  .tile { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; background: #fff; color: var(--text);
-          border: 1px solid var(--border); border-left: 6px solid var(--red); border-radius: 12px; padding: 9px 12px; margin-bottom: 7px; cursor: pointer; }
-  .tile.c1 { border-left-color: var(--green); }
-  .tile.c2 { border-left-color: var(--navy); }
-  .tile.c3 { border-left-color: #8A8A94; }
-  .tile:active { background: #FBF5F5; }
-  .tile .ti { font-size: 20px; line-height: 1; }
+  .tile { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; background: #fff; color: var(--text); border: none;
+          border-radius: var(--r); padding: 12px 14px; margin-bottom: 10px; cursor: pointer; box-shadow: var(--sh); }
+  .tile:active { transform: scale(.99); }
+  .tile .ti { width: 44px; height: 44px; border-radius: 15px; display: grid; place-items: center; background: var(--acs); color: var(--acd); flex: none; }
+  .tile .ti svg { width: 22px; height: 22px; }
+  .tile.c1 .ti { background: #E3EFE6; color: #2F5E40; }
+  .tile.c2 .ti { background: #E6EAF1; color: #333E55; }
+  .tile.c3 .ti { background: #EFF0EC; color: #63665E; }
+  .tile.live { box-shadow: 0 0 0 2px var(--now-border), var(--sh); }
   .tile .tb { flex: 1; min-width: 0; display: block; }
-  .tile .tn { display: block; font-weight: 800; font-size: 15px; line-height: 1.25; }
-  .tile .tx { display: block; font-size: 12.5px; color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
-  .tile .tp { font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 10px; white-space: nowrap; background: #FFF0C2; color: var(--amber); }
-  .tile .tp.lock { background: #EDEEF3; color: var(--navy); }
-  .tile .tp.ok { background: #E8F5EC; color: var(--green); }
-  .tile .chev { color: var(--sub); font-size: 20px; line-height: 1; }
-  .back { margin: 2px 0 4px; }
+  .tile .tn { display: block; font-weight: 600; font-size: 15px; line-height: 1.25; }
+  .tile .tx { display: block; font-size: 12.5px; color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+  .tile .tp { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px; white-space: nowrap; background: var(--now-bg); color: #7A5A0E; }
+  .tile .tp.lock { background: #F1F2EE; color: var(--navy); }
+  .tile .tp.ok { background: var(--acs); color: var(--acd); }
+  .tile .chev { color: #B9BCB4; display: grid; }
+  .tile .chev svg { width: 16px; height: 16px; }
+  .back { margin: 0 0 10px; }
+  .camphead { margin: 0 0 12px; }
+
+  .menu { position: absolute; right: 16px; top: 64px; background: #fff; border-radius: 18px; box-shadow: 0 14px 36px rgba(30,35,25,.22); min-width: 250px; z-index: 30; overflow: hidden; }
+  .menu button { display: block; width: 100%; text-align: left; padding: 12px 16px; border: none; border-bottom: 1px solid var(--border); background: #fff; color: var(--text); font-weight: 500; font-size: 14.5px; cursor: pointer; }
+  .menu button:last-child { border-bottom: none; }
+  .menu .mh { padding: 9px 16px 5px; font-size: 11px; font-weight: 700; color: var(--sub); text-transform: uppercase; letter-spacing: .5px; background: var(--soft); }
+  .menu small { display: block; color: var(--sub); font-weight: 500; font-size: 12px; margin-top: 1px; }
+
+  .tl { display: flex; gap: 10px; padding: 11px 2px; border-bottom: 1px solid var(--border); }
+  .tl:last-child { border-bottom: none; }
+  .tl .tt { width: 84px; flex: none; font-weight: 600; color: var(--text); font-size: 13px; padding-top: 6px; }
+  .tl .tic { width: 32px; height: 32px; border-radius: 50%; background: var(--soft); display: grid; place-items: center; font-size: 15px; flex: none; }
+  .tl .tc { flex: 1; min-width: 0; padding-top: 4px; }
+  .tl .tti { font-weight: 600; font-size: 14.5px; line-height: 1.35; }
+  .tl .tsu { font-size: 12.8px; color: var(--sub); margin-top: 2px; line-height: 1.5; white-space: pre-line; }
+  .tl.meal .tic { background: var(--acs); }
+  .tl.past { opacity: .5; }
 
   details.ohje { display: block; cursor: pointer; }
   details.ohje summary { list-style: none; display: flex; justify-content: space-between; align-items: center; }
   details.ohje summary::-webkit-details-marker { display: none; }
-  details.ohje summary::after { content: "›"; color: var(--sub); font-size: 20px; transition: transform .15s; }
+  details.ohje summary::after { content: "›"; color: var(--sub); font-size: 22px; transition: transform .15s; }
   details.ohje[open] summary::after { transform: rotate(90deg); }
-  details.ohje[open] { border-color: var(--red); }
+  details.ohje[open] { box-shadow: 0 0 0 2px var(--acs), var(--sh); }
 
-  .tile.live { background: var(--now-bg); border-color: var(--now-border); border-left-color: var(--now-border); }
-  header { position: relative; }
-  .menubtn { margin-left: auto; background: rgba(255,255,255,.16); border: none; color: #fff; font-size: 21px; width: 42px; height: 42px; border-radius: 10px; cursor: pointer; }
-  .menu { position: absolute; right: 10px; top: 64px; background: #fff; border-radius: 12px; box-shadow: 0 8px 26px rgba(0,0,0,.25); min-width: 240px; z-index: 30; overflow: hidden; }
-  .menu button { display: block; width: 100%; text-align: left; padding: 12px 15px; border: none; border-bottom: 1px solid var(--border); background: #fff; color: var(--text); font-weight: 600; font-size: 14.5px; cursor: pointer; }
-  .menu button:last-child { border-bottom: none; }
-  .menu .mh { padding: 8px 15px 4px; font-size: 11px; font-weight: 800; color: var(--sub); text-transform: uppercase; letter-spacing: .4px; background: #FAF6F6; }
-  .menu small { display: block; color: var(--sub); font-weight: 500; font-size: 12px; }
-  .camphead { border-radius: 14px; margin: 4px 0 10px; }
-  .tl { display: flex; gap: 10px; padding: 9px 4px; border-bottom: 1px solid var(--border); }
-  .tl:last-child { border-bottom: none; }
-  .tl .tt { min-width: 50px; font-weight: 800; color: var(--red); font-size: 13px; padding-top: 1px; }
-  .tl .tic { font-size: 18px; line-height: 1.2; }
-  .tl .tc { flex: 1; min-width: 0; }
-  .tl .tti { font-weight: 700; font-size: 14.5px; line-height: 1.35; }
-  .tl .tsu { font-size: 12.8px; color: var(--sub); margin-top: 2px; line-height: 1.5; white-space: pre-line; }
-  .tl.meal .tt { color: var(--green); }
-  .tl.past { opacity: .5; }
-
-  .news { border-left: 4px solid var(--red); }
-  .news .title { font-size: 14.5px; }
-  .news .sub { white-space: pre-line; color: var(--text); }
-
-  #toast { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); background: var(--navy); color: #fff;
-           padding: 9px 16px; border-radius: 20px; font-size: 13.5px; font-weight: 600; box-shadow: 0 4px 14px rgba(0,0,0,.25);
+  #toast { position: fixed; left: 50%; bottom: 92px; transform: translateX(-50%); background: var(--text); color: #fff;
+           padding: 10px 18px; border-radius: 999px; font-size: 13.5px; font-weight: 600; box-shadow: 0 6px 20px rgba(0,0,0,.25);
            opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 50; max-width: 92vw; text-align: center; }
   #toast.show { opacity: 1; }
-  footer { text-align: center; font-size: 11px; color: #AAA; margin-top: 26px; }
+  footer { text-align: center; font-size: 11px; color: #A6A9A2; margin-top: 26px; }
 </style>
 </head>
 <body>
 
-<div class="topbar">
-  <header>
-    <img class="logo" src="logo.png" alt="">
-    <div>
-      <h1 id="teamTitle">Manse</h1>
-      <div class="clock" id="clock"></div>
-    </div>
-    <button class="menubtn" id="menuBtn" data-act="menu" aria-label="Valikko">☰</button>
-    <div class="menu" id="menu" hidden></div>
-  </header>
-  <nav class="tabs" id="tabs"></nav>
-</div>
+<header class="top">
+  <div class="brand"><img class="logo" src="logo.png" alt=""><span id="teamTitle">Manse</span></div>
+  <div class="tbtns">
+    <button class="ibtn" id="bellBtn" data-act="tab" data-key="tiedotteet" aria-label="Tiedotteet"></button>
+    <button class="ibtn" id="menuBtn" data-act="menu" aria-label="Valikko"></button>
+  </div>
+  <div class="menu" id="menu" hidden></div>
+</header>
+<div class="phead"><h1 id="ptitle">Kausi</h1><div class="clock" id="clock"></div></div>
 
 <main id="view"></main>
+<nav class="bnav" id="tabs" aria-label="Päävalikko"></nav>
 <div id="toast"></div>
 
 <script>
@@ -204,9 +287,28 @@ const API_URL = "";
 
 const DEMO = !API_URL;
 const TABS = [
-  ["koti", "🏠 Etusivu"], ["ottelut", "⚾ Ottelut"], ["talkoot", "🙋 Talkoot"],
-  ["kyydit", "🚗 Kyydit"], ["kalenteri", "📅 Kalenteri"], ["ohjeet", "📖 Ohjeet"],
+  ["koti", "Etusivu", "grid"], ["ottelut", "Ottelut", "ball"], ["talkoot", "Talkoot", "people"],
+  ["kyydit", "Kyydit", "car"], ["kalenteri", "Kalenteri", "cal"], ["ohjeet", "Ohjeet", "book"],
 ];
+const TITLES = { koti: "Kauden kooste", ottelut: "Otteluohjelma", talkoot: "Talkoovuorot", kyydit: "Kyydit", kalenteri: "Kalenteri", ohjeet: "Ohjeet", tiedotteet: "Tiedotteet" };
+
+// ─── Viivakuvakkeet ──────────────────────────────────────────────────────
+const ICONS = {
+  grid: '<rect x="4" y="4" width="7" height="7" rx="2.2"/><rect x="13" y="4" width="7" height="7" rx="2.2"/><rect x="4" y="13" width="7" height="7" rx="2.2"/><rect x="13" y="13" width="7" height="7" rx="2.2"/>',
+  ball: '<circle cx="12" cy="12" r="8.5"/><path d="M6.3 6.2c2.6 2.2 2.6 9.4 0 11.6M17.7 6.2c-2.6 2.2-2.6 9.4 0 11.6"/>',
+  people: '<circle cx="9" cy="8.5" r="3"/><path d="M3.5 19c.6-3.2 2.9-5 5.5-5s4.9 1.8 5.5 5"/><circle cx="16.5" cy="9.5" r="2.4"/><path d="M15.6 14.1c2.4-.2 4.3 1.3 4.9 4.4"/>',
+  car: '<path d="M4 15.5v-3.2L6.1 8A2 2 0 0 1 7.9 6.8h8.2A2 2 0 0 1 17.9 8l2.1 4.3v3.2a1 1 0 0 1-1 1h-.7M6.4 16.5H5a1 1 0 0 1-1-1"/><path d="M4.5 12.4h15"/><circle cx="8.2" cy="16.8" r="1.8"/><circle cx="15.8" cy="16.8" r="1.8"/><path d="M10 16.8h4"/>',
+  cal: '<rect x="4" y="5.5" width="16" height="14.5" rx="3"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4M8 13.5h2M14 13.5h2M8 16.5h2"/>',
+  book: '<path d="M5 18.5V6a2.5 2.5 0 0 1 2.5-2.5H19v13H7.5A2.5 2.5 0 0 0 5 19a2 2 0 0 0 2 2h12"/><path d="M9 8h6"/>',
+  bell: '<path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.4 1.5H4.6z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
+  menu: '<path d="M4.5 7h15M4.5 12h15M4.5 17h9"/>',
+  tent: '<path d="M3 19.5h18M12 4.5 4 19.5M12 4.5l8 15M12 11.5l-3 8M12 11.5l3 8"/>',
+  pin: '<path d="M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/>',
+  chev: '<path d="M9 6l6 6-6 6"/>',
+  user: '<circle cx="12" cy="8.5" r="3.6"/><path d="M5 20c.8-3.8 3.6-6 7-6s6.2 2.2 7 6"/>',
+  flag: '<path d="M5.5 21V4M5.5 4.5h11l-2.2 4 2.2 4h-11"/>',
+};
+function ic(name) { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name] || ""}</svg>`; }
 
 let D = null;            // haettu data
 let loadError = false;
@@ -217,7 +319,7 @@ function parseHash() {
   let h = location.hash.slice(1);
   try { h = decodeURIComponent(h); } catch (e) {}
   if (h.startsWith("leiri=")) return { tab: "leiri", leiri: h.slice(6) };
-  return { tab: TABS.some(t => t[0] === h) ? h : "koti" };
+  return { tab: TABS.some(t => t[0] === h) || h === "tiedotteet" ? h : "koti" };
 }
 let tab = parseHash().tab;
 const F = { leiri: parseHash().leiri || "", lday: "", menu: false, ohje: "", games: "tulevat", sec: "", talkoot: "avoimet", kal: "kaikki", kalPast: false, mePast: false };
@@ -290,7 +392,7 @@ function secOk(x) { return !F.sec || secName(x) === F.sec; }
 function secIcon(s) { s = s.toLowerCase(); return s.includes("leiri") ? "⛺" : s.includes("sarja") ? "⚾" : "📌"; }
 function secChips() {
   const l = sectionList();
-  return l.length > 1 ? chips("sec", [["", "Kaikki"]].concat(l.map(x => [x, secIcon(x) + " " + esc(x)])), F.sec) : "";
+  return l.length > 1 ? chips("sec", [["", "Kaikki"]].concat(l.map(x => [x, esc(x)])), F.sec) : "";
 }
 
 // ─── Laskurit ────────────────────────────────────────────────────────────
@@ -404,32 +506,102 @@ function roleRow(g, role) {
   return `<div class="rrow"><span class="rl">${esc(role)}${o ? ` <button class="x" style="font-size:13px;color:var(--navy);" title="Ohje" data-act="ohje" data-key="${esc(o.title)}">ⓘ</button>` : ""}:</span> ${body}</div>`;
 }
 
+function teamsOf(g) {
+  const p = String(g.teams || "").split(/\s+[–—-]\s+/);
+  return p.length === 2 ? p : [g.teams || "", ""];
+}
+function isHomeTeam(name) {
+  const tag = String((D.settings && D.settings.homeTag) || "Manse").toLowerCase();
+  return !!tag && String(name).toLowerCase().startsWith(tag);
+}
+function teamAvatar(name) {
+  if (isHomeTeam(name)) return `<span class="av"><img src="logo.png" alt=""></span>`;
+  const words = String(name).replace(/^Esimerkki\s+/i, "").split(/\s+/).filter(Boolean);
+  const ini = (words[0] || "?").slice(0, 1) + (words[1] ? words[1].slice(0, 1) : (words[0] || "").slice(1, 2));
+  let h = 0; for (const c of String(name)) h = (h * 31 + c.charCodeAt(0)) % 360;
+  return `<span class="av" style="background:hsl(${h},32%,46%)">${esc(ini.toUpperCase())}</span>`;
+}
+function rolesFilled(g) { const r = Object.keys(g.roles); return { total: r.length, filled: r.filter(k => g.roles[k]).length }; }
+
 function gameCard(g, opts) {
   opts = opts || {};
   const past = isPast(g.date), today = g.date === todayIso();
-  const meta = [
-    g.time ? `klo ${esc(g.time)}` : "",
-    `<span class="badge ${g.home ? "b-home" : "b-away"}">${g.home ? "Koti" : "Vieras"}</span>`,
-    g.series ? `<span class="badge b-ser">${esc(g.series)}</span>` : "",
-    today ? `<span class="badge b-today">Tänään</span>` : "",
-  ].filter(Boolean).join(" ");
+  const [ta, tb] = teamsOf(g);
   const roles = Object.keys(g.roles);
   const rides = g.rides ? ridesFor(g.id) : [];
   const free = rides.reduce((s, r) => s + Math.max(r.seats - r.passengers.length, 0), 0);
   const rel = opts.rel ? relDay(g.date, g.time) : "";
-  return `<div class="card ${past ? "past" : ""} ${today ? "today" : ""} ${opts.hero ? "hero" : ""}">
-    ${dateBox(g.date, g.home ? "" : "away", "⚾")}
-    <div class="cbody">
-      <div class="meta">${meta}</div>
-      <div class="title">${esc(g.teams)} ${g.result ? `<span class="badge b-res">${esc(g.result)}</span>` : ""}</div>
-      ${rel ? `<div class="sub" style="color:var(--amber);font-weight:700;">${esc(rel)}</div>` : ""}
-      ${g.field ? `<div class="sub">${placeHtml(g.field)}</div>` : ""}
-      ${g.info ? `<div class="sub">${esc(g.info)}</div>` : ""}
-      ${g.link ? `<div class="sub"><a class="lnk" href="${esc(g.link)}" target="_blank" rel="noopener">📋 Pesistulokset</a></div>` : ""}
-      ${roles.length ? `<div class="roles">${roles.map(r => roleRow(g, r)).join("")}</div>` : ""}
-      ${g.rides && !past && !opts.noRides ? `<div class="sub" style="margin-top:6px;">🚗 ${rides.length
-          ? `${rides.length} ${rides.length === 1 ? "auto" : "autoa"}, vapaita paikkoja ${free}`
-          : "Ei vielä kyytitarjouksia"} · <a class="lnk navy" href="#kyydit" data-act="tab" data-key="kyydit">Kyydit</a></div>` : ""}
+  const status = past ? (g.result ? "" : `<span class="badge b-away">Pelattu</span>`)
+    : today ? `<span class="badge b-now">Tänään</span>` : rel ? `<span class="badge b-up">${esc(rel)}</span>` : `<span class="badge b-up">Tuleva</span>`;
+  const f = g.field ? fieldByName(g.field) : null;
+  const team = (n, side) => n ? `<div class="mteam">${teamAvatar(n)}<div class="tn">${esc(n)}</div><div class="ts">${isHomeTeam(n) ? (g.home ? "Koti" : "Vieras") : side}</div></div>` : `<div></div>`;
+  let foot = "";
+  if (roles.length && opts.roles !== false) foot += `<div class="roles">${roles.map(r => roleRow(g, r)).join("")}</div>`;
+  else if (roles.length) {
+    const rf = rolesFilled(g);
+    foot += `<button class="mlink" data-act="goSec" data-key="talkoot|${esc(secName(g))}">${ic("people").replace("<svg", '<svg width="15" height="15"')}
+      Talkoot ${rf.filled}/${rf.total} <span class="bar"><i style="width:${Math.round(100 * rf.filled / rf.total)}%"></i></span>
+      ${talkooLocked(g) ? "🔒" : rf.filled < rf.total && !past ? `<span class="open">${rf.total - rf.filled} avointa</span>` : ""}</button>`;
+  }
+  if (g.rides && !past && !opts.noRides) foot += `<button class="mlink" data-act="tab" data-key="kyydit">${ic("car").replace("<svg", '<svg width="15" height="15"')}
+      ${rides.length ? `${rides.length} ${rides.length === 1 ? "auto" : "autoa"}, vapaita paikkoja ${free}` : "Ei vielä kyytitarjouksia"} ›</button>`;
+  if (g.info) foot += `<div class="sub">${esc(g.info)}</div>`;
+  if (g.link) foot += `<div class="sub"><a class="lnk" href="${esc(g.link)}" target="_blank" rel="noopener">📋 Pesistulokset</a></div>`;
+  return `<div class="mcard ${past ? "past" : ""} ${today ? "today" : ""} ${opts.hero ? "hero" : ""}">
+    <div class="mmain">
+      <div>${opts.date === false ? "" : `<div class="mdate">${esc(dayLabel(g.date))}</div>`}
+        <div class="mtime">${esc(g.time || "–")}</div>
+        <div class="mplace">${g.field ? `<a href="${esc(mapUrl(f && f.address ? f.address : g.field))}" target="_blank" rel="noopener">${esc(g.field)}</a>` : ""}</div>
+        ${status}</div>
+      <div class="mteams">${team(ta, "Koti")}<div class="vs ${g.result ? "res" : ""}">${g.result ? esc(g.result) : "vs"}</div>${team(tb, "Vieras")}</div>
+      <div class="mright">${g.series || secName(g) !== OTHER ? `<span class="badge b-ser">${esc(g.series || secName(g))}</span>` : ""}
+        <span class="badge ${g.home ? "b-home" : "b-away"}">${g.home ? "Kotipeli" : "Vieraspeli"}</span></div>
+    </div>${foot ? `<div class="mfoot">${foot}</div>` : ""}</div>`;
+}
+
+function heroField() {
+  const rows = []; for (let y = 16; y < 60; y += 5) rows.push(`<path d="M0 ${y} H400" stroke="rgba(255,255,255,.09)" stroke-width="1.6"/>`);
+  return `<svg class="field" viewBox="0 0 400 236" role="img" aria-label="Pesäpallokenttä">
+    <defs>
+      <linearGradient id="gr" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7E9F52"/><stop offset="1" stop-color="#55762F"/></linearGradient>
+      <linearGradient id="sa" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D8BC8E"/><stop offset="1" stop-color="#C79E68"/></linearGradient>
+      <radialGradient id="li" cx=".5" cy="0" r=".9"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+    </defs>
+    <rect width="400" height="236" fill="url(#gr)"/>
+    <path d="M0 236 L60 60 H90 L40 236Z M110 236 L130 60 H155 L150 236Z M250 236 L245 60 H270 L290 236Z M360 236 L310 60 H340 L400 236Z" fill="rgba(255,255,255,.05)"/>
+    <rect y="0" width="400" height="62" fill="#3F5135"/>${rows.join("")}
+    <path d="M0 0 H400 V12 L0 24Z" fill="#E6E8E2"/><path d="M0 24 L400 12" stroke="#C9CCC4" stroke-width="2"/>
+    <path d="M40 20 V60 M120 17 V60 M200 15 V60 M280 14 V60 M360 13 V60" stroke="rgba(255,255,255,.18)" stroke-width="2"/>
+    <rect y="58" width="400" height="6" fill="#2D3B26"/>
+    <path d="M70 236 L140 76 H260 L330 236Z" fill="url(#sa)"/>
+    <g fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round" opacity=".95">
+      <path d="M70 236 L140 76 H260 L330 236"/>
+      <path d="M150 96 H250" stroke-dasharray="5 5" opacity=".8"/>
+      <path d="M172 236 A28 20 0 0 1 228 236"/>
+      <path d="M200 218 L94 196 L292 154 L126 108 L200 218" stroke-dasharray="3 6" stroke-width="1.6" opacity=".75"/>
+    </g>
+    <g fill="#fff"><circle cx="200" cy="218" r="5"/><rect x="89" y="191" width="9" height="9" rx="2"/><rect x="287" y="149" width="9" height="9" rx="2"/><rect x="121" y="103" width="9" height="9" rx="2"/></g>
+    <g fill="#2B3824"><circle cx="160" cy="150" r="3.6"/><circle cx="236" cy="128" r="3.6"/><circle cx="200" cy="96" r="3.6"/><circle cx="112" cy="168" r="3.6"/><circle cx="262" cy="188" r="3.6"/><circle cx="214" cy="160" r="3.6"/></g>
+    <circle cx="206" cy="212" r="4.2" fill="#D8483E"/>
+    <rect width="400" height="236" fill="url(#li)"/>
+  </svg>`;
+}
+function heroCard(g) {
+  const [ta, tb] = teamsOf(g);
+  const rel = relDay(g.date, g.time) || dayLabel(g.date);
+  const rf = rolesFilled(g);
+  const rides = g.rides ? ridesFor(g.id) : [];
+  let foot = "";
+  if (rf.total) foot = `<button class="gfoot" data-act="goSec" data-key="talkoot|${esc(secName(g))}"><span>Talkoovuorot ${rf.filled}/${rf.total}</span>
+      <span class="bar"><i style="width:${Math.round(100 * rf.filled / rf.total)}%"></i></span><span>${talkooLocked(g) ? "🔒" : ""} ›</span></button>`;
+  else if (g.rides) foot = `<button class="gfoot" data-act="tab" data-key="kyydit"><span>🚗 ${rides.length ? `${rides.length} ${rides.length === 1 ? "kyyti" : "kyytiä"} tarjolla` : "Ei vielä kyytejä"}</span><span style="margin-left:auto;">›</span></button>`;
+  return `<div class="hero">${heroField()}
+    <div class="glass">
+      <div class="gh">Seuraava ottelu <span class="badge ${g.date === todayIso() ? "b-now" : "b-up"}">${esc(rel)}</span>
+        <span class="gp">${esc(g.field || "")}</span></div>
+      <div class="grow">${teamAvatar(ta)}<span class="gn">${esc(ta)}${isHomeTeam(ta) ? `<small>${g.home ? "koti" : "vieras"}</small>` : ""}</span><span class="gv">${esc(g.time || "")}</span></div>
+      <div class="grow" style="border-bottom:${foot ? "" : "none"}">${teamAvatar(tb)}<span class="gn">${esc(tb)}${isHomeTeam(tb) ? `<small>${g.home ? "koti" : "vieras"}</small>` : ""}</span><span class="gv"><small>${esc(dayLabel(g.date))}</small></span></div>
+      ${foot}
     </div></div>`;
 }
 
@@ -512,9 +684,9 @@ function rideBlock(target) {
 }
 
 function miniRow(it) {
-  const icon = it.kind === "game" ? "⚾" : it.kind === "talkoo" ? "🙋" : it.kind === "ride" ? "🚗" : eventIcon(it.ref);
-  return `<div class="mini"><span class="md">${dayLabel(it.date)}${it.time ? "<br>" + esc(it.time) : ""}</span>
-          <span class="mt">${icon} ${esc(it.title)}${it.extra ? `<br><span class="small muted">${it.extra}</span>` : ""}</span></div>`;
+  const icon = it.kind === "game" ? ic("ball") : it.kind === "talkoo" ? ic("people") : it.kind === "ride" ? ic("car") : `<span style="font-size:14px;">${eventIcon(it.ref)}</span>`;
+  return `<div class="mini"><span class="md">${dayLabel(it.date)}${it.time ? `<em>${esc(it.time)}</em>` : ""}</span><span class="mic">${icon}</span>
+          <span class="mt">${esc(it.title)}${it.extra ? `<br><span class="small muted">${it.extra}</span>` : ""}</span></div>`;
 }
 
 function allItems() {
@@ -537,6 +709,18 @@ function groupByMonth(items, cardFn) {
   });
   return out;
 }
+function seg(group, options, current) {
+  return `<div class="seg">${options.map(([v, l]) => `<button class="${v === current ? "on" : ""}" data-act="filter" data-key="${group}|${esc(v)}">${l}</button>`).join("")}</div>`;
+}
+function groupByDay(items, cardFn) {
+  const groups = [];
+  items.forEach(it => { if (!groups.length || groups[groups.length - 1].d !== it.date) groups.push({ d: it.date, items: [] }); groups[groups.length - 1].items.push(it); });
+  return groups.map(gr => {
+    const d = dOf(gr.d);
+    return `<details class="dgrp" open><summary><span>${wd(gr.d)} ${d.getDate()}.${d.getMonth() + 1}.${d.getFullYear()}${gr.d === todayIso() ? " · tänään" : ""}</span>
+      <span class="dn">${gr.items.length} ${gr.items.length === 1 ? "ottelu" : "ottelua"} ${ic("chev")}</span></summary>${gr.items.map(cardFn).join("")}</details>`;
+  }).join("");
+}
 function chips(group, options, current) {
   return `<div class="chips">${options.map(([v, l]) => `<button class="chip ${v === current ? "on" : ""}" data-act="filter" data-key="${group}|${esc(v)}">${l}</button>`).join("")}</div>`;
 }
@@ -553,11 +737,14 @@ function viewKoti() {
   const t = todayIso();
   let h = statusBanners();
 
-  const news = (D.news || []).filter(n => !n.until || n.until >= t).sort((a, b) => (b.date || "").localeCompare(a.date || "")).slice(0, 3);
+  const next = D.games.filter(g => g.date >= t).sort(byWhen)[0];
+  if (next) h += heroCard(next);
+
+  const news = (D.news || []).filter(n => !n.until || n.until >= t).sort((a, b) => (b.date || "").localeCompare(a.date || "")).slice(0, 2);
   news.forEach(n => {
-    h += `<div class="card news"><div class="cbody">
+    h += `<div class="card news"><div class="mic" style="background:#FCEAE8;color:var(--red);">${ic("bell")}</div><div class="cbody">
       ${n.date ? `<div class="meta">${dayLabel(n.date)}</div>` : ""}
-      <div class="title">📣 ${esc(n.title)}</div>${n.text ? `<div class="sub">${esc(n.text)}</div>` : ""}</div></div>`;
+      <div class="title">${esc(n.title)}</div>${n.text ? `<div class="sub">${esc(n.text)}</div>` : ""}</div></div>`;
   });
 
   // Leirit näkyvät painikkeina aina leirin loppuun asti; lähestyvä tai käynnissä oleva leiri korostetaan ja nostetaan ylös.
@@ -565,8 +752,33 @@ function viewKoti() {
     .sort((a, b) => (isCamp(b) && campVisible(b) ? 1 : 0) - (isCamp(a) && campVisible(a) ? 1 : 0));
   h += `<div class="h2">Kausi</div>` + tiles.map(x => sectionTile(x)).join("");
   h += myBlock();
-
+  h += statsBlock();
   return h;
+}
+
+function statsBlock() {
+  const t = todayIso();
+  const played = D.games.filter(g => g.date < t).length, all = D.games.length;
+  const upG = D.games.filter(g => g.date >= t), upT = D.talkoot.filter(x => x.date >= t);
+  const need = upG.reduce((n, g) => n + rolesFilled(g).total, 0) + upT.reduce((n, x) => n + x.need, 0);
+  const got = upG.reduce((n, g) => n + rolesFilled(g).filled, 0) + upT.reduce((n, x) => n + Math.min(x.names.length, x.need), 0);
+  const tg = rideTargets().filter(x => x.date >= t).map(x => x.id);
+  const rides = (D.rides || []).filter(r => tg.includes(r.target));
+  const seats = rides.reduce((n, r) => n + r.seats, 0), taken = rides.reduce((n, r) => n + Math.min(r.passengers.length, r.seats), 0);
+  const row = (label, a, b) => `<div class="srow"><span>${label}</span><b>${a}/${b}${b ? ` <span class="muted" style="font-weight:500;">(${Math.round(100 * a / b)} %)</span>` : ""}</b>
+    <div class="bar"><i style="width:${b ? Math.round(100 * a / b) : 0}%"></i></div></div>`;
+  if (!all && !need && !seats) return "";
+  return `<div class="h2">Kauden tilanne</div><div class="box stats">
+    ${all ? row("Ottelut pelattu", played, all) : ""}
+    ${need ? row("Tulevat talkoovuorot täytetty", got, need) : ""}
+    ${seats ? row("Kyytipaikat varattu", taken, seats) : ""}</div>`;
+}
+
+function viewTiedotteet() {
+  const news = (D.news || []).slice().sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+  return statusBanners() + (news.length ? news.map(n => `<div class="card news"><div class="mic" style="background:#FCEAE8;color:var(--red);">${ic("bell")}</div><div class="cbody">
+      ${n.date ? `<div class="meta">${dayLabel(n.date)}</div>` : ""}<div class="title">${esc(n.title)}</div>${n.text ? `<div class="sub">${esc(n.text)}</div>` : ""}</div></div>`).join("")
+    : `<p class="note">Ei tiedotteita.</p>`);
 }
 
 function secColor(s) { const i = sections().indexOf(s); return i === -1 ? 3 : i % 3; }
@@ -587,15 +799,15 @@ function sectionTile(s) {
   const st = secStatus(s);
   const pill = !st.has ? "" : st.locked
     ? `<span class="tp lock">${st.open ? `🔒 ${st.open} jakamatta` : "🔒 jaettu"}</span>`
-    : st.open ? `<span class="tp">🙋 ${st.open} avointa</span>` : `<span class="tp ok">✓ täynnä</span>`;
+    : st.open ? `<span class="tp">${st.open} avointa</span>` : `<span class="tp ok">✓ täynnä</span>`;
   const line = next
     ? `${esc(daysUntil(next.date) <= 1 ? relDay(next.date, next.time) : dayLabel(next.date))}${next.time && !relDay(next.date, next.time).startsWith("Alkaa") ? " klo " + esc(next.time) : ""} · ${esc(next.title)}`
     : items.length ? "Ei tulevaa ohjelmaa" : "Ei vielä ohjelmaa";
   const camp = isCamp(s), live = camp && campLive(s), near = camp && campVisible(s);
   return `<button class="tile c${secColor(s)} ${near ? "live" : ""}" data-act="${camp ? "openLeiri" : "openSec"}" data-key="${esc(s)}">
-    <span class="ti">${secIcon(s)}</span>
+    <span class="ti">${ic(camp ? "tent" : /sarja/i.test(s) ? "ball" : "flag")}</span>
     <span class="tb"><span class="tn">${esc(s)}${live ? " · käynnissä" : ""}</span><span class="tx">${live ? "Avaa leirin ohjelma ja ruokalista" : camp ? esc([campLabel(s), campRange(s)].filter(Boolean).join(" · ")) + (daysUntil(campInfo(s).start) > 0 ? ` · alkaa ${daysUntil(campInfo(s).start) === 1 ? "huomenna" : daysUntil(campInfo(s).start) + " pv päästä"}` : "") : line}</span></span>
-    ${pill}<span class="chev">›</span></button>`;
+    ${pill}<span class="chev">${ic("chev")}</span></button>`;
 }
 function viewOsio() {
   const s = F.sec || OTHER;
@@ -664,8 +876,8 @@ function sectionBlock(s, color) {
   }
 
   return `<section class="sec sec-${color}">
-    <div class="sech"><div><div class="sect">${secIcon(s)} ${esc(s)}</div>${metaBits ? `<div class="secm">${esc(metaBits)}</div>` : ""}</div>
-      ${hasTalkoot ? `<span class="secpill ${open && !secLocked ? "" : "ok"}">${secLocked ? (open ? `🔒 ${open} jakamatta` : "🔒 jaettu") : open ? `🙋 ${open} avointa` : "✓ täynnä"}</span>` : ""}</div>
+    <div class="sech"><div><div class="sect">${esc(metaBits || s)}</div></div>
+      ${hasTalkoot ? `<span class="secpill ${open && !secLocked ? "" : "ok"}">${secLocked ? (open ? `🔒 ${open} jakamatta` : "🔒 jaettu") : open ? `${open} avointa` : "✓ täynnä"}</span>` : ""}</div>
     <div class="secb">${b}</div></section>`;
 }
 
@@ -711,7 +923,7 @@ function myShifts(me, withPast) {
 function myBlock() {
   const me = myName(), names = allNames();
   if (me && !names.some(n => n.toLowerCase() === me.toLowerCase())) names.unshift(me);
-  let h = `<div class="h2 navy">👤 Minun tehtävät</div><div class="box">`;
+  let h = `<div class="h2 navy">Minun tehtävät</div><div class="box" style="padding-top:12px;padding-bottom:10px;">`;
   if (!names.length) return h + `<p class="small muted">Kun vuoroja on jaettu tai kyytejä sovittu, valitse tästä nimesi ja näet omat tehtäväsi.</p></div>`;
   h += `<label class="small muted" for="meSel" style="font-weight:700;">Valitse nimesi</label>
         <select id="meSel" class="inp wide" style="margin:3px 0 6px;background:#fff;">
@@ -732,8 +944,8 @@ function myBlock() {
 function viewOttelut() {
   const t = todayIso();
   let h = statusBanners();
+  h += seg("games", [["tulevat", "Tulevat"], ["pelatut", "Pelatut"], ["kaikki", "Kaikki"]], F.games);
   h += secChips();
-  h += chips("games", [["tulevat", "Tulevat"], ["pelatut", "Pelatut"], ["kaikki", "Kaikki"]], F.games);
   let list = D.games.filter(secOk);
   if (F.games === "tulevat") list = list.filter(g => g.date >= t).sort(byWhen);
   else if (F.games === "pelatut") list = list.filter(g => g.date < t).sort((a, b) => byWhen(b, a));
@@ -742,21 +954,20 @@ function viewOttelut() {
     const res = list.filter(g => g.result).length;
     h += `<p class="note">Pelattuja otteluita ${list.length}${res ? `, tulos kirjattu ${res}` : ""}.</p>`;
   }
-  h += list.length ? groupByMonth(list, g => gameCard(g)) : `<p class="note">Ei otteluita tässä näkymässä.</p>`;
+  h += list.length ? groupByDay(list, g => gameCard(g, { date: false, roles: false })) : `<p class="note">Ei otteluita tässä näkymässä.</p>`;
   return h;
 }
 
 function viewTalkoot() {
   const t = todayIso();
-  let h = statusBanners();
+  let h = statusBanners() + seg("talkoot", [["avoimet", "Avoimet"], ["tulevat", "Tulevat"], ["menneet", "Menneet"]], F.talkoot);
   const o = openTotals();
   h += o.all === 0
     ? `<div class="banner ok">✅ Kaikki tulevat talkoovuorot on täytetty — kiitos!</div>`
-    : `<div class="banner warn">🙋 Avoimia vuoroja <b>${o.all}</b><br><span class="small" style="font-weight:600;">Otteluissa ${o.games} · muissa talkoissa ${o.talkoot}. Ilmoittaudu painamalla "Ilmoittaudu".</span></div>`;
+    : `<div class="banner warn">Avoimia vuoroja <b>${o.all}</b> · otteluissa ${o.games}, muissa talkoissa ${o.talkoot}</div>`;
   const lockedSecs = sectionList().filter(secLockedName).filter(x => !F.sec || x === F.sec);
   if (lockedSecs.length && !locked()) h += `<div class="banner lock">🔒 ${esc(lockedSecs.join(", "))}: vuorot jakaa talkoovastaava. Ilmoittautuminen sivulla on suljettu — näet täältä oman vuorosi.</div>`;
   h += secChips();
-  h += chips("talkoot", [["avoimet", "Avoimet"], ["tulevat", "Kaikki tulevat"], ["menneet", "Menneet"]], F.talkoot);
 
   let items = [].concat(
     D.games.filter(g => Object.keys(g.roles).length).map(g => ({ kind: "game", date: g.date, time: g.time, ref: g, open: gameOpen(g) })),
@@ -807,8 +1018,8 @@ function viewKyydit() {
 function viewKalenteri() {
   const t = todayIso();
   let h = statusBanners();
+  h += seg("kal", [["kaikki", "Kaikki"], ["game", "Ottelut"], ["talkoo", "Talkoot"], ["event", "Tapahtumat"]], F.kal);
   h += secChips();
-  h += chips("kal", [["kaikki", "Kaikki"], ["game", "⚾ Ottelut"], ["talkoo", "🙋 Talkoot"], ["event", "📌 Tapahtumat"]], F.kal);
   h += `<div class="chips"><button class="chip ${F.kalPast ? "on" : ""}" data-act="filter" data-key="kalPast|x">Näytä menneet</button>
         <button class="chip" data-act="icsAll">📥 Lataa kaikki kalenteriin</button></div>`;
   let items = allItems().filter(it => (F.kal === "kaikki" || it.kind === F.kal) && secOk(it.ref));
@@ -883,11 +1094,11 @@ function viewLeiri() {
   const targets = rideTargets().filter(x => secName(x.ref) === s);
   const ohjeet = (D.ohjeet || []).filter(o => secName(o) === s);
   const infoTabs = [
-    menu.length ? ["ruoka", "🍽️ Ruokalista"] : null,
-    ["paikat", "📍 Paikat"],
-    talk.length || gamesWithRoles.length ? ["talkoot", "🙋 Talkoot"] : null,
-    targets.length ? ["kyydit", "🚗 Kyydit"] : null,
-    ["info", "ℹ️ Info"],
+    menu.length ? ["ruoka", "Ruokalista"] : null,
+    ["paikat", "Paikat"],
+    talk.length || gamesWithRoles.length ? ["talkoot", "Talkoot"] : null,
+    targets.length ? ["kyydit", "Kyydit"] : null,
+    ["info", "Info"],
   ].filter(Boolean);
   const valid = days.concat(infoTabs.map(x => x[0]));
   if (!valid.includes(F.lday)) F.lday = days.includes(t) ? t : days.find(d => d >= t) || days[0] || "info";
@@ -895,9 +1106,9 @@ function viewLeiri() {
 
   let h = statusBanners();
   h += `<div class="back"><button class="btn ghost sm" data-act="tab" data-key="koti">← Etusivu</button></div>`;
-  h += `<div class="sec sec-${secColor(s)} camphead"><div class="sech"><div><div class="sect">⛺ ${esc(s)}</div>
-        <div class="secm">${esc([campLabel(s), campRange(s)].filter(Boolean).join(" · "))}${campLive(s) ? " · käynnissä" : c.start > t ? ` · alkaa ${daysUntil(c.start) === 1 ? "huomenna" : daysUntil(c.start) + " päivän päästä"}` : ""}</div></div>
-        ${st.has ? `<span class="secpill ${st.open && !st.locked ? "" : "ok"}">${st.locked ? (st.open ? `🔒 ${st.open} jakamatta` : "🔒 jaettu") : st.open ? `🙋 ${st.open} avointa` : "✓ täynnä"}</span>` : ""}</div></div>`;
+  h += `<div class="sec sec-${secColor(s)} camphead"><div class="sech"><div><div class="sect">${esc(campLabel(s) || s)}</div>
+        <div class="secm">${esc(campRange(s))}${campLive(s) ? " · käynnissä" : c.start > t ? ` · alkaa ${daysUntil(c.start) === 1 ? "huomenna" : daysUntil(c.start) + " päivän päästä"}` : ""}</div></div>
+        ${st.has ? `<span class="secpill ${st.open && !st.locked ? "" : "ok"}">${st.locked ? (st.open ? `🔒 ${st.open} jakamatta` : "🔒 jaettu") : st.open ? `${st.open} avointa` : "✓ täynnä"}</span>` : ""}</div></div>`;
   if (days.length) h += chips("lday", days.map(d => [d, dayLabel(d) + (d === t ? " •" : "")]), F.lday);
   h += chips("lday", infoTabs, F.lday);
 
@@ -1019,13 +1230,16 @@ function downloadIcs(items, filename) {
 // ─── Renderöinti ─────────────────────────────────────────────────────────
 function renderTabs() {
   const o = D ? openTotals().all : 0;
-  document.getElementById("tabs").innerHTML = TABS.map(([k, l]) =>
-    `<button class="tab ${k === tab ? "active" : ""}" data-act="tab" data-key="${k}">${l}${k === "talkoot" && o ? `<span class="cnt">${o}</span>` : ""}</button>`).join("");
+  document.getElementById("tabs").innerHTML = TABS.map(([k, l, icon]) =>
+    `<button class="${k === tab ? "active" : ""}" data-act="tab" data-key="${k}" aria-label="${l}">${ic(icon)}<span class="lb">${l}</span>${k === "talkoot" && o ? `<span class="cnt">${o}</span>` : ""}</button>`).join("");
+  const fresh = D && (D.news || []).some(n => n.date && daysUntil(n.date) >= -7 && (!n.until || n.until >= todayIso()));
+  document.getElementById("bellBtn").innerHTML = ic("bell") + (fresh ? `<span class="dot"></span>` : "");
+  document.getElementById("menuBtn").innerHTML = ic("menu");
 }
 function renderClock() {
   const n = nowFi();
   document.getElementById("clock").textContent =
-    `${WD[n.getDay()].toLowerCase()} ${n.getDate()}.${n.getMonth() + 1}. klo ${String(n.getHours()).padStart(2, "0")}:${String(n.getMinutes()).padStart(2, "0")}`
+    `${WD[n.getDay()]} ${n.getDate()}.${n.getMonth() + 1}. klo ${String(n.getHours()).padStart(2, "0")}:${String(n.getMinutes()).padStart(2, "0")}`
     + (D && D.settings && D.settings.season ? ` · kausi ${D.settings.season}` : "");
 }
 function render() {
@@ -1033,6 +1247,7 @@ function render() {
   document.getElementById("teamTitle").textContent = team;
   document.title = team + " – kausi";
   renderTabs(); renderClock();
+  document.getElementById("ptitle").textContent = tab === "leiri" ? (F.leiri || "Leiri") : tab === "osio" ? (F.sec || OTHER) : TITLES[tab] || team;
   const v = document.getElementById("view");
   v.classList.toggle("busy", busy);
   if (!D) {
@@ -1042,7 +1257,7 @@ function render() {
     return;
   }
   renderMenu();
-  const views = { leiri: viewLeiri, osio: viewOsio, koti: viewKoti, ottelut: viewOttelut, talkoot: viewTalkoot, kyydit: viewKyydit, kalenteri: viewKalenteri, ohjeet: viewOhjeet };
+  const views = { tiedotteet: viewTiedotteet, leiri: viewLeiri, osio: viewOsio, koti: viewKoti, ottelut: viewOttelut, talkoot: viewTalkoot, kyydit: viewKyydit, kalenteri: viewKalenteri, ohjeet: viewOhjeet };
   v.innerHTML = views[tab]() + `<footer>${esc(team)} · kauden sivusto</footer>`;
 }
 
