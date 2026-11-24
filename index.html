@@ -233,6 +233,9 @@ function sectionList() {
   if ([].concat(D.games, D.talkoot, D.events).some(x => secName(x) === OTHER)) l.push(OTHER);
   return l;
 }
+function secLockedName(s) { return ((D.settings && D.settings.lockedSections) || []).some(x => x.toLowerCase() === String(s).toLowerCase()); }
+// Talkooilmoittautuminen suljettu: koko lista lukittu tai rivin osio on Lukitut osiot -listalla
+function talkooLocked(x) { return locked() || secLockedName(secName(x)); }
 function secOk(x) { return !F.sec || secName(x) === F.sec; }
 function secIcon(s) { s = s.toLowerCase(); return s.includes("leiri") ? "⛺" : s.includes("sarja") ? "⚾" : "📌"; }
 function secChips() {
@@ -342,7 +345,8 @@ function roleRow(g, role) {
   const name = g.roles[role] || "";
   let body;
   if (editing && editing.key === key) body = inlineInput("Nimi");
-  else if (locked() || isPast(g.date)) body = name ? esc(name) : `<span class="muted">—</span>`;
+  else if (isPast(g.date)) body = name ? esc(name) : `<span class="muted">—</span>`;
+  else if (talkooLocked(g)) body = name ? esc(name) : `<span class="muted">Jakamatta</span>`;
   else if (name) body = `${esc(name)} <button class="btn ghost sm" data-act="edit" data-key="${esc(key)}" data-val="${esc(name)}">Vaihda</button>
                          <button class="x" title="Poista" data-act="rmRole" data-key="${esc(key)}">✕</button>`;
   else body = `<span class="open">Avoin</span> <button class="btn sm" data-act="edit" data-key="${esc(key)}">Ilmoittaudu</button>`;
@@ -383,10 +387,11 @@ function talkooCard(t) {
   const open = talkooOpen(t);
   const key = `talkoo|${t.id}`;
   const time = t.time ? `klo ${esc(t.time)}${t.end ? "–" + esc(t.end) : ""}` : "";
-  const names = t.names.map(n => `<span class="pas">${esc(n)}${!past && !locked() ? `<button class="x" title="Poista" data-act="rmTalkoo" data-key="${esc(t.id + "|" + n)}">✕</button>` : ""}</span>`).join("");
+  const names = t.names.map(n => `<span class="pas">${esc(n)}${!past && !talkooLocked(t) ? `<button class="x" title="Poista" data-act="rmTalkoo" data-key="${esc(t.id + "|" + n)}">✕</button>` : ""}</span>`).join("");
   let action = "";
   if (editing && editing.key === key) action = `<div class="rrow">${inlineInput("Nimi")}</div>`;
-  else if (!past && !locked() && open > 0) action = `<div class="rrow"><span class="open">${open} ${open === 1 ? "paikka" : "paikkaa"} vapaana</span>
+  else if (!past && open > 0 && talkooLocked(t)) action = `<div class="rrow"><span class="muted">${open} jakamatta</span></div>`;
+  else if (!past && open > 0) action = `<div class="rrow"><span class="open">${open} ${open === 1 ? "paikka" : "paikkaa"} vapaana</span>
        <button class="btn sm" data-act="edit" data-key="${esc(key)}">Ilmoittaudu</button></div>`;
   else if (open === 0) action = `<div class="rrow" style="color:var(--green);font-weight:700;font-size:12.5px;">✓ Täynnä</div>`;
   return `<div class="card ${past ? "past" : ""} ${today ? "today" : ""}">
@@ -536,6 +541,7 @@ function sectionBlock(s, color) {
   const openT = talk.filter(x => x.date >= t).reduce((n, x) => n + talkooOpen(x), 0);
   const open = openG + openT;
   const hasTalkoot = upGames.some(g => Object.keys(g.roles).length) || talk.some(x => x.date >= t);
+  const secLocked = locked() || secLockedName(s);
   const range = !dates.length ? "" : dates[0] === dates[dates.length - 1] ? dayLabel(dates[0]) : dm(dates[0]) + "–" + dm(dates[dates.length - 1]);
   const metaBits = [range, games.length ? `${upGames.length}/${games.length} ottelua tulossa` : ""].filter(Boolean).join(" · ");
 
@@ -560,11 +566,12 @@ function sectionBlock(s, color) {
       const openList = allItems().filter(it => it.date >= t && secName(it.ref) === s &&
         (it.kind === "game" ? gameOpen(it.ref) : it.kind === "talkoo" ? talkooOpen(it.ref) : 0));
       b += `<div class="box">${openList.slice(0, 5).map(it => {
-        const what = it.kind === "game" ? Object.keys(it.ref.roles).filter(r => !it.ref.roles[r]).join(", ") : `${talkooOpen(it.ref)} vapaana`;
-        return miniRow(Object.assign({}, it, { extra: `<span class="open">${esc(what)}</span>` }));
+        const what = it.kind === "game" ? Object.keys(it.ref.roles).filter(r => !it.ref.roles[r]).join(", ") : `${talkooOpen(it.ref)} ${secLocked ? "jakamatta" : "vapaana"}`;
+        return miniRow(Object.assign({}, it, { extra: secLocked ? `<span class="muted">Jakamatta: ${esc(what)}</span>` : `<span class="open">${esc(what)}</span>` }));
       }).join("")}${openList.length > 5 ? `<div class="small muted" style="padding-top:6px;">+ ${openList.length - 5} muuta</div>` : ""}</div>`;
-    } else b += `<div class="banner ok" style="margin-bottom:4px;">✅ Kaikki vuorot täytetty — kiitos!</div>`;
-    b += `<div class="more"><button class="btn sm" data-act="goSec" data-key="talkoot|${esc(s)}">Ilmoittaudu talkoisiin →</button></div>`;
+    } else b += `<div class="banner ok" style="margin-bottom:4px;">✅ Kaikki vuorot ${secLocked ? "jaettu" : "täytetty — kiitos"}!</div>`;
+    if (secLocked) b += `<p class="note" style="margin:6px 2px 0;">🔒 Vuorot jakaa talkoovastaava.</p>`;
+    b += `<div class="more"><button class="btn sm ${secLocked ? "ghost" : ""}" data-act="goSec" data-key="talkoot|${esc(s)}">${secLocked ? "Näytä vuorot →" : "Ilmoittaudu talkoisiin →"}</button></div>`;
   }
 
   // Tapahtumat
@@ -585,7 +592,7 @@ function sectionBlock(s, color) {
 
   return `<section class="sec sec-${color}">
     <div class="sech"><div><div class="sect">${secIcon(s)} ${esc(s)}</div>${metaBits ? `<div class="secm">${esc(metaBits)}</div>` : ""}</div>
-      ${hasTalkoot ? `<span class="secpill ${open ? "" : "ok"}">${open ? `🙋 ${open} avointa` : "✓ täynnä"}</span>` : ""}</div>
+      ${hasTalkoot ? `<span class="secpill ${open && !secLocked ? "" : "ok"}">${secLocked ? (open ? `🔒 ${open} jakamatta` : "🔒 jaettu") : open ? `🙋 ${open} avointa` : "✓ täynnä"}</span>` : ""}</div>
     <div class="secb">${b}</div></section>`;
 }
 
@@ -633,6 +640,8 @@ function viewTalkoot() {
   h += o.all === 0
     ? `<div class="banner ok">✅ Kaikki tulevat talkoovuorot on täytetty — kiitos!</div>`
     : `<div class="banner warn">🙋 Avoimia vuoroja <b>${o.all}</b><br><span class="small" style="font-weight:600;">Otteluissa ${o.games} · muissa talkoissa ${o.talkoot}. Ilmoittaudu painamalla "Ilmoittaudu".</span></div>`;
+  const lockedSecs = sectionList().filter(secLockedName).filter(x => !F.sec || x === F.sec);
+  if (lockedSecs.length && !locked()) h += `<div class="banner lock">🔒 ${esc(lockedSecs.join(", "))}: vuorot jakaa talkoovastaava. Ilmoittautuminen sivulla on suljettu — näet täältä oman vuorosi.</div>`;
   h += secChips();
   h += chips("talkoot", [["avoimet", "Avoimet"], ["tulevat", "Kaikki tulevat"], ["menneet", "Menneet"]], F.talkoot);
 
@@ -731,6 +740,7 @@ function viewInfo() {
     Kotipelien talkoovuorot näkyvät pelin alla. Vieraspeleissä ei ole talkoita, vaan niissä sovitaan kyydit.<br>
     <b>Muut talkoot:</b> Talkoot-välilehdellä näkyy, montako tekijää vuoroon tarvitaan ja ketkä ovat jo ilmoittautuneet.<br>
     <b>Kyydit:</b> Kyydit-välilehdellä kuljettaja tarjoaa paikkoja ja pelaajat liittyvät kyytiin.<br>
+    <b>Lukitut osiot (🔒):</b> Näissä talkoovastaava jakaa vuorot, ja sivulla näet oman vuorosi. Kyydit voi silti sopia sivulla.<br>
     <b>Muutokset:</b> Oman nimen voi vaihtaa tai poistaa (✕). Jos lista on lukittu, sovi muutoksesta talkoovastaavan kanssa.<br>
     <b>Kalenteri:</b> 📅-napilla saat tapahtuman puhelimen kalenteriin.</div>`;
   return h;
@@ -891,7 +901,7 @@ function makeDemo() {
   return {
     ok: true, locked: false, today: todayIso(),
     settings: { team: "Manse F-tytöt", season: String(t0.getFullYear()), homeTag: "Manse",
-                homeRoles: HOME_ROLES, awayRoles: [], sections: [AS, AL, VL], roleSection: AS },
+                homeRoles: HOME_ROLES, awayRoles: [], sections: [AS, AL, VL], roleSection: AS, lockedSections: [AS] },
     games,
     talkoot: [
       { id: "t1", section: AL, date: day(13), time: "08:00", end: "12:00", event: "Alueleiri", task: "Kioski, aamuvuoro", place: "Kotikenttä", need: 3, names: ["Sanna R.", "Mikko L."], info: "Kassalipas ja kahvinkeitin ovat varastossa." },

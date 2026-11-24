@@ -37,7 +37,8 @@ var DEFAULT_SETTINGS = [
   ["Kotijoukkueen tunniste", "Manse", "Jos Joukkueet alkaa tällä sanalla, peli on kotipeli (ellei Koti/Vieras-sarakkeessa toisin lue)"],
   ["Kotipelin talkoot", "Kirjuri, Tulostaulu / ottelun vanhin, 2. tuomari, 3. tuomari, Takarajatuomari, Kioski 1, Kioski 2, Kentän piirtäjä", "Pilkulla erotettu lista. Jokaiselle tulee oma sarake Ottelut-välilehdelle. Kaksi samaa tehtävää = kaksi riviä (esim. Kioski 1, Kioski 2)"],
   ["Vieraspelin talkoot", "", "Pilkulla erotettu lista. Tyhjä = vieraspeleissä ei talkoita, vain kyydit"],
-  ["Lukko", "AUKI", "AUKI = ilmoittautuminen sivustolla toimii. LUKITTU = muutoksia ei voi tehdä sivustolla"]
+  ["Lukitut osiot", "Aluesarja", "Näiden osioiden talkoovuoroihin ei voi ilmoittautua sivustolla: talkoovastaava kirjoittaa nimet Sheetiin ja sivu näyttää ne. Pilkulla erotettu lista (esim. Aluesarja, Alueleiri, Valtakunnallinen leiri). Tyhjä = kaikki auki. Kyytejä voi aina sopia sivustolla"],
+  ["Lukko", "AUKI", "AUKI = ilmoittautuminen sivustolla toimii. LUKITTU = mitään (myöskään kyytejä) ei voi muuttaa sivustolla"]
 ];
 
 // ─── Valikko ja välilehtien luonti ────────────────────────────────────────
@@ -186,6 +187,16 @@ function sectionOf_(explicit, fallback, sections) {
   return "";
 }
 
+function rowSection_(sh, hm, row, fallbackCol, s) {
+  var get = function (c) { return c in hm ? sh.getRange(row, hm[c] + 1).getValue() : ""; };
+  return sectionOf_(get("Osio"), get(fallbackCol), splitList_(s["Osiot"]));
+}
+function sectionLocked_(sec, s) {
+  var l = splitList_(s["Lukitut osiot"]).map(function (x) { return x.toLowerCase(); });
+  return l.indexOf((sec || "Yleiset").toLowerCase()) !== -1;
+}
+var LOCKED_MSG = "Tämän osion talkoovuorot jakaa talkoovastaava. Ilmoittautuminen sivustolla on suljettu.";
+
 function allRoles_(settings) {
   var a = splitList_(settings["Kotipelin talkoot"]).concat(splitList_(settings["Vieraspelin talkoot"]));
   return a.filter(function (x, i) { return a.indexOf(x) === i; });
@@ -294,7 +305,7 @@ function buildPayload_() {
   return {
     ok: true,
     settings: { team: s["Joukkue"], season: s["Kausi"], homeTag: s["Kotijoukkueen tunniste"], homeRoles: homeRoles, awayRoles: awayRoles,
-                sections: sections, roleSection: s["Ottelutalkoot osiossa"] },
+                sections: sections, roleSection: s["Ottelutalkoot osiossa"], lockedSections: splitList_(s["Lukitut osiot"]) },
     locked: /^lukit/i.test(s["Lukko"] || ""),
     today: todayIso_(),
     games: games, talkoot: talkoot, events: events, rides: rides, news: news, contacts: contacts, fields: fields
@@ -329,6 +340,7 @@ function handle_(b, s) {
     if (allRoles_(s).indexOf(b.role) === -1 || !(b.role in hm)) return { ok: false, error: "Tuntematon rooli." };
     var row = findRowById_(sh, hm, b.id);
     if (!row) return { ok: false, error: "Ottelua ei löytynyt." };
+    if (sectionLocked_(rowSection_(sh, hm, row, "Sarja", s), s)) return { ok: false, error: LOCKED_MSG };
     if (fmtDate_(sh.getRange(row, hm["Pvm"] + 1).getValue(), year) < today) return { ok: false, error: "Ottelu on jo pelattu." };
     sh.getRange(row, hm[b.role] + 1).setValue(name);
     return { ok: true };
@@ -338,6 +350,7 @@ function handle_(b, s) {
     var sh2 = sheet_("Talkoot"), hm2 = headerMap_(sh2);
     var row2 = findRowById_(sh2, hm2, b.id);
     if (!row2) return { ok: false, error: "Talkoovuoroa ei löytynyt." };
+    if (sectionLocked_(rowSection_(sh2, hm2, row2, "Tapahtuma", s), s)) return { ok: false, error: LOCKED_MSG };
     if (fmtDate_(sh2.getRange(row2, hm2["Pvm"] + 1).getValue(), year) < today) return { ok: false, error: "Vuoro on jo mennyt." };
     var cell = sh2.getRange(row2, hm2["Nimet"] + 1);
     var names = splitList_(cell.getValue());

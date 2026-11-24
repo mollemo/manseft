@@ -15,6 +15,8 @@ Etusivu on jaettu osioihin (oletuksena **Aluesarja**, **Alueleiri** ja **Valtaku
 Rivin osio valitaan **Osio**-sarakkeesta Ottelut-, Talkoot- ja Tapahtumat-välilehdillä. Jos Osio on tyhjä, osio päätellään Sarja-/Tapahtuma-/Otsikko-tekstistä, ja muuten rivi näkyy kohdassa *Yleiset*.
 Ottelutalkoot (kotipelit) ja vieraspelien kyydit koskevat vain Asetusten *Ottelutalkoot osiossa* -kohdan osiota (oletus Aluesarja). Leirien talkoot kirjataan Talkoot-välilehdelle ja leirin kyydit Tapahtumat-riville (*Kyydit = Kyllä*).
 
+**Lukitut osiot** (Asetukset): näiden osioiden talkoovuoroihin ei voi ilmoittautua sivustolla. Talkoovastaava kirjoittaa nimet suoraan Sheetiin, ja sivu näyttää ne (avoimet vuorot näkyvät *Jakamatta*). Oletuksena lukittu on Aluesarja; leirit lukitaan lisäämällä ne samalle riville pilkulla erotettuna. Kyytejä voi sopia sivustolla aina. *Lukko = LUKITTU* sulkee edelleen koko sivuston muokkauksen, kyydit mukaan lukien.
+
 ## Sheetin välilehdet
 | Välilehti | Mitä sinne kirjoitetaan |
 |---|---|
