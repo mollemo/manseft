@@ -125,6 +125,22 @@
   .secb .box { margin-bottom: 4px; }
   .more { margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap; }
 
+  .tile { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; background: #fff; color: var(--text);
+          border: 1px solid var(--border); border-left: 6px solid var(--red); border-radius: 12px; padding: 9px 12px; margin-bottom: 7px; cursor: pointer; }
+  .tile.c1 { border-left-color: var(--green); }
+  .tile.c2 { border-left-color: var(--navy); }
+  .tile.c3 { border-left-color: #8A8A94; }
+  .tile:active { background: #FBF5F5; }
+  .tile .ti { font-size: 20px; line-height: 1; }
+  .tile .tb { flex: 1; min-width: 0; display: block; }
+  .tile .tn { display: block; font-weight: 800; font-size: 15px; line-height: 1.25; }
+  .tile .tx { display: block; font-size: 12.5px; color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
+  .tile .tp { font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 10px; white-space: nowrap; background: #FFF0C2; color: var(--amber); }
+  .tile .tp.lock { background: #EDEEF3; color: var(--navy); }
+  .tile .tp.ok { background: #E8F5EC; color: var(--green); }
+  .tile .chev { color: var(--sub); font-size: 20px; line-height: 1; }
+  .back { margin: 2px 0 4px; }
+
   .news { border-left: 4px solid var(--red); }
   .news .title { font-size: 14.5px; }
   .news .sub { white-space: pre-line; color: var(--text); }
@@ -509,10 +525,42 @@ function viewKoti() {
       <div class="title">📣 ${esc(n.title)}</div>${n.text ? `<div class="sub">${esc(n.text)}</div>` : ""}</div></div>`;
   });
 
+  h += `<div class="h2">Kausi</div>` + sectionList().map(x => sectionTile(x)).join("");
   h += myBlock();
-  sectionList().forEach((s, i) => h += sectionBlock(s, s === OTHER ? 3 : i % 3));
 
   return h;
+}
+
+function secColor(s) { const i = sections().indexOf(s); return i === -1 ? 3 : i % 3; }
+function secStatus(s) {
+  const t = todayIso();
+  const upG = D.games.filter(g => secName(g) === s && g.date >= t);
+  const upT = D.talkoot.filter(x => secName(x) === s && x.date >= t);
+  return {
+    open: upG.reduce((n, g) => n + gameOpen(g), 0) + upT.reduce((n, x) => n + talkooOpen(x), 0),
+    has: upG.some(g => Object.keys(g.roles).length) || upT.length > 0,
+    locked: locked() || secLockedName(s),
+  };
+}
+function sectionTile(s) {
+  const t = todayIso();
+  const items = allItems().filter(it => secName(it.ref) === s);
+  const next = items.find(it => it.date >= t);
+  const st = secStatus(s);
+  const pill = !st.has ? "" : st.locked
+    ? `<span class="tp lock">${st.open ? `🔒 ${st.open} jakamatta` : "🔒 jaettu"}</span>`
+    : st.open ? `<span class="tp">🙋 ${st.open} avointa</span>` : `<span class="tp ok">✓ täynnä</span>`;
+  const line = next
+    ? `${esc(daysUntil(next.date) <= 1 ? relDay(next.date, next.time) : dayLabel(next.date))}${next.time && !relDay(next.date, next.time).startsWith("Alkaa") ? " klo " + esc(next.time) : ""} · ${esc(next.title)}`
+    : items.length ? "Ei tulevaa ohjelmaa" : "Ei vielä ohjelmaa";
+  return `<button class="tile c${secColor(s)}" data-act="openSec" data-key="${esc(s)}">
+    <span class="ti">${secIcon(s)}</span>
+    <span class="tb"><span class="tn">${esc(s)}</span><span class="tx">${line}</span></span>
+    ${pill}<span class="chev">›</span></button>`;
+}
+function viewOsio() {
+  const s = F.sec || OTHER;
+  return statusBanners() + `<div class="back"><button class="btn ghost sm" data-act="tab" data-key="koti">← Etusivu</button></div>` + sectionBlock(s, secColor(s));
 }
 
 function sectionBlock(s, color) {
@@ -825,13 +873,17 @@ function render() {
       : `<div class="banner warn">Haetaan kauden tietoja…</div>`;
     return;
   }
-  const views = { koti: viewKoti, ottelut: viewOttelut, talkoot: viewTalkoot, kyydit: viewKyydit, kalenteri: viewKalenteri, info: viewInfo };
+  const views = { osio: viewOsio, koti: viewKoti, ottelut: viewOttelut, talkoot: viewTalkoot, kyydit: viewKyydit, kalenteri: viewKalenteri, info: viewInfo };
   v.innerHTML = views[tab]() + `<footer>${esc(team)} · kauden sivusto</footer>`;
 }
 
 // ─── Toiminnot (yksi kuuntelija kaikille napeille) ───────────────────────
 const ACTIONS = {
   tab(k, el, ev) { ev.preventDefault(); tab = k; editing = null; touched.clear(); history.replaceState(null, "", "#" + k); render(); window.scrollTo(0, 0); },
+  openSec(k, el, ev) {
+    ev.preventDefault(); F.sec = k; tab = "osio"; editing = null; touched.clear();
+    history.replaceState(null, "", "#osio"); render(); window.scrollTo(0, 0);
+  },
   goSec(k, el, ev) {
     ev.preventDefault();
     const i = k.indexOf("|"); tab = k.slice(0, i); F.sec = k.slice(i + 1);
