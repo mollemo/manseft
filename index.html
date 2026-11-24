@@ -320,10 +320,11 @@ function parseHash() {
   let h = location.hash.slice(1);
   try { h = decodeURIComponent(h); } catch (e) {}
   if (h.startsWith("leiri=")) return { tab: "leiri", leiri: h.slice(6) };
+  if (h.startsWith("osio=")) return { tab: "osio", sec: h.slice(5) };
   return { tab: TABS.some(t => t[0] === h) || h === "tiedotteet" ? h : "koti" };
 }
 let tab = parseHash().tab;
-const F = { leiri: parseHash().leiri || "", lday: "", menu: false, ohje: "", games: "tulevat", sec: "", talkoot: "avoimet", kal: "kaikki", kalPast: false, mePast: false };
+const F = { leiri: parseHash().leiri || "", sec: parseHash().sec || "", lday: "", menu: false, ohje: "", games: "tulevat", talkoot: "avoimet", kal: "kaikki", kalPast: false, mePast: false };
 
 // ─── Apufunktiot ─────────────────────────────────────────────────────────
 const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -1264,26 +1265,26 @@ function render() {
 
 // ─── Toiminnot (yksi kuuntelija kaikille napeille) ───────────────────────
 const ACTIONS = {
-  tab(k, el, ev) { ev.preventDefault(); F.menu = false; tab = k; editing = null; touched.clear(); history.replaceState(null, "", "#" + k); render(); window.scrollTo(0, 0); },
+  tab(k, el, ev) { ev.preventDefault(); F.menu = false; tab = k; editing = null; touched.clear(); go(); render(); window.scrollTo(0, 0); },
   ohje(k, el, ev) {
     ev.preventDefault(); F.ohje = k; tab = "ohjeet"; editing = null;
-    history.replaceState(null, "", "#ohjeet"); render();
+    go(); render();
     const el2 = document.getElementById("ohje-" + k); if (el2) el2.scrollIntoView({ block: "start" }); else window.scrollTo(0, 0);
   },
   menu(k, el, ev) { ev.preventDefault(); F.menu = !F.menu; renderMenu(); },
   openLeiri(k, el, ev) {
     ev.preventDefault(); F.leiri = k; F.lday = ""; F.menu = false; tab = "leiri"; editing = null; touched.clear();
-    history.replaceState(null, "", "#leiri=" + encodeURIComponent(k)); render(); window.scrollTo(0, 0);
+    go(); render(); window.scrollTo(0, 0);
   },
   openSec(k, el, ev) {
     if (isCamp(k)) return ACTIONS.openLeiri(k, el, ev);
     ev.preventDefault(); F.sec = k; tab = "osio"; editing = null; touched.clear();
-    history.replaceState(null, "", "#osio"); render(); window.scrollTo(0, 0);
+    go(); render(); window.scrollTo(0, 0);
   },
   goSec(k, el, ev) {
     ev.preventDefault();
     const i = k.indexOf("|"); tab = k.slice(0, i); F.sec = k.slice(i + 1);
-    editing = null; touched.clear(); history.replaceState(null, "", "#" + tab); render(); window.scrollTo(0, 0);
+    editing = null; touched.clear(); go(); render(); window.scrollTo(0, 0);
   },
   edit(k, el, ev) { ev.preventDefault(); startEdit(k, el.dataset.val); },
   cancel() { editing = null; render(); },
@@ -1349,10 +1350,25 @@ document.addEventListener("keydown", ev => {
     if (ev.key === "Escape") ACTIONS.cancel();
   }
 });
-window.addEventListener("hashchange", () => {
-  const p = parseHash();
-  if (p.tab !== tab || (p.leiri && p.leiri !== F.leiri)) { tab = p.tab; if (p.leiri) { F.leiri = p.leiri; F.lday = ""; } editing = null; render(); }
-});
+// ─── Selaimen historia: jokainen siirtymä on oma kohtansa, joten Takaisin/Eteenpäin toimivat ──
+function navState() { return { tab, sec: F.sec, leiri: F.leiri, lday: F.lday }; }
+function navHash() { return tab === "leiri" ? "#leiri=" + encodeURIComponent(F.leiri) : tab === "osio" ? "#osio=" + encodeURIComponent(F.sec) : "#" + tab; }
+function go() {
+  const st = navState();
+  if (history.state && JSON.stringify(history.state) === JSON.stringify(st)) return;
+  history.pushState(st, "", navHash());
+}
+function restore(st) {
+  const same = JSON.stringify(st) === JSON.stringify(navState());
+  tab = st.tab || "koti";
+  if (st.sec !== undefined) F.sec = st.sec;
+  if (st.leiri !== undefined) F.leiri = st.leiri;
+  if (st.lday !== undefined) F.lday = st.lday;
+  F.menu = false; editing = null;
+  if (!same) { render(); window.scrollTo(0, 0); }
+}
+window.addEventListener("popstate", ev => restore(ev.state || Object.assign({ sec: F.sec, leiri: F.leiri, lday: "" }, parseHash())));
+history.replaceState(navState(), "", navHash());
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && !editing && !busy) load(); });
 
 // ─── Esikatselun esimerkkidata (käytössä vain kun API_URL on tyhjä) ───────
