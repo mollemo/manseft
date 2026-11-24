@@ -24,7 +24,7 @@ var SHEETS = {
   "Tapahtumat":   ["ID", "Osio", "Pvm", "Klo", "Loppu", "Otsikko", "Tyyppi", "Paikka", "Lisätiedot", "Linkki", "Kyydit"],
   "Kyydit":       ["ID", "KohdeID", "Kuljettaja", "Paikat", "Kyytiläiset", "Lähtö", "Lisätiedot"],
   "Tiedotteet":   ["Pvm", "Otsikko", "Teksti", "Näytä asti"],
-  "Yhteystiedot": ["Rooli", "Nimi", "Puhelin", "Sähköposti"],
+  "Ohjeet":       ["Otsikko", "Teksti", "Linkki"],
   "Kentät":       ["Nimi", "Osoite", "Pinta"],
   "Asetukset":    ["Asetus", "Arvo", "Selite"]
 };
@@ -295,9 +295,11 @@ function buildPayload_() {
     return { date: fmtDate_(r["Pvm"], year), title: str_(r["Otsikko"]), text: str_(r["Teksti"]), until: fmtDate_(r["Näytä asti"], year) };
   }).filter(function (n) { return n.title || n.text; });
 
-  var contacts = readTable_("Yhteystiedot").map(function (r) {
-    return { role: str_(r["Rooli"]), name: str_(r["Nimi"]), phone: str_(r["Puhelin"]), email: str_(r["Sähköposti"]) };
-  });
+  // Ohjeet-välilehti: rivien järjestys = näyttöjärjestys. Otsikko, joka vastaa talkooroolia
+  // (esim. "Kirjuri" tai "Kioski"), näkyy ⓘ-linkkinä roolin vieressä.
+  var ohjeet = readTable_("Ohjeet").map(function (r) {
+    return { title: str_(r["Otsikko"]), text: str_(r["Teksti"]), link: str_(r["Linkki"]) };
+  }).filter(function (o) { return o.title || o.text; });
   var fields = readTable_("Kentät").map(function (r) {
     return { name: str_(r["Nimi"]), address: str_(r["Osoite"]), surface: str_(r["Pinta"]) };
   }).filter(function (f) { return f.name; });
@@ -308,7 +310,7 @@ function buildPayload_() {
                 sections: sections, roleSection: s["Ottelutalkoot osiossa"], lockedSections: splitList_(s["Lukitut osiot"]) },
     locked: /^lukit/i.test(s["Lukko"] || ""),
     today: todayIso_(),
-    games: games, talkoot: talkoot, events: events, rides: rides, news: news, contacts: contacts, fields: fields
+    games: games, talkoot: talkoot, events: events, rides: rides, news: news, ohjeet: ohjeet, fields: fields
   };
 }
 

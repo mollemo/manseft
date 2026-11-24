@@ -141,6 +141,13 @@
   .tile .chev { color: var(--sub); font-size: 20px; line-height: 1; }
   .back { margin: 2px 0 4px; }
 
+  details.ohje { display: block; cursor: pointer; }
+  details.ohje summary { list-style: none; display: flex; justify-content: space-between; align-items: center; }
+  details.ohje summary::-webkit-details-marker { display: none; }
+  details.ohje summary::after { content: "›"; color: var(--sub); font-size: 20px; transition: transform .15s; }
+  details.ohje[open] summary::after { transform: rotate(90deg); }
+  details.ohje[open] { border-color: var(--red); }
+
   .news { border-left: 4px solid var(--red); }
   .news .title { font-size: 14.5px; }
   .news .sub { white-space: pre-line; color: var(--text); }
@@ -177,7 +184,7 @@ const API_URL = "";
 const DEMO = !API_URL;
 const TABS = [
   ["koti", "🏠 Etusivu"], ["ottelut", "⚾ Ottelut"], ["talkoot", "🙋 Talkoot"],
-  ["kyydit", "🚗 Kyydit"], ["kalenteri", "📅 Kalenteri"], ["info", "ℹ️ Info"],
+  ["kyydit", "🚗 Kyydit"], ["kalenteri", "📅 Kalenteri"], ["ohjeet", "📖 Ohjeet"],
 ];
 
 let D = null;            // haettu data
@@ -186,7 +193,7 @@ let busy = false;        // tallennus käynnissä
 let editing = null;      // { key, value }  – avoin syöttökenttä
 const touched = new Set(); // tällä käyntikerralla muokatut vuorot pysyvät näkyvissä Avoimet-suodattimessa
 let tab = TABS.some(t => t[0] === location.hash.slice(1)) ? location.hash.slice(1) : "koti";
-const F = { games: "tulevat", sec: "", talkoot: "avoimet", kal: "kaikki", kalPast: false, mePast: false };
+const F = { ohje: "", games: "tulevat", sec: "", talkoot: "avoimet", kal: "kaikki", kalPast: false, mePast: false };
 
 // ─── Apufunktiot ─────────────────────────────────────────────────────────
 const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -366,7 +373,8 @@ function roleRow(g, role) {
   else if (name) body = `${esc(name)} <button class="btn ghost sm" data-act="edit" data-key="${esc(key)}" data-val="${esc(name)}">Vaihda</button>
                          <button class="x" title="Poista" data-act="rmRole" data-key="${esc(key)}">✕</button>`;
   else body = `<span class="open">Avoin</span> <button class="btn sm" data-act="edit" data-key="${esc(key)}">Ilmoittaudu</button>`;
-  return `<div class="rrow"><span class="rl">${esc(role)}:</span> ${body}</div>`;
+  const o = ohjeFor(role);
+  return `<div class="rrow"><span class="rl">${esc(role)}${o ? ` <button class="x" style="font-size:13px;color:var(--navy);" title="Ohje" data-act="ohje" data-key="${esc(o.title)}">ⓘ</button>` : ""}:</span> ${body}</div>`;
 }
 
 function gameCard(g, opts) {
@@ -786,38 +794,41 @@ function viewKalenteri() {
   return h;
 }
 
-function viewInfo() {
+function ohjeFor(role) {
+  const r = String(role || "").toLowerCase();
+  return (D.ohjeet || []).find(o => o.title && (o.title.toLowerCase() === r || r.startsWith(o.title.toLowerCase() + " "))) || null;
+}
+function viewOhjeet() {
   let h = statusBanners();
+  const ohjeet = D.ohjeet || [];
+  h += `<div class="h2">📖 Ohjeet</div>`;
+  h += ohjeet.length
+    ? ohjeet.map(o => `<details class="card ohje" id="ohje-${esc(o.title)}" ${F.ohje && F.ohje === o.title ? "open" : ""}>
+        <summary class="title">${esc(o.title || "Ohje")}</summary>
+        <div class="sub" style="white-space:pre-line;color:var(--text);margin-top:6px;">${esc(o.text)}</div>
+        ${o.link ? `<div class="sub" style="margin-top:6px;"><a class="lnk" href="${esc(o.link)}" target="_blank" rel="noopener">🔗 Lisätiedot</a></div>` : ""}
+      </details>`).join("")
+    : `<p class="note">Ohjeita ei ole vielä lisätty. Ne kirjoitetaan Sheetin Ohjeet-välilehdelle.</p>`;
+
+  h += `<div class="h2 navy">Näin sivu toimii</div><div class="box small" style="line-height:1.6;">
+    <b>Minun tehtävät:</b> Valitse etusivulla nimesi, niin näet omat talkoovuorosi ja kyytisi paikkoineen. 📅-napilla saat ne kaikki kerralla kalenteriin.<br>
+    <b>Lukitut osiot (🔒):</b> Talkoovastaava jakaa vuorot, ja ne näkyvät sivulla. Muutoksista sovitaan talkoovastaavan kanssa.<br>
+    <b>Avoimet talkoot:</b> Paina vuoron kohdalla <i>Ilmoittaudu</i> ja kirjoita nimesi. Oman nimen voi vaihtaa tai poistaa (✕).<br>
+    <b>Kyydit:</b> Kyydit-välilehdellä kuljettaja tarjoaa paikkoja ja pelaajat liittyvät kyytiin. Vieraspeleissä ei ole talkoita, vaan niissä sovitaan kyydit.<br>
+    <b>ⓘ roolin vieressä:</b> avaa kyseisen tehtävän ohjeen.<br>
+    <b>Kalenteri:</b> 📅-napilla saat tapahtuman puhelimen kalenteriin.</div>`;
+
+  if ((D.fields || []).length) {
+    h += `<div class="h2">📍 Kentät</div>`;
+    D.fields.forEach(f => h += `<div class="card"><div class="cbody"><div class="title">${placeHtml(f.name).replace(/<br>.*$/, "")}</div>
+      <div class="sub">${esc([f.address, f.surface].filter(Boolean).join(" · "))}</div></div></div>`);
+  }
   const news = (D.news || []).slice().sort((a, b) => (b.date || "").localeCompare(a.date || ""));
   if (news.length) {
     h += `<div class="h2">📣 Tiedotteet</div>`;
     news.forEach(n => h += `<div class="card news"><div class="cbody">${n.date ? `<div class="meta">${dayLabel(n.date)}</div>` : ""}
       <div class="title">${esc(n.title)}</div>${n.text ? `<div class="sub">${esc(n.text)}</div>` : ""}</div></div>`);
   }
-  if ((D.contacts || []).length) {
-    h += `<div class="h2">📞 Yhteystiedot</div>`;
-    D.contacts.forEach(c => {
-      const tel = c.phone.replace(/[^\d+]/g, "");
-      h += `<div class="card"><div class="cbody">
-        <div class="meta">${esc(c.role)}</div><div class="title">${esc(c.name)}</div>
-        <div class="sub">${c.phone ? `📱 <a class="lnk" href="tel:${esc(tel)}">${esc(c.phone)}</a>` : ""}
-        ${c.email ? `${c.phone ? "<br>" : ""}✉️ <a class="lnk" href="mailto:${esc(c.email)}">${esc(c.email)}</a>` : ""}</div></div></div>`;
-    });
-  }
-  if ((D.fields || []).length) {
-    h += `<div class="h2">📍 Kentät</div>`;
-    D.fields.forEach(f => h += `<div class="card"><div class="cbody"><div class="title">${placeHtml(f.name).replace(/<br>.*$/, "")}</div>
-      <div class="sub">${esc([f.address, f.surface].filter(Boolean).join(" · "))}</div></div></div>`);
-  }
-  h += `<div class="h2 navy">Näin ilmoittaudut</div><div class="box small" style="line-height:1.6;">
-    <b>Ottelutalkoot:</b> Ottelut- tai Talkoot-välilehdellä paina avoimen roolin kohdalla <i>Ilmoittaudu</i> ja kirjoita nimesi.
-    Kotipelien talkoovuorot näkyvät pelin alla. Vieraspeleissä ei ole talkoita, vaan niissä sovitaan kyydit.<br>
-    <b>Muut talkoot:</b> Talkoot-välilehdellä näkyy, montako tekijää vuoroon tarvitaan ja ketkä ovat jo ilmoittautuneet.<br>
-    <b>Kyydit:</b> Kyydit-välilehdellä kuljettaja tarjoaa paikkoja ja pelaajat liittyvät kyytiin.<br>
-    <b>Lukitut osiot (🔒):</b> Näissä talkoovastaava jakaa vuorot, ja sivulla näet oman vuorosi. Kyydit voi silti sopia sivulla.<br>
-    <b>Muutokset:</b> Oman nimen voi vaihtaa tai poistaa (✕). Jos lista on lukittu, sovi muutoksesta talkoovastaavan kanssa.<br>
-    <b>Minun tehtävät:</b> Valitse etusivulla nimesi, niin näet omat talkoovuorosi ja kyytisi paikkoineen. 📅-napilla saat ne kaikki kerralla kalenteriin.<br>
-    <b>Kalenteri:</b> 📅-napilla saat tapahtuman puhelimen kalenteriin.</div>`;
   return h;
 }
 
@@ -873,13 +884,18 @@ function render() {
       : `<div class="banner warn">Haetaan kauden tietoja…</div>`;
     return;
   }
-  const views = { osio: viewOsio, koti: viewKoti, ottelut: viewOttelut, talkoot: viewTalkoot, kyydit: viewKyydit, kalenteri: viewKalenteri, info: viewInfo };
+  const views = { osio: viewOsio, koti: viewKoti, ottelut: viewOttelut, talkoot: viewTalkoot, kyydit: viewKyydit, kalenteri: viewKalenteri, ohjeet: viewOhjeet };
   v.innerHTML = views[tab]() + `<footer>${esc(team)} · kauden sivusto</footer>`;
 }
 
 // ─── Toiminnot (yksi kuuntelija kaikille napeille) ───────────────────────
 const ACTIONS = {
   tab(k, el, ev) { ev.preventDefault(); tab = k; editing = null; touched.clear(); history.replaceState(null, "", "#" + k); render(); window.scrollTo(0, 0); },
+  ohje(k, el, ev) {
+    ev.preventDefault(); F.ohje = k; tab = "ohjeet"; editing = null;
+    history.replaceState(null, "", "#ohjeet"); render();
+    const el2 = document.getElementById("ohje-" + k); if (el2) el2.scrollIntoView({ block: "start" }); else window.scrollTo(0, 0);
+  },
   openSec(k, el, ev) {
     ev.preventDefault(); F.sec = k; tab = "osio"; editing = null; touched.clear();
     history.replaceState(null, "", "#osio"); render(); window.scrollTo(0, 0);
@@ -1009,10 +1025,12 @@ function makeDemo() {
     news: [
       { date: day(-1), title: "Tervetuloa kauden sivustolle", text: "Täältä löydät kaikki ottelut, talkoot ja kyydit. Ilmoittaudu avoimiin vuoroihin suoraan sivulla.", until: "" },
     ],
-    contacts: [
-      { role: "Valmentaja", name: "Esimerkki Valmentaja", phone: "040 000 0000", email: "valmentaja@example.com" },
-      { role: "Joukkueenjohtaja", name: "Esimerkki Johtaja", phone: "040 000 0001", email: "jojo@example.com" },
-      { role: "Talkoovastaava", name: "Esimerkki Talkoovastaava", phone: "", email: "talkoot@example.com" },
+    ohjeet: [
+      { title: "Kirjuri", text: "Esimerkkiohje: tule paikalle 30 min ennen ottelua. Pöytäkirja ja kynät ovat kioskin laatikossa.\nKirjaa vaihdot ja tulokset, ja palauta pöytäkirja valmentajalle ottelun jälkeen.", link: "" },
+      { title: "Tulostaulu / ottelun vanhin", text: "Esimerkkiohje: päivitä tulostaulua vuoroparien välissä. Ottelun vanhimpana huolehdit, että yleisö ja penkit toimivat sääntöjen mukaan.", link: "" },
+      { title: "Kioski", text: "Esimerkkiohje: kioskin avain, kassalipas ja kahvinkeitin ovat varastossa.\nAvaa kioski 45 min ennen ottelua ja siivoa lopuksi. Tilitä kassa talkoovastaavalle.", link: "" },
+      { title: "Kentän piirtäjä", text: "Esimerkkiohje: kalkkivaunu ja mittanauha ovat varastossa. Aloita piirtäminen viimeistään 60 min ennen ottelua.", link: "" },
+      { title: "Kyydit vieraspeleihin", text: "Esimerkkiohje: kuljettaja ilmoittaa kyydin sivun Kyydit-välilehdellä. Sovitaan lähtöpaikka ja -aika kyydin tiedoissa.", link: "" },
     ],
     fields: [
       { name: "Kotikenttä", address: "Esimerkkikatu 1, Tampere", surface: "Hiekka" },
