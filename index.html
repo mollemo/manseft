@@ -10,8 +10,9 @@
 <style>
   :root {
     --bg: #EEEFEB; --card: #FFFFFF; --soft: #F4F5F1; --text: #1D2019; --sub: #8A8D85; --border: #E7E8E3;
-    --ac: #6E8E2E; --ac2: #97B54C; --acd: #55711F; --acs: #EDF2E0;
-    --red: #D8483E; --darkred: #B23A30; --deep: #7A2A22; --green: #6E8E2E; --navy: #38432F; --blue: #56708F;
+    --ac: #C41E28; --ac2: #E8463F; --acd: #A3161E; --acs: #FBE7E5; --acrgb: 196,30,40;
+    --ok: #3E7D45; --oks: #E7F2E6;
+    --red: #C41E28; --darkred: #A3161E; --deep: #7A1218; --green: #3E7D45; --navy: #38432F; --blue: #56708F;
     --now-bg: #FFF6DC; --now-border: #E2B13C; --amber: #A97A12;
     --r: 20px; --sh: 0 1px 2px rgba(30,35,25,.04), 0 8px 24px rgba(30,35,25,.06);
   }
@@ -45,7 +46,7 @@
   .bnav button svg { width: 21px; height: 21px; flex: none; }
   .bnav button .lb { display: none; }
   .bnav button.active { background: linear-gradient(180deg, var(--ac2), var(--ac)); color: #fff; padding: 0 17px;
-                        box-shadow: 0 4px 14px rgba(110,142,46,.38), inset 0 1px 0 rgba(255,255,255,.3); }
+                        box-shadow: 0 4px 14px rgba(var(--acrgb),.38), inset 0 1px 0 rgba(255,255,255,.3); }
   .bnav button.active .lb { display: inline; }
   .bnav .cnt { position: absolute; top: 6px; right: 6px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: var(--red);
                color: #fff; font-size: 10px; font-weight: 800; line-height: 16px; text-align: center; }
@@ -62,7 +63,7 @@
 
   .banner { border-radius: 16px; padding: 11px 14px; margin-bottom: 12px; font-size: 13.5px; font-weight: 500; line-height: 1.45; border: 1px solid transparent; }
   .banner.warn { background: var(--now-bg); color: #7A5A0E; border-color: #F2DFA6; }
-  .banner.ok   { background: var(--acs); color: var(--acd); border-color: #DCE7C4; }
+  .banner.ok   { background: var(--oks); color: var(--ok); border-color: #CFE5CD; }
   .banner.err  { background: #FCEAE8; color: var(--darkred); border-color: #F5D0CC; }
   .banner.lock { background: #F1F2EE; color: var(--navy); border-color: #E2E4DD; }
   .banner.demo { background: rgba(255,255,255,.7); color: var(--sub); font-size: 12.5px; }
@@ -73,7 +74,7 @@
   .card.past { opacity: .6; }
   .card.today { box-shadow: 0 0 0 2px var(--now-border), var(--sh); }
   .datebox { width: 48px; min-width: 48px; text-align: center; border-radius: 14px; padding: 6px 0; background: var(--soft); color: var(--text); }
-  .datebox.talkoo { background: var(--acs); }
+  .datebox.talkoo { background: var(--acs); color: var(--acd); }
   .datebox.event { background: #EEF1F5; }
   .datebox .wd { font-size: 11px; font-weight: 600; color: var(--sub); text-transform: uppercase; }
   .datebox .dm { font-size: 15px; font-weight: 700; line-height: 1.2; }
@@ -89,7 +90,7 @@
   .b-today, .b-now { background: linear-gradient(180deg, #F0C25A, #DDA531); color: #fff; }
   .b-up   { background: linear-gradient(180deg, var(--ac2), var(--ac)); color: #fff; }
   .b-res  { background: var(--text); color: #fff; font-size: 12px; }
-  a.lnk { color: var(--acd); font-weight: 600; text-decoration: none; border-bottom: 1px solid rgba(85,113,31,.28); }
+  a.lnk { color: var(--acd); font-weight: 600; text-decoration: none; border-bottom: 1px solid rgba(var(--acrgb),.28); }
   a.lnk.navy { color: var(--navy); border-bottom-color: rgba(56,67,47,.25); }
 
   .roles { margin-top: 10px; border-top: 1px solid var(--border); padding-top: 4px; }
@@ -97,7 +98,7 @@
   .rrow .rl { font-weight: 600; min-width: 0; color: #4A4E45; }
   .open { color: var(--red); font-weight: 600; }
   .btn { font-size: 12.5px; font-weight: 600; color: #fff; background: linear-gradient(180deg, var(--ac2), var(--ac)); border: none; border-radius: 999px;
-         padding: 7px 15px; cursor: pointer; box-shadow: 0 3px 10px rgba(110,142,46,.25); }
+         padding: 7px 15px; cursor: pointer; box-shadow: 0 3px 10px rgba(var(--acrgb),.25); }
   .btn.ghost { color: var(--text); background: #fff; box-shadow: inset 0 0 0 1px var(--border); }
   .btn.navy { background: var(--navy); box-shadow: none; }
   .btn.navy.ghost { color: var(--navy); background: #fff; box-shadow: inset 0 0 0 1px var(--border); }
@@ -131,7 +132,7 @@
 
   .ride { border-radius: 14px; padding: 10px 12px; margin-top: 8px; background: var(--soft); font-size: 13.5px; }
   .ride .rh { display: flex; justify-content: space-between; gap: 6px; align-items: baseline; flex-wrap: wrap; }
-  .seats { font-size: 12px; font-weight: 700; color: var(--acd); }
+  .seats { font-size: 12px; font-weight: 700; color: var(--ok); }
   .seats.full { color: var(--sub); }
   .pas { display: inline-flex; align-items: center; background: #fff; border-radius: 999px; padding: 2px 5px 2px 10px; margin: 5px 5px 0 0; font-size: 12.5px; box-shadow: inset 0 0 0 1px var(--border); }
   .form { display: grid; gap: 8px; margin-top: 8px; }
@@ -202,7 +203,7 @@
   /* Osiot ja leirit */
   .sec { margin: 4px 0 16px; }
   .sech { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 16px; color: #fff; border-radius: 22px; box-shadow: var(--sh);
-          background: linear-gradient(135deg, #85A43E, #5B7A21); }
+          background: linear-gradient(135deg, #E0403A, #A3161E); }
   .sec-1 .sech { background: linear-gradient(135deg, #5B8C68, #2F5E40); }
   .sec-2 .sech { background: linear-gradient(135deg, #5F6D86, #333E55); }
   .sec-3 .sech { background: linear-gradient(135deg, #92958C, #63665E); }
@@ -227,7 +228,7 @@
   .tile .tx { display: block; font-size: 12.5px; color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
   .tile .tp { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px; white-space: nowrap; background: var(--now-bg); color: #7A5A0E; }
   .tile .tp.lock { background: #F1F2EE; color: var(--navy); }
-  .tile .tp.ok { background: var(--acs); color: var(--acd); }
+  .tile .tp.ok { background: var(--oks); color: var(--ok); }
   .tile .chev { color: #B9BCB4; display: grid; }
   .tile .chev svg { width: 16px; height: 16px; }
   .back { margin: 0 0 10px; }
@@ -246,7 +247,7 @@
   .tl .tc { flex: 1; min-width: 0; padding-top: 4px; }
   .tl .tti { font-weight: 600; font-size: 14.5px; line-height: 1.35; }
   .tl .tsu { font-size: 12.8px; color: var(--sub); margin-top: 2px; line-height: 1.5; white-space: pre-line; }
-  .tl.meal .tic { background: var(--acs); }
+  .tl.meal .tic { background: var(--oks); }
   .tl.past { opacity: .5; }
 
   details.ohje { display: block; cursor: pointer; }
