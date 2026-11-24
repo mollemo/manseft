@@ -560,12 +560,11 @@ function viewKoti() {
       <div class="title">📣 ${esc(n.title)}</div>${n.text ? `<div class="sub">${esc(n.text)}</div>` : ""}</div></div>`;
   });
 
-  const tiles = sectionList().filter(x => !isCamp(x) || campVisible(x)).sort((a, b) => (campLive(b) ? 1 : 0) - (campLive(a) ? 1 : 0));
+  // Leirit näkyvät painikkeina aina leirin loppuun asti; lähestyvä tai käynnissä oleva leiri korostetaan ja nostetaan ylös.
+  const tiles = sectionList().filter(x => !isCamp(x) || !campInfo(x).start || campInfo(x).end >= t)
+    .sort((a, b) => (isCamp(b) && campVisible(b) ? 1 : 0) - (isCamp(a) && campVisible(a) ? 1 : 0));
   h += `<div class="h2">Kausi</div>` + tiles.map(x => sectionTile(x)).join("");
   h += myBlock();
-  const later = sectionList().filter(x => isCamp(x) && !campVisible(x) && campInfo(x).end >= t);
-  if (later.length) h += `<p class="note" style="margin-top:14px;">⛺ Tulevat leirit: ${later.map(x =>
-    `<a class="lnk navy" href="#" data-act="openLeiri" data-key="${esc(x)}">${esc(x)}</a> ${esc(campRange(x))}`).join(" · ")}</p>`;
 
   return h;
 }
@@ -592,8 +591,8 @@ function sectionTile(s) {
   const line = next
     ? `${esc(daysUntil(next.date) <= 1 ? relDay(next.date, next.time) : dayLabel(next.date))}${next.time && !relDay(next.date, next.time).startsWith("Alkaa") ? " klo " + esc(next.time) : ""} · ${esc(next.title)}`
     : items.length ? "Ei tulevaa ohjelmaa" : "Ei vielä ohjelmaa";
-  const camp = isCamp(s), live = camp && campLive(s);
-  return `<button class="tile c${secColor(s)} ${live ? "live" : ""}" data-act="${camp ? "openLeiri" : "openSec"}" data-key="${esc(s)}">
+  const camp = isCamp(s), live = camp && campLive(s), near = camp && campVisible(s);
+  return `<button class="tile c${secColor(s)} ${near ? "live" : ""}" data-act="${camp ? "openLeiri" : "openSec"}" data-key="${esc(s)}">
     <span class="ti">${secIcon(s)}</span>
     <span class="tb"><span class="tn">${esc(s)}${live ? " · käynnissä" : ""}</span><span class="tx">${live ? "Avaa leirin ohjelma ja ruokalista" : camp ? esc([campLabel(s), campRange(s)].filter(Boolean).join(" · ")) + (daysUntil(campInfo(s).start) > 0 ? ` · alkaa ${daysUntil(campInfo(s).start) === 1 ? "huomenna" : daysUntil(campInfo(s).start) + " pv päästä"}` : "") : line}</span></span>
     ${pill}<span class="chev">›</span></button>`;

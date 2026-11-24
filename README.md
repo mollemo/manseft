@@ -19,7 +19,7 @@ Ottelutalkoot (kotipelit) ja vieraspelien kyydit koskevat vain Asetusten *Ottelu
 
 ## Leirisivut
 Alueleirillä ja Valtakunnallisella leirillä on oma leirisivu (kuten erillisillä leirisivustoilla): päiväkohtainen ohjelma, ruokalista, paikat, talkoot, kyydit ja leirin info.
-Leirit eivät ole yläpalkissa. Ne löytyvät **☰-valikosta**, ja etusivulle leiri nousee vasta *Leiri etusivulla* -asetuksen verran päiviä ennen alkua (oletus 14). Leirin aikana sen painike on korostettu. Leirisivulle voi myös jakaa suoran linkin, esim. `…/manseft/#leiri=Alueleiri`.
+Leirit eivät ole yläpalkissa. Ne löytyvät **☰-valikosta** ja etusivun painikkeista leirin loppuun asti. *Leiri etusivulla* -asetuksen verran päiviä ennen alkua (oletus 14) ja leirin aikana painike on korostettu ja ylimpänä. Leirisivulle voi myös jakaa suoran linkin, esim. `…/manseft/#leiri=Alueleiri`.
 
 - **Leirit**-välilehti: Osio, Nimi, Alkaa, Päättyy, Paikkakunta, Lisätiedot (näkyy leirin Info-kohdassa), Linkki. Setup täyttää valmiiksi kauden 2027 leirit: **Alueleiri Loimaa 11.–13.6.2027** ja **Naperoleiri Laitila 2.–6.8.2027**.
 - **Päivän ohjelma** kootaan automaattisesti: osion ottelut, Tapahtumat-rivit (esim. Tyyppi *Ohjelma* tai *Majoitus*), ruokailut ja talkoovuorot kellonajan mukaan.
