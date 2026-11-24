@@ -24,7 +24,9 @@ var SHEETS = {
   "Tapahtumat":   ["ID", "Osio", "Pvm", "Klo", "Loppu", "Otsikko", "Tyyppi", "Paikka", "Lisätiedot", "Linkki", "Kyydit"],
   "Kyydit":       ["ID", "KohdeID", "Kuljettaja", "Paikat", "Kyytiläiset", "Lähtö", "Lisätiedot"],
   "Tiedotteet":   ["Pvm", "Otsikko", "Teksti", "Näytä asti"],
-  "Ohjeet":       ["Otsikko", "Teksti", "Linkki"],
+  "Leirit":       ["Osio", "Alkaa", "Päättyy", "Paikkakunta", "Lisätiedot", "Linkki"],
+  "Ruokalista":   ["Osio", "Pvm", "Ateria", "Klo", "Ruoka", "Paikka"],
+  "Ohjeet":       ["Osio", "Otsikko", "Teksti", "Linkki"],
   "Kentät":       ["Nimi", "Osoite", "Pinta"],
   "Asetukset":    ["Asetus", "Arvo", "Selite"]
 };
@@ -37,6 +39,7 @@ var DEFAULT_SETTINGS = [
   ["Kotijoukkueen tunniste", "Manse", "Jos Joukkueet alkaa tällä sanalla, peli on kotipeli (ellei Koti/Vieras-sarakkeessa toisin lue)"],
   ["Kotipelin talkoot", "Kirjuri, Tulostaulu / ottelun vanhin, 2. tuomari, 3. tuomari, Takarajatuomari, Kioski 1, Kioski 2, Kentän piirtäjä", "Pilkulla erotettu lista. Jokaiselle tulee oma sarake Ottelut-välilehdelle. Kaksi samaa tehtävää = kaksi riviä (esim. Kioski 1, Kioski 2)"],
   ["Vieraspelin talkoot", "", "Pilkulla erotettu lista. Tyhjä = vieraspeleissä ei talkoita, vain kyydit"],
+  ["Leiri etusivulla", "14", "Montako päivää ennen leirin alkua leiri nousee etusivulle. Muulloin leirisivu löytyy ☰-valikosta"],
   ["Lukitut osiot", "Aluesarja", "Näiden osioiden talkoovuoroihin ei voi ilmoittautua sivustolla: talkoovastaava kirjoittaa nimet Sheetiin ja sivu näyttää ne. Pilkulla erotettu lista (esim. Aluesarja, Alueleiri, Valtakunnallinen leiri). Tyhjä = kaikki auki. Kyytejä voi aina sopia sivustolla"],
   ["Lukko", "AUKI", "AUKI = ilmoittautuminen sivustolla toimii. LUKITTU = mitään (myöskään kyytejä) ei voi muuttaa sivustolla"]
 ];
@@ -82,11 +85,14 @@ function setup() {
   var tap = ss.getSheetByName("Tapahtumat");
   var th = headerMap_(tap);
   tap.getRange(2, th["Tyyppi"] + 1, Math.max(tap.getMaxRows() - 1, 1), 1).setDataValidation(
-    SpreadsheetApp.newDataValidation().requireValueInList(["Harjoitus", "Turnaus", "Leiri", "Palaveri", "Varainhankinta", "Juhla", "Muu"], true).setAllowInvalid(true).build());
+    SpreadsheetApp.newDataValidation().requireValueInList(["Harjoitus", "Turnaus", "Leiri", "Ohjelma", "Majoitus", "Palaveri", "Varainhankinta", "Juhla", "Muu"], true).setAllowInvalid(true).build());
   tap.getRange(2, th["Kyydit"] + 1, Math.max(tap.getMaxRows() - 1, 1), 1).setDataValidation(
     SpreadsheetApp.newDataValidation().requireValueInList(["Kyllä"], true).setAllowInvalid(true).build());
   var osiot = splitList_(settings["Osiot"]);
-  if (osiot.length) ["Ottelut", "Talkoot", "Tapahtumat"].forEach(function (name) {
+  var rl = ss.getSheetByName("Ruokalista");
+  rl.getRange(2, headerMap_(rl)["Ateria"] + 1, Math.max(rl.getMaxRows() - 1, 1), 1).setDataValidation(
+    SpreadsheetApp.newDataValidation().requireValueInList(["Aamupala", "Lounas", "Välipala", "Päivällinen", "Iltapala"], true).setAllowInvalid(true).build());
+  if (osiot.length) ["Ottelut", "Talkoot", "Tapahtumat", "Leirit", "Ruokalista", "Ohjeet"].forEach(function (name) {
     var sh = ss.getSheetByName(name), h = headerMap_(sh);
     sh.getRange(2, h["Osio"] + 1, Math.max(sh.getMaxRows() - 1, 1), 1).setDataValidation(
       SpreadsheetApp.newDataValidation().requireValueInList(osiot, true).setAllowInvalid(true).build());
@@ -298,8 +304,18 @@ function buildPayload_() {
   // Ohjeet-välilehti: rivien järjestys = näyttöjärjestys. Otsikko, joka vastaa talkooroolia
   // (esim. "Kirjuri" tai "Kioski"), näkyy ⓘ-linkkinä roolin vieressä.
   var ohjeet = readTable_("Ohjeet").map(function (r) {
-    return { title: str_(r["Otsikko"]), text: str_(r["Teksti"]), link: str_(r["Linkki"]) };
+    return { section: sectionOf_(r["Osio"], "", sections), title: str_(r["Otsikko"]), text: str_(r["Teksti"]), link: str_(r["Linkki"]) };
   }).filter(function (o) { return o.title || o.text; });
+
+  // Leirit: osion päivät ja tiedot. Ruokalista: ateriat päivittäin.
+  var camps = readTable_("Leirit").map(function (r) {
+    return { section: sectionOf_(r["Osio"], "", sections), start: fmtDate_(r["Alkaa"], year), end: fmtDate_(r["Päättyy"], year),
+             town: str_(r["Paikkakunta"]), info: str_(r["Lisätiedot"]), link: str_(r["Linkki"]) };
+  }).filter(function (c) { return c.section; });
+  var menu = readTable_("Ruokalista").map(function (r) {
+    return { section: sectionOf_(r["Osio"], "", sections), date: fmtDate_(r["Pvm"], year), meal: str_(r["Ateria"]),
+             time: r["Klo"] instanceof Date ? fmtTime_(r["Klo"]) : str_(r["Klo"]), food: str_(r["Ruoka"]), place: str_(r["Paikka"]) };
+  }).filter(function (m) { return m.date && (m.meal || m.food); });
   var fields = readTable_("Kentät").map(function (r) {
     return { name: str_(r["Nimi"]), address: str_(r["Osoite"]), surface: str_(r["Pinta"]) };
   }).filter(function (f) { return f.name; });
@@ -307,10 +323,11 @@ function buildPayload_() {
   return {
     ok: true,
     settings: { team: s["Joukkue"], season: s["Kausi"], homeTag: s["Kotijoukkueen tunniste"], homeRoles: homeRoles, awayRoles: awayRoles,
-                sections: sections, roleSection: s["Ottelutalkoot osiossa"], lockedSections: splitList_(s["Lukitut osiot"]) },
+                sections: sections, roleSection: s["Ottelutalkoot osiossa"], lockedSections: splitList_(s["Lukitut osiot"]),
+                campDays: parseInt(s["Leiri etusivulla"], 10) || 14 },
     locked: /^lukit/i.test(s["Lukko"] || ""),
     today: todayIso_(),
-    games: games, talkoot: talkoot, events: events, rides: rides, news: news, ohjeet: ohjeet, fields: fields
+    games: games, talkoot: talkoot, events: events, rides: rides, news: news, ohjeet: ohjeet, fields: fields, camps: camps, menu: menu
   };
 }
 

@@ -148,6 +148,25 @@
   details.ohje[open] summary::after { transform: rotate(90deg); }
   details.ohje[open] { border-color: var(--red); }
 
+  .tile.live { background: var(--now-bg); border-color: var(--now-border); border-left-color: var(--now-border); }
+  header { position: relative; }
+  .menubtn { margin-left: auto; background: rgba(255,255,255,.16); border: none; color: #fff; font-size: 21px; width: 42px; height: 42px; border-radius: 10px; cursor: pointer; }
+  .menu { position: absolute; right: 10px; top: 64px; background: #fff; border-radius: 12px; box-shadow: 0 8px 26px rgba(0,0,0,.25); min-width: 240px; z-index: 30; overflow: hidden; }
+  .menu button { display: block; width: 100%; text-align: left; padding: 12px 15px; border: none; border-bottom: 1px solid var(--border); background: #fff; color: var(--text); font-weight: 600; font-size: 14.5px; cursor: pointer; }
+  .menu button:last-child { border-bottom: none; }
+  .menu .mh { padding: 8px 15px 4px; font-size: 11px; font-weight: 800; color: var(--sub); text-transform: uppercase; letter-spacing: .4px; background: #FAF6F6; }
+  .menu small { display: block; color: var(--sub); font-weight: 500; font-size: 12px; }
+  .camphead { border-radius: 14px; margin: 4px 0 10px; }
+  .tl { display: flex; gap: 10px; padding: 9px 4px; border-bottom: 1px solid var(--border); }
+  .tl:last-child { border-bottom: none; }
+  .tl .tt { min-width: 50px; font-weight: 800; color: var(--red); font-size: 13px; padding-top: 1px; }
+  .tl .tic { font-size: 18px; line-height: 1.2; }
+  .tl .tc { flex: 1; min-width: 0; }
+  .tl .tti { font-weight: 700; font-size: 14.5px; line-height: 1.35; }
+  .tl .tsu { font-size: 12.8px; color: var(--sub); margin-top: 2px; line-height: 1.5; white-space: pre-line; }
+  .tl.meal .tt { color: var(--green); }
+  .tl.past { opacity: .5; }
+
   .news { border-left: 4px solid var(--red); }
   .news .title { font-size: 14.5px; }
   .news .sub { white-space: pre-line; color: var(--text); }
@@ -168,6 +187,8 @@
       <h1 id="teamTitle">Manse</h1>
       <div class="clock" id="clock"></div>
     </div>
+    <button class="menubtn" id="menuBtn" data-act="menu" aria-label="Valikko">☰</button>
+    <div class="menu" id="menu" hidden></div>
   </header>
   <nav class="tabs" id="tabs"></nav>
 </div>
@@ -192,8 +213,14 @@ let loadError = false;
 let busy = false;        // tallennus käynnissä
 let editing = null;      // { key, value }  – avoin syöttökenttä
 const touched = new Set(); // tällä käyntikerralla muokatut vuorot pysyvät näkyvissä Avoimet-suodattimessa
-let tab = TABS.some(t => t[0] === location.hash.slice(1)) ? location.hash.slice(1) : "koti";
-const F = { ohje: "", games: "tulevat", sec: "", talkoot: "avoimet", kal: "kaikki", kalPast: false, mePast: false };
+function parseHash() {
+  let h = location.hash.slice(1);
+  try { h = decodeURIComponent(h); } catch (e) {}
+  if (h.startsWith("leiri=")) return { tab: "leiri", leiri: h.slice(6) };
+  return { tab: TABS.some(t => t[0] === h) ? h : "koti" };
+}
+let tab = parseHash().tab;
+const F = { leiri: parseHash().leiri || "", lday: "", menu: false, ohje: "", games: "tulevat", sec: "", talkoot: "avoimet", kal: "kaikki", kalPast: false, mePast: false };
 
 // ─── Apufunktiot ─────────────────────────────────────────────────────────
 const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -430,7 +457,7 @@ function talkooCard(t) {
     </div></div>`;
 }
 
-const EVENT_ICONS = { harjoitus: "🏃", turnaus: "🏆", leiri: "⛺", palaveri: "💬", varainhankinta: "💶", juhla: "🎉" };
+const EVENT_ICONS = { harjoitus: "🏃", turnaus: "🏆", leiri: "⛺", ohjelma: "🎯", majoitus: "🛏️", ruokailu: "🍽️", palaveri: "💬", varainhankinta: "💶", juhla: "🎉" };
 function eventIcon(e) { return EVENT_ICONS[String(e.type || "").toLowerCase()] || "📌"; }
 function eventCard(e) {
   const past = isPast(e.date), today = e.date === todayIso();
@@ -533,8 +560,12 @@ function viewKoti() {
       <div class="title">📣 ${esc(n.title)}</div>${n.text ? `<div class="sub">${esc(n.text)}</div>` : ""}</div></div>`;
   });
 
-  h += `<div class="h2">Kausi</div>` + sectionList().map(x => sectionTile(x)).join("");
+  const tiles = sectionList().filter(x => !isCamp(x) || campVisible(x)).sort((a, b) => (campLive(b) ? 1 : 0) - (campLive(a) ? 1 : 0));
+  h += `<div class="h2">Kausi</div>` + tiles.map(x => sectionTile(x)).join("");
   h += myBlock();
+  const later = sectionList().filter(x => isCamp(x) && !campVisible(x) && campInfo(x).end >= t);
+  if (later.length) h += `<p class="note" style="margin-top:14px;">⛺ Tulevat leirit: ${later.map(x =>
+    `<a class="lnk navy" href="#" data-act="openLeiri" data-key="${esc(x)}">${esc(x)}</a> ${esc(campRange(x))}`).join(" · ")}</p>`;
 
   return h;
 }
@@ -561,9 +592,10 @@ function sectionTile(s) {
   const line = next
     ? `${esc(daysUntil(next.date) <= 1 ? relDay(next.date, next.time) : dayLabel(next.date))}${next.time && !relDay(next.date, next.time).startsWith("Alkaa") ? " klo " + esc(next.time) : ""} · ${esc(next.title)}`
     : items.length ? "Ei tulevaa ohjelmaa" : "Ei vielä ohjelmaa";
-  return `<button class="tile c${secColor(s)}" data-act="openSec" data-key="${esc(s)}">
+  const camp = isCamp(s), live = camp && campLive(s);
+  return `<button class="tile c${secColor(s)} ${live ? "live" : ""}" data-act="${camp ? "openLeiri" : "openSec"}" data-key="${esc(s)}">
     <span class="ti">${secIcon(s)}</span>
-    <span class="tb"><span class="tn">${esc(s)}</span><span class="tx">${line}</span></span>
+    <span class="tb"><span class="tn">${esc(s)}${live ? " · käynnissä" : ""}</span><span class="tx">${live ? "Avaa leirin ohjelma ja ruokalista" : camp ? esc([campRange(s), campInfo(s).town].filter(Boolean).join(" · ")) + (daysUntil(campInfo(s).start) > 0 ? ` · alkaa ${daysUntil(campInfo(s).start) === 1 ? "huomenna" : daysUntil(campInfo(s).start) + " pv päästä"}` : "") : line}</span></span>
     ${pill}<span class="chev">›</span></button>`;
 }
 function viewOsio() {
@@ -794,20 +826,144 @@ function viewKalenteri() {
   return h;
 }
 
+// ─── Leirit ──────────────────────────────────────────────────────────────
+function isCamp(s) { return s !== OTHER && ((D.camps || []).some(c => c.section === s) || /leiri/i.test(s)); }
+function campInfo(s) {
+  const c = (D.camps || []).find(x => x.section === s) || {};
+  const dates = [].concat(D.games, D.talkoot, D.events, D.menu || []).filter(x => secName(x) === s).map(x => x.date).sort();
+  return Object.assign({ info: "", link: "", town: "" }, c, { start: c.start || dates[0] || "", end: c.end || c.start || dates[dates.length - 1] || "" });
+}
+function campRange(s) { const c = campInfo(s); return !c.start ? "" : c.start === c.end ? dayLabel(c.start) : dm(c.start) + "–" + dm(c.end); }
+function campLive(s) { const c = campInfo(s), t = todayIso(); return !!c.start && c.start <= t && t <= c.end; }
+function campVisible(s) {
+  const c = campInfo(s), t = todayIso(), n = (D.settings && D.settings.campDays) || 14;
+  return !!c.start && t <= c.end && daysUntil(c.start) <= n;
+}
+function campDays(s) {
+  const c = campInfo(s); if (!c.start) return [];
+  const out = []; let d = dOf(c.start); const e = dOf(c.end);
+  while (d <= e && out.length < 21) { out.push(isoOf(d)); d = new Date(d.getTime() + 864e5); }
+  return out;
+}
+const MEAL_ICONS = { aamupala: "☀️", lounas: "🍴", välipala: "🍎", päivällinen: "🍽️", iltapala: "🥪" };
+function mealIcon(m) { return MEAL_ICONS[String(m || "").toLowerCase()] || "🍽️"; }
+function sortMin(t) { const m = String(t || "").match(/(\d{1,2})(?:[:.](\d{2}))?/); return m ? +m[1] * 60 + (+m[2] || 0) : 9999; }
+function fmtSpan(a, b) { return a ? esc(a) + (b ? "–" + esc(b) : "") : ""; }
+
+function campDayRows(s, iso) {
+  const rows = [];
+  D.games.filter(g => secName(g) === s && g.date === iso).forEach(g => rows.push({ t: g.time, cls: "", ic: "⚾",
+    title: esc(g.teams) + (g.result ? ` <span class="badge b-res">${esc(g.result)}</span>` : ""),
+    sub: [g.field ? placeLink(g.field) : "", g.info ? esc(g.info) : "", g.link ? `<a class="lnk" href="${esc(g.link)}" target="_blank" rel="noopener">📋 Pesistulokset</a>` : ""].filter(Boolean).join("<br>") }));
+  D.events.filter(e => secName(e) === s && e.date === iso).forEach(e => rows.push({ t: e.time, end: e.end, cls: "", ic: eventIcon(e), title: esc(e.title),
+    sub: [e.place ? placeLink(e.place) : "", e.info ? esc(e.info) : "", e.link ? `<a class="lnk" href="${esc(e.link)}" target="_blank" rel="noopener">🔗 Lisätiedot</a>` : ""].filter(Boolean).join("<br>") }));
+  (D.menu || []).filter(m => secName(m) === s && m.date === iso).forEach(m => rows.push({ t: m.time, cls: "meal", ic: mealIcon(m.meal), title: esc(m.meal || "Ruokailu"),
+    sub: [m.food ? esc(m.food) : "", m.place ? placeLink(m.place) : ""].filter(Boolean).join("<br>") }));
+  D.talkoot.filter(x => secName(x) === s && x.date === iso).forEach(x => rows.push({ t: x.time, end: x.end, cls: "", ic: "🙋", title: "Talkoot: " + esc(x.task || "vuoro"),
+    sub: [`${x.names.length}/${x.need}${x.names.length ? " · " + esc(x.names.join(", ")) : ""}`, x.place ? placeLink(x.place) : ""].filter(Boolean).join(" · ") }));
+  return rows.sort((a, b) => sortMin(a.t) - sortMin(b.t));
+}
+function tlHtml(rows, iso) {
+  const now = nowFi(), nowMin = now.getHours() * 60 + now.getMinutes(), t = todayIso();
+  return rows.map(r => {
+    const past = iso < t || (iso === t && sortMin(r.end || r.t) + (r.end ? 0 : 60) < nowMin && sortMin(r.t) !== 9999);
+    return `<div class="tl ${r.cls} ${past ? "past" : ""}"><div class="tt">${r.t ? fmtSpan(r.t, r.end && !String(r.t).includes("–") ? r.end : "") : "—"}</div>
+      <div class="tic">${r.ic}</div><div class="tc"><div class="tti">${r.title}</div>${r.sub ? `<div class="tsu">${r.sub}</div>` : ""}</div></div>`;
+  }).join("");
+}
+
+function viewLeiri() {
+  const s = F.leiri;
+  if (!s || !sectionList().includes(s)) return `<div class="back"><button class="btn ghost sm" data-act="tab" data-key="koti">← Etusivu</button></div><p class="note">Leiriä ei löytynyt.</p>`;
+  const c = campInfo(s), days = campDays(s), t = todayIso();
+  const menu = (D.menu || []).filter(m => secName(m) === s);
+  const talk = D.talkoot.filter(x => secName(x) === s);
+  const gamesWithRoles = D.games.filter(g => secName(g) === s && Object.keys(g.roles).length);
+  const targets = rideTargets().filter(x => secName(x.ref) === s);
+  const ohjeet = (D.ohjeet || []).filter(o => secName(o) === s);
+  const infoTabs = [
+    menu.length ? ["ruoka", "🍽️ Ruokalista"] : null,
+    ["paikat", "📍 Paikat"],
+    talk.length || gamesWithRoles.length ? ["talkoot", "🙋 Talkoot"] : null,
+    targets.length ? ["kyydit", "🚗 Kyydit"] : null,
+    ["info", "ℹ️ Info"],
+  ].filter(Boolean);
+  const valid = days.concat(infoTabs.map(x => x[0]));
+  if (!valid.includes(F.lday)) F.lday = days.includes(t) ? t : days.find(d => d >= t) || days[0] || "info";
+  const st = secStatus(s);
+
+  let h = statusBanners();
+  h += `<div class="back"><button class="btn ghost sm" data-act="tab" data-key="koti">← Etusivu</button></div>`;
+  h += `<div class="sec sec-${secColor(s)} camphead"><div class="sech"><div><div class="sect">⛺ ${esc(s)}</div>
+        <div class="secm">${esc([campRange(s), c.town].filter(Boolean).join(" · "))}${campLive(s) ? " · käynnissä" : c.start > t ? ` · alkaa ${daysUntil(c.start) === 1 ? "huomenna" : daysUntil(c.start) + " päivän päästä"}` : ""}</div></div>
+        ${st.has ? `<span class="secpill ${st.open && !st.locked ? "" : "ok"}">${st.locked ? (st.open ? `🔒 ${st.open} jakamatta` : "🔒 jaettu") : st.open ? `🙋 ${st.open} avointa` : "✓ täynnä"}</span>` : ""}</div></div>`;
+  if (days.length) h += chips("lday", days.map(d => [d, dayLabel(d) + (d === t ? " •" : "")]), F.lday);
+  h += chips("lday", infoTabs, F.lday);
+
+  const v = F.lday;
+  if (days.includes(v)) {
+    const rows = campDayRows(s, v);
+    h += `<div class="h3">${esc(dayLabel(v))}${v === t ? " · tänään" : ""}</div>`;
+    h += rows.length ? `<div class="box">${tlHtml(rows, v)}</div>` : `<p class="note">Tälle päivälle ei ole vielä ohjelmaa.</p>`;
+  } else if (v === "ruoka") {
+    const byDay = {};
+    menu.slice().sort((a, b) => a.date.localeCompare(b.date) || sortMin(a.time) - sortMin(b.time)).forEach(m => (byDay[m.date] = byDay[m.date] || []).push(m));
+    Object.keys(byDay).forEach(d => {
+      h += `<div class="h3">${esc(dayLabel(d))}${d === t ? " · tänään" : ""}</div><div class="box">${tlHtml(byDay[d].map(m => ({ t: m.time, cls: "meal", ic: mealIcon(m.meal),
+        title: esc(m.meal || "Ruokailu"), sub: [m.food ? esc(m.food) : "", m.place ? placeLink(m.place) : ""].filter(Boolean).join("<br>") })), d)}</div>`;
+    });
+  } else if (v === "paikat") {
+    const names = [...new Set([].concat(
+      D.games.filter(g => secName(g) === s).map(g => g.field), D.events.filter(e => secName(e) === s).map(e => e.place),
+      menu.map(m => m.place), talk.map(x => x.place)).filter(Boolean))];
+    h += names.length ? names.map(n => `<div class="card"><div class="cbody"><div class="title">${placeHtml(n)}</div></div></div>`).join("")
+      : `<p class="note">Paikkoja ei ole vielä lisätty. Kirjoita paikka otteluun, tapahtumaan tai ruokalistaan, ja sen osoite Kentät-välilehdelle.</p>`;
+  } else if (v === "talkoot") {
+    if (secLockedName(s) && !locked()) h += `<div class="banner lock">🔒 Leirin vuorot jakaa talkoovastaava.</div>`;
+    const items = [].concat(gamesWithRoles.map(g => ({ date: g.date, time: g.time, html: gameCard(g, { noRides: true }) })),
+      talk.map(x => ({ date: x.date, time: x.time, html: talkooCard(x) }))).sort(byWhen);
+    h += items.map(i => i.html).join("");
+  } else if (v === "kyydit") {
+    h += targets.map(tg => `<div class="card">${dateBox(tg.date, tg.kind === "game" ? "away" : "event", tg.kind === "game" ? "⚾" : eventIcon(tg.ref))}
+      <div class="cbody"><div class="meta" style="color:var(--navy);">${tg.time ? "klo " + esc(tg.time) : ""}</div><div class="title">${esc(tg.title)}</div>
+      ${tg.place ? `<div class="sub">${placeHtml(tg.place)}</div>` : ""}${rideBlock(tg)}</div></div>`).join("");
+  } else if (v === "info") {
+    if (c.info || c.link) h += `<div class="box" style="white-space:pre-line;font-size:14px;line-height:1.55;">${esc(c.info)}${c.link ? `${c.info ? "\n" : ""}<a class="lnk" href="${esc(c.link)}" target="_blank" rel="noopener">🔗 Leirin sivut</a>` : ""}</div>`;
+    h += ohjeet.map(ohjeCard).join("");
+    if (!c.info && !c.link && !ohjeet.length) h += `<p class="note">Leirin tiedot kirjoitetaan Sheetin Leirit-välilehdelle ja leirin ohjeet Ohjeet-välilehdelle (Osio = ${esc(s)}).</p>`;
+  }
+  return h;
+}
+
+function renderMenu() {
+  const m = document.getElementById("menu");
+  if (!m) return;
+  if (!F.menu || !D) { m.hidden = true; return; }
+  const camps = sectionList().filter(isCamp);
+  m.innerHTML = `<button data-act="tab" data-key="koti">🏠 Etusivu</button>`
+    + (camps.length ? `<div class="mh">Leirit</div>` + camps.map(x => `<button data-act="openLeiri" data-key="${esc(x)}">⛺ ${esc(x)}${campLive(x) ? " · käynnissä" : ""}<small>${esc(campRange(x) || "päivät tulossa")}</small></button>`).join("") : "")
+    + `<div class="mh">Muut</div><button data-act="tab" data-key="kalenteri">📅 Kalenteri</button><button data-act="tab" data-key="ohjeet">📖 Ohjeet</button>`;
+  m.hidden = false;
+}
+
+function generalOhjeet() { return (D.ohjeet || []).filter(o => secName(o) === OTHER || !isCamp(secName(o))); }
+function ohjeCard(o) {
+  return `<details class="card ohje" id="ohje-${esc(o.title)}" ${F.ohje && F.ohje === o.title ? "open" : ""}>
+    <summary class="title">${esc(o.title || "Ohje")}</summary>
+    <div class="sub" style="white-space:pre-line;color:var(--text);margin-top:6px;">${esc(o.text)}</div>
+    ${o.link ? `<div class="sub" style="margin-top:6px;"><a class="lnk" href="${esc(o.link)}" target="_blank" rel="noopener">🔗 Lisätiedot</a></div>` : ""}
+  </details>`;
+}
 function ohjeFor(role) {
   const r = String(role || "").toLowerCase();
-  return (D.ohjeet || []).find(o => o.title && (o.title.toLowerCase() === r || r.startsWith(o.title.toLowerCase() + " "))) || null;
+  return generalOhjeet().find(o => o.title && (o.title.toLowerCase() === r || r.startsWith(o.title.toLowerCase() + " "))) || null;
 }
 function viewOhjeet() {
   let h = statusBanners();
-  const ohjeet = D.ohjeet || [];
+  const ohjeet = generalOhjeet();
   h += `<div class="h2">📖 Ohjeet</div>`;
   h += ohjeet.length
-    ? ohjeet.map(o => `<details class="card ohje" id="ohje-${esc(o.title)}" ${F.ohje && F.ohje === o.title ? "open" : ""}>
-        <summary class="title">${esc(o.title || "Ohje")}</summary>
-        <div class="sub" style="white-space:pre-line;color:var(--text);margin-top:6px;">${esc(o.text)}</div>
-        ${o.link ? `<div class="sub" style="margin-top:6px;"><a class="lnk" href="${esc(o.link)}" target="_blank" rel="noopener">🔗 Lisätiedot</a></div>` : ""}
-      </details>`).join("")
+    ? ohjeet.map(ohjeCard).join("")
     : `<p class="note">Ohjeita ei ole vielä lisätty. Ne kirjoitetaan Sheetin Ohjeet-välilehdelle.</p>`;
 
   h += `<div class="h2 navy">Näin sivu toimii</div><div class="box small" style="line-height:1.6;">
@@ -884,19 +1040,26 @@ function render() {
       : `<div class="banner warn">Haetaan kauden tietoja…</div>`;
     return;
   }
-  const views = { osio: viewOsio, koti: viewKoti, ottelut: viewOttelut, talkoot: viewTalkoot, kyydit: viewKyydit, kalenteri: viewKalenteri, ohjeet: viewOhjeet };
+  renderMenu();
+  const views = { leiri: viewLeiri, osio: viewOsio, koti: viewKoti, ottelut: viewOttelut, talkoot: viewTalkoot, kyydit: viewKyydit, kalenteri: viewKalenteri, ohjeet: viewOhjeet };
   v.innerHTML = views[tab]() + `<footer>${esc(team)} · kauden sivusto</footer>`;
 }
 
 // ─── Toiminnot (yksi kuuntelija kaikille napeille) ───────────────────────
 const ACTIONS = {
-  tab(k, el, ev) { ev.preventDefault(); tab = k; editing = null; touched.clear(); history.replaceState(null, "", "#" + k); render(); window.scrollTo(0, 0); },
+  tab(k, el, ev) { ev.preventDefault(); F.menu = false; tab = k; editing = null; touched.clear(); history.replaceState(null, "", "#" + k); render(); window.scrollTo(0, 0); },
   ohje(k, el, ev) {
     ev.preventDefault(); F.ohje = k; tab = "ohjeet"; editing = null;
     history.replaceState(null, "", "#ohjeet"); render();
     const el2 = document.getElementById("ohje-" + k); if (el2) el2.scrollIntoView({ block: "start" }); else window.scrollTo(0, 0);
   },
+  menu(k, el, ev) { ev.preventDefault(); F.menu = !F.menu; renderMenu(); },
+  openLeiri(k, el, ev) {
+    ev.preventDefault(); F.leiri = k; F.lday = ""; F.menu = false; tab = "leiri"; editing = null; touched.clear();
+    history.replaceState(null, "", "#leiri=" + encodeURIComponent(k)); render(); window.scrollTo(0, 0);
+  },
   openSec(k, el, ev) {
+    if (isCamp(k)) return ACTIONS.openLeiri(k, el, ev);
     ev.preventDefault(); F.sec = k; tab = "osio"; editing = null; touched.clear();
     history.replaceState(null, "", "#osio"); render(); window.scrollTo(0, 0);
   },
@@ -955,6 +1118,7 @@ const ACTIONS = {
 };
 document.addEventListener("click", ev => {
   const el = ev.target.closest("[data-act]");
+  if (F.menu && !ev.target.closest("#menu") && !(el && el.dataset.act === "menu")) { F.menu = false; renderMenu(); }
   if (!el || (busy && el.dataset.act !== "tab")) return;
   const fn = ACTIONS[el.dataset.act];
   if (fn) fn(el.dataset.key || "", el, ev);
@@ -969,8 +1133,8 @@ document.addEventListener("keydown", ev => {
   }
 });
 window.addEventListener("hashchange", () => {
-  const h = location.hash.slice(1);
-  if (TABS.some(t => t[0] === h) && h !== tab) { tab = h; editing = null; render(); }
+  const p = parseHash();
+  if (p.tab !== tab || (p.leiri && p.leiri !== F.leiri)) { tab = p.tab; if (p.leiri) { F.leiri = p.leiri; F.lday = ""; } editing = null; render(); }
 });
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && !editing && !busy) load(); });
 
@@ -1005,7 +1169,7 @@ function makeDemo() {
   return {
     ok: true, locked: false, today: todayIso(),
     settings: { team: "Manse F-tytöt", season: String(t0.getFullYear()), homeTag: "Manse",
-                homeRoles: HOME_ROLES, awayRoles: [], sections: [AS, AL, VL], roleSection: AS, lockedSections: [AS] },
+                homeRoles: HOME_ROLES, awayRoles: [], sections: [AS, AL, VL], roleSection: AS, lockedSections: [AS], campDays: 14 },
     games,
     talkoot: [
       { id: "t1", section: AL, date: day(13), time: "08:00", end: "12:00", event: "Alueleiri", task: "Kioski, aamuvuoro", place: "Kotikenttä", need: 3, names: ["Sanna R.", "Mikko L."], info: "Kassalipas ja kahvinkeitin ovat varastossa." },
@@ -1017,7 +1181,10 @@ function makeDemo() {
       { id: "e1", section: "", date: day(1), time: "17:00", end: "18:30", title: "Harjoitukset", type: "Harjoitus", place: "Kotikenttä", info: "", link: "", rides: false },
       { id: "e2", section: "", date: day(4), time: "18:30", end: "19:30", title: "Vanhempainpalaveri", type: "Palaveri", place: "Seuran toimisto", info: "Käydään läpi kauden talkoot ja leirit.", link: "", rides: false },
       { id: "e4", section: AL, date: day(13), time: "08:15", end: "", title: "Joukkueen kokoontuminen", type: "Turnaus", place: "Kotikenttä", info: "Pelipaidat jaetaan paikan päällä.", link: "", rides: false },
-      { id: "e3", section: VL, date: day(30), time: "", end: "", title: "Valtakunnallinen leiri alkaa", type: "Leiri", place: "Leiripaikka", info: "Leirin oma sivu avataan lähempänä.", link: "", rides: true },
+      { id: "e3", section: VL, date: day(30), time: "13:00", end: "", title: "Saapuminen leirille", type: "Majoitus", place: "Leirikoulu", info: "Majoittuminen luokkiin. Kyydit sovitaan Kyydit-välilehdellä.", link: "", rides: true },
+      { id: "e5", section: VL, date: day(30), time: "18:00", end: "19:00", title: "Leirin avajaiset", type: "Ohjelma", place: "Leiripaikka", info: "", link: "", rides: false },
+      { id: "e6", section: VL, date: day(31), time: "18:00", end: "20:00", title: "Toimintailta", type: "Ohjelma", place: "Leiripaikka", info: "Esimerkki: leiridisco ja kesätori.", link: "", rides: false },
+      { id: "e7", section: VL, date: day(32), time: "14:00", end: "", title: "Kotiinlähtö", type: "Majoitus", place: "Leirikoulu", info: "Tavarat pakataan ennen lounasta.", link: "", rides: false },
     ],
     rides: [
       { id: "k1", target: "o4", driver: "Mikko L.", seats: 3, passengers: ["Ella", "Venla"], depart: "Kotikenttä klo 9.15", info: "" },
@@ -1025,7 +1192,23 @@ function makeDemo() {
     news: [
       { date: day(-1), title: "Tervetuloa kauden sivustolle", text: "Täältä löydät kaikki ottelut, talkoot ja kyydit. Ilmoittaudu avoimiin vuoroihin suoraan sivulla.", until: "" },
     ],
+    camps: [
+      { section: AL, start: day(13), end: day(13), town: "Tampere", info: "Esimerkki: alueleiri pelataan kotikentällä. Ota mukaan eväät, juomapullo ja pelivarusteet.", link: "" },
+      { section: VL, start: day(30), end: day(32), town: "Esimerkkilä", info: "Esimerkki: majoitus leirikoululla luokissa, ruokailut leiriruokalassa.\nPelaajat ovat aikuisten valvonnassa koko leirin ajan.", link: "" },
+    ],
+    menu: [
+      { section: VL, date: day(30), meal: "Lounas", time: "12:30–13:30", food: "Lihapullat, perunat, salaatti", place: "Leiriruokala" },
+      { section: VL, date: day(30), meal: "Päivällinen", time: "16:30–17:30", food: "Kalakeitto, leipä, marjakiisseli", place: "Leiriruokala" },
+      { section: VL, date: day(30), meal: "Iltapala", time: "20:00–21:00", food: "Jogurtti, leivät, hedelmät", place: "Leiriruokala" },
+      { section: VL, date: day(31), meal: "Aamupala", time: "07:00–09:00", food: "Puuro, kananmuna, leivät", place: "Leiriruokala" },
+      { section: VL, date: day(31), meal: "Lounas", time: "11:00–13:00", food: "Broilerikastike, riisi, salaatti", place: "Leiriruokala" },
+      { section: VL, date: day(31), meal: "Päivällinen", time: "16:00–17:30", food: "Makaronilaatikko, salaatti", place: "Leiriruokala" },
+      { section: VL, date: day(31), meal: "Iltapala", time: "20:00–21:00", food: "Leivät, mehu, hedelmät", place: "Leiriruokala" },
+      { section: VL, date: day(32), meal: "Aamupala", time: "07:00–09:00", food: "Puuro, leivät", place: "Leiriruokala" },
+      { section: VL, date: day(32), meal: "Lounas", time: "11:00–12:30", food: "Jauhelihakastike, pasta", place: "Leiriruokala" },
+    ],
     ohjeet: [
+      { section: VL, title: "Pakkauslista", text: "Esimerkki:\n• makuupussi ja patja\n• pelivarusteet ja vaihtovaatteet\n• pyyhe ja peseytymisvälineet\n• juomapullo", link: "" },
       { title: "Kirjuri", text: "Esimerkkiohje: tule paikalle 30 min ennen ottelua. Pöytäkirja ja kynät ovat kioskin laatikossa.\nKirjaa vaihdot ja tulokset, ja palauta pöytäkirja valmentajalle ottelun jälkeen.", link: "" },
       { title: "Tulostaulu / ottelun vanhin", text: "Esimerkkiohje: päivitä tulostaulua vuoroparien välissä. Ottelun vanhimpana huolehdit, että yleisö ja penkit toimivat sääntöjen mukaan.", link: "" },
       { title: "Kioski", text: "Esimerkkiohje: kioskin avain, kassalipas ja kahvinkeitin ovat varastossa.\nAvaa kioski 45 min ennen ottelua ja siivoa lopuksi. Tilitä kassa talkoovastaavalle.", link: "" },
@@ -1035,6 +1218,9 @@ function makeDemo() {
     fields: [
       { name: "Kotikenttä", address: "Esimerkkikatu 1, Tampere", surface: "Hiekka" },
       { name: "Vieraskenttä", address: "Toinen katu 5, Nokia", surface: "Tekonurmi" },
+      { name: "Leiripaikka", address: "Leirikatu 3, Esimerkkilä", surface: "Hiekka" },
+      { name: "Leirikoulu", address: "Koulutie 1, Esimerkkilä", surface: "" },
+      { name: "Leiriruokala", address: "Koulutie 1, Esimerkkilä", surface: "" },
     ],
   };
 }

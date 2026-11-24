@@ -17,6 +17,16 @@ Ottelutalkoot (kotipelit) ja vieraspelien kyydit koskevat vain Asetusten *Ottelu
 
 **Lukitut osiot** (Asetukset): näiden osioiden talkoovuoroihin ei voi ilmoittautua sivustolla. Talkoovastaava kirjoittaa nimet suoraan Sheetiin, ja sivu näyttää ne (avoimet vuorot näkyvät *Jakamatta*). Oletuksena lukittu on Aluesarja; leirit lukitaan lisäämällä ne samalle riville pilkulla erotettuna. Kyytejä voi sopia sivustolla aina. *Lukko = LUKITTU* sulkee edelleen koko sivuston muokkauksen, kyydit mukaan lukien.
 
+## Leirisivut
+Alueleirillä ja Valtakunnallisella leirillä on oma leirisivu (kuten erillisillä leirisivustoilla): päiväkohtainen ohjelma, ruokalista, paikat, talkoot, kyydit ja leirin info.
+Leirit eivät ole yläpalkissa. Ne löytyvät **☰-valikosta**, ja etusivulle leiri nousee vasta *Leiri etusivulla* -asetuksen verran päiviä ennen alkua (oletus 14). Leirin aikana sen painike on korostettu. Leirisivulle voi myös jakaa suoran linkin, esim. `…/manseft/#leiri=Alueleiri`.
+
+- **Leirit**-välilehti: Osio, Alkaa, Päättyy, Paikkakunta, Lisätiedot (näkyy leirin Info-kohdassa), Linkki.
+- **Päivän ohjelma** kootaan automaattisesti: osion ottelut, Tapahtumat-rivit (esim. Tyyppi *Ohjelma* tai *Majoitus*), ruokailut ja talkoovuorot kellonajan mukaan.
+- **Ruokalista**-välilehti: Osio, Pvm, Ateria (Aamupala/Lounas/Välipala/Päivällinen/Iltapala), Klo (esim. `07:00–09:00`), Ruoka, Paikka.
+- **Leirin ohjeet** (esim. pakkauslista): Ohjeet-välilehdelle, Osio = leirin nimi. Ne näkyvät vain leirisivulla.
+- Ruokalan, majoituksen ym. osoitteet Kentät-välilehdelle, niin niistä tulee karttalinkit.
+
 ## Sheetin välilehdet
 | Välilehti | Mitä sinne kirjoitetaan |
 |---|---|
