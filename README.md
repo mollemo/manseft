@@ -10,6 +10,11 @@ Kaikki sisältö tulee yhdestä Google Sheetistä, joten koodiin ei tarvitse kos
 4. Kopioi `/exec`-osoite `index.html`:n riville `const API_URL = "";`
 5. Vie `index.html` ja `logo.png` uuteen GitHub-repoon ja laita GitHub Pages päälle (Settings → Pages → main).
 
+## Etusivun osiot
+Etusivu on jaettu osioihin (oletuksena **Aluesarja**, **Alueleiri** ja **Valtakunnallinen leiri**). Jokaisen osion alla näkyvät sen ottelut, avoimet talkoovuorot, tapahtumat ja kyydit.
+Rivin osio valitaan **Osio**-sarakkeesta Ottelut-, Talkoot- ja Tapahtumat-välilehdillä. Jos Osio on tyhjä, osio päätellään Sarja-/Tapahtuma-/Otsikko-tekstistä, ja muuten rivi näkyy kohdassa *Yleiset*.
+Ottelutalkoot (kotipelit) ja vieraspelien kyydit koskevat vain Asetusten *Ottelutalkoot osiossa* -kohdan osiota (oletus Aluesarja). Leirien talkoot kirjataan Talkoot-välilehdelle ja leirin kyydit Tapahtumat-riville (*Kyydit = Kyllä*).
+
 ## Sheetin välilehdet
 | Välilehti | Mitä sinne kirjoitetaan |
 |---|---|
@@ -19,7 +24,7 @@ Kaikki sisältö tulee yhdestä Google Sheetistä, joten koodiin ei tarvitse kos
 | **Kyydit** | Täyttyy sivustolta. Valmentaja voi muokata tai poistaa rivejä. |
 | **Tiedotteet** | Näkyvät etusivulla *Näytä asti* -päivään saakka (tyhjä = aina). |
 | **Yhteystiedot**, **Kentät** | Info-välilehdelle. Kentän osoitteesta tulee karttalinkki kaikkialle, missä kenttää käytetään. |
-| **Asetukset** | Joukkueen nimi, kausi, koti- ja vieraspelin talkooroolit sekä **Lukko** (AUKI / LUKITTU). |
+| **Asetukset** | Joukkueen nimi, kausi, **Osiot**, ottelutalkoiden osio, koti- ja vieraspelin talkooroolit sekä **Lukko** (AUKI / LUKITTU). |
 
 ID-sarakkeen täyttää skripti itse, joten jätä se tyhjäksi. Päivämäärän voi kirjoittaa muodossa `16.5.` tai päivämääränä.
 Jos muutat talkoorooleja Asetuksissa, aja **Kausisivusto → Luo / korjaa välilehdet**, niin uudet roolisarakkeet syntyvät.

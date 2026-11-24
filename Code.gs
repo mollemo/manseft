@@ -19,9 +19,9 @@
  */
 
 var SHEETS = {
-  "Ottelut":      ["ID", "Pvm", "Klo", "Joukkueet", "Kenttä", "Sarja", "Koti/Vieras", "Tulos", "Pesistulokset", "Lisätiedot"],
-  "Talkoot":      ["ID", "Pvm", "Klo", "Loppu", "Tapahtuma", "Tehtävä", "Paikka", "Tarve", "Nimet", "Lisätiedot"],
-  "Tapahtumat":   ["ID", "Pvm", "Klo", "Loppu", "Otsikko", "Tyyppi", "Paikka", "Lisätiedot", "Linkki", "Kyydit"],
+  "Ottelut":      ["ID", "Osio", "Pvm", "Klo", "Joukkueet", "Kenttä", "Sarja", "Koti/Vieras", "Tulos", "Pesistulokset", "Lisätiedot"],
+  "Talkoot":      ["ID", "Osio", "Pvm", "Klo", "Loppu", "Tapahtuma", "Tehtävä", "Paikka", "Tarve", "Nimet", "Lisätiedot"],
+  "Tapahtumat":   ["ID", "Osio", "Pvm", "Klo", "Loppu", "Otsikko", "Tyyppi", "Paikka", "Lisätiedot", "Linkki", "Kyydit"],
   "Kyydit":       ["ID", "KohdeID", "Kuljettaja", "Paikat", "Kyytiläiset", "Lähtö", "Lisätiedot"],
   "Tiedotteet":   ["Pvm", "Otsikko", "Teksti", "Näytä asti"],
   "Yhteystiedot": ["Rooli", "Nimi", "Puhelin", "Sähköposti"],
@@ -31,6 +31,8 @@ var SHEETS = {
 
 var DEFAULT_SETTINGS = [
   ["Joukkue", "Manse F-tytöt", "Näkyy sivun otsikossa"],
+  ["Osiot", "Aluesarja, Alueleiri, Valtakunnallinen leiri", "Etusivun osiot tässä järjestyksessä. Rivin osio valitaan Osio-sarakkeesta (Ottelut, Talkoot, Tapahtumat). Tyhjä Osio = Yleiset"],
+  ["Ottelutalkoot osiossa", "Aluesarja", "Kotipelin talkoot ja vieraspelien kyydit tulevat vain tämän osion otteluihin. Tyhjä = kaikkiin otteluihin"],
   ["Kausi", "2027", "Vuosi. Käytetään, jos päivämäärä on kirjoitettu ilman vuotta (esim. 16.5.)"],
   ["Kotijoukkueen tunniste", "Manse", "Jos Joukkueet alkaa tällä sanalla, peli on kotipeli (ellei Koti/Vieras-sarakkeessa toisin lue)"],
   ["Kotipelin talkoot", "Kirjuri, Tulostaulu / ottelun vanhin, 2. tuomari, 3. tuomari, Takarajatuomari, Kioski 1, Kioski 2, Kentän piirtäjä", "Pilkulla erotettu lista. Jokaiselle tulee oma sarake Ottelut-välilehdelle. Kaksi samaa tehtävää = kaksi riviä (esim. Kioski 1, Kioski 2)"],
@@ -82,6 +84,12 @@ function setup() {
     SpreadsheetApp.newDataValidation().requireValueInList(["Harjoitus", "Turnaus", "Leiri", "Palaveri", "Varainhankinta", "Juhla", "Muu"], true).setAllowInvalid(true).build());
   tap.getRange(2, th["Kyydit"] + 1, Math.max(tap.getMaxRows() - 1, 1), 1).setDataValidation(
     SpreadsheetApp.newDataValidation().requireValueInList(["Kyllä"], true).setAllowInvalid(true).build());
+  var osiot = splitList_(settings["Osiot"]);
+  if (osiot.length) ["Ottelut", "Talkoot", "Tapahtumat"].forEach(function (name) {
+    var sh = ss.getSheetByName(name), h = headerMap_(sh);
+    sh.getRange(2, h["Osio"] + 1, Math.max(sh.getMaxRows() - 1, 1), 1).setDataValidation(
+      SpreadsheetApp.newDataValidation().requireValueInList(osiot, true).setAllowInvalid(true).build());
+  });
   var lockRow = findSettingRow_(set, "Lukko");
   if (lockRow) set.getRange(lockRow, 2).setDataValidation(
     SpreadsheetApp.newDataValidation().requireValueInList(["AUKI", "LUKITTU"], true).build());
@@ -169,6 +177,15 @@ function findSettingRow_(sh, key) {
 function splitList_(s) {
   return String(s || "").split(",").map(function (x) { return x.trim(); }).filter(function (x) { return x; });
 }
+// Osio: Osio-sarakkeen arvo, tai jos se on tyhjä, osio jonka nimi löytyy vararivistä (esim. Sarja-sarakkeesta).
+function sectionOf_(explicit, fallback, sections) {
+  var e = str_(explicit).toLowerCase(), f = str_(fallback).toLowerCase();
+  for (var i = 0; i < sections.length; i++) if (e && sections[i].toLowerCase() === e) return sections[i];
+  if (e) return "";
+  for (var j = 0; j < sections.length; j++) if (f && f.indexOf(sections[j].toLowerCase()) !== -1) return sections[j];
+  return "";
+}
+
 function allRoles_(settings) {
   var a = splitList_(settings["Kotipelin talkoot"]).concat(splitList_(settings["Vieraspelin talkoot"]));
   return a.filter(function (x, i) { return a.indexOf(x) === i; });
@@ -218,15 +235,19 @@ function buildPayload_() {
   var homeRoles = splitList_(s["Kotipelin talkoot"]);
   var awayRoles = splitList_(s["Vieraspelin talkoot"]);
   var tag = (s["Kotijoukkueen tunniste"] || "").toLowerCase();
+  var sections = splitList_(s["Osiot"]);
+  var roleSec = str_(s["Ottelutalkoot osiossa"]).toLowerCase();
 
   var games = readTable_("Ottelut").map(function (r) {
     var teams = str_(r["Joukkueet"]);
     var kv = str_(r["Koti/Vieras"]).toLowerCase();
     var home = kv ? kv.charAt(0) === "k" : (tag && teams.toLowerCase().indexOf(tag) === 0);
+    var section = sectionOf_(r["Osio"], r["Sarja"], sections);
+    var applies = !roleSec || section.toLowerCase() === roleSec;
     var roles = {};
-    (home ? homeRoles : awayRoles).forEach(function (role) { roles[role] = str_(r[role]); });
+    if (applies) (home ? homeRoles : awayRoles).forEach(function (role) { roles[role] = str_(r[role]); });
     return {
-      id: str_(r["ID"]), date: fmtDate_(r["Pvm"], year), time: fmtTime_(r["Klo"]),
+      id: str_(r["ID"]), section: section, rides: !home && applies, date: fmtDate_(r["Pvm"], year), time: fmtTime_(r["Klo"]),
       teams: teams, field: str_(r["Kenttä"]), series: str_(r["Sarja"]), home: !!home,
       result: str_(r["Tulos"]), link: str_(r["Pesistulokset"]), info: str_(r["Lisätiedot"]),
       roles: roles
@@ -235,7 +256,8 @@ function buildPayload_() {
 
   var talkoot = readTable_("Talkoot").map(function (r) {
     return {
-      id: str_(r["ID"]), date: fmtDate_(r["Pvm"], year), time: fmtTime_(r["Klo"]), end: fmtTime_(r["Loppu"]),
+      id: str_(r["ID"]), section: sectionOf_(r["Osio"], r["Tapahtuma"], sections),
+      date: fmtDate_(r["Pvm"], year), time: fmtTime_(r["Klo"]), end: fmtTime_(r["Loppu"]),
       event: str_(r["Tapahtuma"]), task: str_(r["Tehtävä"]), place: str_(r["Paikka"]),
       need: Math.max(parseInt(r["Tarve"], 10) || 1, 1), names: splitList_(r["Nimet"]), info: str_(r["Lisätiedot"])
     };
@@ -243,7 +265,8 @@ function buildPayload_() {
 
   var events = readTable_("Tapahtumat").map(function (r) {
     return {
-      id: str_(r["ID"]), date: fmtDate_(r["Pvm"], year), time: fmtTime_(r["Klo"]), end: fmtTime_(r["Loppu"]),
+      id: str_(r["ID"]), section: sectionOf_(r["Osio"], str_(r["Otsikko"]) + " " + str_(r["Tyyppi"]), sections),
+      date: fmtDate_(r["Pvm"], year), time: fmtTime_(r["Klo"]), end: fmtTime_(r["Loppu"]),
       title: str_(r["Otsikko"]), type: str_(r["Tyyppi"]), place: str_(r["Paikka"]),
       info: str_(r["Lisätiedot"]), link: str_(r["Linkki"]), rides: /^k/i.test(str_(r["Kyydit"]))
     };
@@ -270,7 +293,8 @@ function buildPayload_() {
 
   return {
     ok: true,
-    settings: { team: s["Joukkue"], season: s["Kausi"], homeTag: s["Kotijoukkueen tunniste"], homeRoles: homeRoles, awayRoles: awayRoles },
+    settings: { team: s["Joukkue"], season: s["Kausi"], homeTag: s["Kotijoukkueen tunniste"], homeRoles: homeRoles, awayRoles: awayRoles,
+                sections: sections, roleSection: s["Ottelutalkoot osiossa"] },
     locked: /^lukit/i.test(s["Lukko"] || ""),
     today: todayIso_(),
     games: games, talkoot: talkoot, events: events, rides: rides, news: news, contacts: contacts, fields: fields
