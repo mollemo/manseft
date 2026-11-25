@@ -34,7 +34,7 @@ var SHEETS = {
 
 var DEFAULT_SETTINGS = [
   ["Joukkue", "Manse F-tytöt", "Näkyy sivun otsikossa"],
-  ["Osiot", "Aluesarja, Alueleiri, Valtakunnallinen leiri", "Etusivun osiot tässä järjestyksessä. Rivin osio valitaan Osio-sarakkeesta (Ottelut, Talkoot, Tapahtumat). Tyhjä Osio = Yleiset"],
+  ["Osiot", "Aluesarja, Alueleiri, Valtakunnallinen leiri", "Etusivun osiot tässä järjestyksessä. Rivin osio valitaan Osio-sarakkeesta (Ottelut, Talkoot, Tapahtumat). Tyhjä Osio = Muut talkoot (esim. Sappee, lipunmyynti)"],
   ["Ottelutalkoot osiossa", "Aluesarja", "Kotipelin talkoot ja vieraspelien kyydit tulevat vain tämän osion otteluihin. Tyhjä = kaikkiin otteluihin"],
   ["Kausi", "2027", "Vuosi. Käytetään, jos päivämäärä on kirjoitettu ilman vuotta (esim. 16.5.)"],
   ["Kotijoukkueen tunniste", "Manse", "Jos Joukkueet alkaa tällä sanalla, peli on kotipeli (ellei Koti/Vieras-sarakkeessa toisin lue)"],

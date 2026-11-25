@@ -472,7 +472,8 @@ function placeHtml(name) {
 }
 
 // ─── Osiot (Aluesarja, Alueleiri, …) ─────────────────────────────────────
-const OTHER = "Yleiset";
+// Rivit, joilla Osio on tyhjä: seuran muut talkoot (esim. Sappee, lipunmyynti edustusjoukkueen peleissä)
+const OTHER = "Muut talkoot";
 function sections() { return (D.settings && D.settings.sections) || []; }
 function secName(x) { return x && x.section && sections().includes(x.section) ? x.section : OTHER; }
 function sectionList() {
@@ -954,7 +955,8 @@ function heroGame() { const t = todayIso(); return D.games.filter(g => g.date >=
 
 function sectionTile(s) {
   const t = todayIso();
-  const items = allItems().filter(it => secName(it.ref) === s);
+  // Muut talkoot -painike näyttää talkoovuorot (ei tyhjän osion muita tapahtumia)
+  const items = allItems().filter(it => secName(it.ref) === s && (s !== OTHER || it.kind === "talkoo"));
   const upcoming = items.filter(it => it.date >= t);
   // Jos osion seuraava kohde on sama ottelu kuin isossa kortissa, näytetään sitä seuraava ("Sitten: …")
   const hero = heroGame();
@@ -966,7 +968,7 @@ function sectionTile(s) {
     : skip ? "Ei muita tulevia" : items.length ? "Ei tulevaa ohjelmaa" : "Ei vielä ohjelmaa";
   const camp = isCamp(s), live = camp && campLive(s), near = camp && campVisible(s);
   return `<button class="tile c${secColor(s)} ${near ? "live" : ""}" data-act="${camp ? "openLeiri" : "openSec"}" data-key="${esc(s)}">
-    <span class="ti">${ic(camp ? "tent" : /sarja/i.test(s) ? "ball" : "flag")}</span>
+    <span class="ti">${ic(camp ? "tent" : /sarja/i.test(s) ? "ball" : s === OTHER ? "people" : "flag")}</span>
     <span class="tb"><span class="tn">${esc(s)}${live ? " · käynnissä" : ""}</span><span class="tx">${live ? "Avaa leirin ohjelma ja ruokalista" : camp ? esc([campLabel(s), campRange(s)].filter(Boolean).join(" · ")) + (daysUntil(campInfo(s).start) > 0 ? ` · alkaa ${daysUntil(campInfo(s).start) === 1 ? "huomenna" : daysUntil(campInfo(s).start) + " pv päästä"}` : "") : line}</span></span>
     ${pill}<span class="chev">${ic("chev")}</span></button>`;
 }

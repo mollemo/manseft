@@ -12,7 +12,7 @@ Kaikki sisältö tulee yhdestä Google Sheetistä, joten koodiin ei tarvitse kos
 
 ## Etusivun osiot
 Etusivu on jaettu osioihin (oletuksena **Aluesarja**, **Alueleiri** ja **Valtakunnallinen leiri**). Jokaisen osion alla näkyvät sen ottelut, avoimet talkoovuorot, tapahtumat ja kyydit.
-Rivin osio valitaan **Osio**-sarakkeesta Ottelut-, Talkoot- ja Tapahtumat-välilehdillä. Jos Osio on tyhjä, osio päätellään Sarja-/Tapahtuma-/Otsikko-tekstistä, ja muuten rivi näkyy kohdassa *Yleiset*.
+Rivin osio valitaan **Osio**-sarakkeesta Ottelut-, Talkoot- ja Tapahtumat-välilehdillä. Jos Osio on tyhjä, osio päätellään Sarja-/Tapahtuma-/Otsikko-tekstistä, ja muuten rivi näkyy kohdassa *Muut talkoot* (seuran yhteiset talkoot, esim. Sappee ja lipunmyynti edustusjoukkueen peleissä).
 Ottelutalkoot (kotipelit) ja vieraspelien kyydit koskevat vain Asetusten *Ottelutalkoot osiossa* -kohdan osiota (oletus Aluesarja). Leirien talkoot kirjataan Talkoot-välilehdelle ja leirin kyydit Tapahtumat-riville (*Kyydit = Kyllä*).
 
 **Talkoovuorot** jakaa talkoovastaava: nimet kirjoitetaan suoraan Sheetiin (Ottelut-välilehden roolisarakkeet ja Talkoot-välilehden Nimet-sarake), ja sivu näyttää ne. Sivustolla voi ilmoittautua vain kyyteihin. *Lukko = LUKITTU* sulkee myös kyytien muokkauksen.
