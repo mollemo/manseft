@@ -53,7 +53,9 @@
   .bnav .cnt { position: absolute; top: 6px; right: 6px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: var(--red);
                color: #fff; font-size: 10px; font-weight: 800; line-height: 16px; text-align: center; }
   .bnav button.active .cnt { display: none; }
-  @media (max-width: 390px) { .bnav button { min-width: 42px; padding: 0 9px; } .bnav button.active { padding: 0 13px; } }
+  @media (max-width: 430px) { .bnav { gap: 0; padding: 5px; } .bnav button { min-width: 40px; height: 46px; padding: 0 8px; font-size: 12.5px; gap: 5px; }
+                              .bnav button svg { width: 20px; height: 20px; } .bnav button.active { padding: 0 12px; } }
+  @media (max-width: 360px) { .bnav button.active .lb { display: none; } }
 
   /* Typografia */
   .h2 { font-size: 17px; font-weight: 600; color: var(--text); margin: 24px 4px 10px; display: flex; align-items: center; gap: 8px; letter-spacing: -.2px; }
@@ -234,6 +236,21 @@
   .tile .chev { color: #B9BCB4; display: grid; }
   .tile .chev svg { width: 16px; height: 16px; }
   .back { margin: 0 0 10px; }
+  .lcard { background: #fff; border-radius: 24px; box-shadow: var(--sh); margin-bottom: 14px; overflow: hidden; }
+  .lcard.ended { opacity: .6; }
+  .lcard > .sech { width: 100%; border: none; border-radius: 0; box-shadow: none; text-align: left; cursor: pointer; font: inherit; }
+  .lcard > .sech.sec-1-bg { background: linear-gradient(135deg, #5B8C68, #2F5E40); }
+  .lcard > .sech.sec-2-bg { background: linear-gradient(135deg, #5F6D86, #333E55); }
+  .lcard > .sech.sec-3-bg { background: linear-gradient(135deg, #92958C, #63665E); }
+  .ldays { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 12px 12px 2px; }
+  .ldays::-webkit-scrollbar { display: none; }
+  .ldays .chip { box-shadow: inset 0 0 0 1px var(--border); }
+  .lbtns { display: grid; grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); gap: 8px; padding: 12px; }
+  .lbtn { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 4px 10px; border: none; border-radius: 16px; background: var(--soft);
+          color: var(--text); font-size: 12.5px; font-weight: 600; cursor: pointer; }
+  .lbtn svg { width: 22px; height: 22px; color: var(--ac); }
+  .lbtn:active { background: var(--acs); }
+  .lfoot { border-top: 1px solid var(--border); padding: 10px 16px 12px; font-size: 13px; color: var(--sub); }
   .camphead { margin: 0 0 12px; }
 
   .menu { position: absolute; right: 16px; top: 64px; background: #fff; border-radius: 18px; box-shadow: 0 14px 36px rgba(30,35,25,.22); min-width: 250px; z-index: 30; overflow: hidden; }
@@ -291,9 +308,9 @@ const API_URL = "";
 const DEMO = !API_URL;
 const TABS = [
   ["koti", "Etusivu", "grid"], ["ottelut", "Ottelut", "ball"], ["talkoot", "Talkoot", "people"],
-  ["kyydit", "Kyydit", "car"], ["kalenteri", "Kalenteri", "cal"], ["ohjeet", "Ohjeet", "book"],
+  ["kyydit", "Kyydit", "car"], ["leirit", "Leirit", "tent"], ["kalenteri", "Kalenteri", "cal"], ["ohjeet", "Ohjeet", "book"],
 ];
-const TITLES = { koti: "Kausi", ottelut: "Otteluohjelma", talkoot: "Talkoovuorot", kyydit: "Kyydit", kalenteri: "Kalenteri", ohjeet: "Ohjeet", tiedotteet: "Tiedotteet" };
+const TITLES = { koti: "Kausi", ottelut: "Otteluohjelma", talkoot: "Talkoovuorot", kyydit: "Kyydit", leirit: "Leirit", kalenteri: "Kalenteri", ohjeet: "Ohjeet", tiedotteet: "Tiedotteet" };
 
 // ─── Viivakuvakkeet ──────────────────────────────────────────────────────
 const ICONS = {
@@ -310,6 +327,7 @@ const ICONS = {
   chev: '<path d="M9 6l6 6-6 6"/>',
   user: '<circle cx="12" cy="8.5" r="3.6"/><path d="M5 20c.8-3.8 3.6-6 7-6s6.2 2.2 7 6"/>',
   flag: '<path d="M5.5 21V4M5.5 4.5h11l-2.2 4 2.2 4h-11"/>',
+  food: '<path d="M7 3.5v7.5M5 3.5v4.5a2 2 0 0 0 4 0V3.5M7 11v9.5M17 20.5v-17c-2.3 1.2-3.6 3.6-3.6 7.2v3.3H17"/>',
 };
 function ic(name) { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name] || ""}</svg>`; }
 
@@ -1109,7 +1127,7 @@ function viewLeiri() {
   const st = secStatus(s);
 
   let h = statusBanners();
-  h += `<div class="back"><button class="btn ghost sm" data-act="tab" data-key="koti">← Etusivu</button></div>`;
+  h += `<div class="back"><button class="btn ghost sm" data-act="tab" data-key="leirit">← Leirit</button></div>`;
   h += `<div class="sec sec-${secColor(s)} camphead"><div class="sech"><div><div class="sect">${esc(campLabel(s) || s)}</div>
         <div class="secm">${esc(campRange(s))}${campLive(s) ? " · käynnissä" : c.start > t ? ` · alkaa ${daysUntil(c.start) === 1 ? "huomenna" : daysUntil(c.start) + " päivän päästä"}` : ""}</div></div>
         ${st.has ? `<span class="secpill ${st.open && !st.locked ? "" : "ok"}">${st.locked ? (st.open ? `🔒 ${st.open} jakamatta` : "🔒 jaettu") : st.open ? `${st.open} avointa` : "✓ täynnä"}</span>` : ""}</div></div>`;
@@ -1148,6 +1166,39 @@ function viewLeiri() {
     h += ohjeet.map(ohjeCard).join("");
     if (!c.info && !c.link && !ohjeet.length) h += `<p class="note">Leirin tiedot kirjoitetaan Sheetin Leirit-välilehdelle ja leirin ohjeet Ohjeet-välilehdelle (Osio = ${esc(s)}).</p>`;
   }
+  return h;
+}
+
+function viewLeirit() {
+  const t = todayIso();
+  const camps = sectionList().filter(isCamp).sort((a, b) => {
+    const A = campInfo(a), B = campInfo(b), ea = A.end && A.end < t, eb = B.end && B.end < t;
+    return ea !== eb ? (ea ? 1 : -1) : (A.start || "9").localeCompare(B.start || "9");
+  });
+  let h = statusBanners();
+  if (!camps.length) return h + `<p class="note">Leirejä ei ole vielä lisätty. Ne kirjoitetaan Sheetin Leirit-välilehdelle.</p>`;
+  h += `<p class="note">Valitse leiri, niin näet sen päiväohjelman, ruokalistan, talkoot, kyydit ja leirin ohjeet.</p>`;
+  camps.forEach(s => {
+    const c = campInfo(s), st = secStatus(s), ended = c.end && c.end < t, live = campLive(s);
+    const n = c.start ? daysUntil(c.start) : null;
+    const when = live ? "Käynnissä nyt" : ended ? "Päättynyt" : n === null ? "Päivät tulossa" : n === 0 ? "Alkaa tänään" : n === 1 ? "Alkaa huomenna" : `Alkaa ${n} pv päästä`;
+    const days = campDays(s);
+    const hasMenu = (D.menu || []).some(m => secName(m) === s);
+    const btn = (key, label, icon) => `<button class="lbtn" data-act="openLeiri" data-key="${esc(s + "|" + key)}">${ic(icon)}<span>${label}</span></button>`;
+    h += `<div class="lcard ${ended ? "ended" : ""}">
+      <button class="sech sec-${secColor(s)}-bg" data-act="openLeiri" data-key="${esc(s)}">
+        <div><div class="sect">${esc(campLabel(s) || s)}</div><div class="secm">${esc(s)} · ${esc(campRange(s))}</div></div>
+        <span class="secpill ${live ? "" : "ok"}">${esc(when)}</span></button>
+      ${days.length ? `<div class="ldays">${days.map(d => `<button class="chip ${d === t ? "on" : ""}" data-act="openLeiri" data-key="${esc(s + "|" + d)}">${esc(dayLabel(d))}</button>`).join("")}</div>` : ""}
+      <div class="lbtns">
+        ${btn(days.includes(t) ? t : days[0] || "info", "Ohjelma", "cal")}
+        ${hasMenu ? btn("ruoka", "Ruokalista", "food") : ""}
+        ${btn("talkoot", "Talkoot", "people")}
+        ${btn("info", "Info", "book")}
+      </div>
+      ${st.has && !ended ? `<div class="lfoot">${st.locked ? `🔒 Talkoovuorot: ${st.open ? `${st.open} jakamatta` : "jaettu"}` : st.open ? `<span class="open">${st.open} avointa talkoovuoroa</span>` : "✓ Talkoovuorot täynnä"}</div>` : ""}
+    </div>`;
+  });
   return h;
 }
 
@@ -1235,7 +1286,7 @@ function downloadIcs(items, filename) {
 function renderTabs() {
   const o = D ? openTotals().all : 0;
   document.getElementById("tabs").innerHTML = TABS.map(([k, l, icon]) =>
-    `<button class="${k === tab ? "active" : ""}" data-act="tab" data-key="${k}" aria-label="${l}">${ic(icon)}<span class="lb">${l}</span>${k === "talkoot" && o ? `<span class="cnt">${o}</span>` : ""}</button>`).join("");
+    `<button class="${k === tab || (k === "leirit" && tab === "leiri") ? "active" : ""}" data-act="tab" data-key="${k}" aria-label="${l}">${ic(icon)}<span class="lb">${l}</span>${k === "talkoot" && o ? `<span class="cnt">${o}</span>` : ""}</button>`).join("");
   const fresh = D && (D.news || []).some(n => n.date && daysUntil(n.date) >= -7 && (!n.until || n.until >= todayIso()));
   document.getElementById("bellBtn").innerHTML = ic("bell") + (fresh ? `<span class="dot"></span>` : "");
   document.getElementById("menuBtn").innerHTML = ic("menu");
@@ -1261,7 +1312,7 @@ function render() {
     return;
   }
   renderMenu();
-  const views = { tiedotteet: viewTiedotteet, leiri: viewLeiri, osio: viewOsio, koti: viewKoti, ottelut: viewOttelut, talkoot: viewTalkoot, kyydit: viewKyydit, kalenteri: viewKalenteri, ohjeet: viewOhjeet };
+  const views = { leirit: viewLeirit, tiedotteet: viewTiedotteet, leiri: viewLeiri, osio: viewOsio, koti: viewKoti, ottelut: viewOttelut, talkoot: viewTalkoot, kyydit: viewKyydit, kalenteri: viewKalenteri, ohjeet: viewOhjeet };
   v.innerHTML = views[tab]() + `<footer>${esc(team)} · kauden sivusto</footer>`;
 }
 
@@ -1275,7 +1326,8 @@ const ACTIONS = {
   },
   menu(k, el, ev) { ev.preventDefault(); F.menu = !F.menu; renderMenu(); },
   openLeiri(k, el, ev) {
-    ev.preventDefault(); F.leiri = k; F.lday = ""; F.menu = false; tab = "leiri"; editing = null; touched.clear();
+    const i = k.indexOf("|");
+    ev.preventDefault(); F.leiri = i === -1 ? k : k.slice(0, i); F.lday = i === -1 ? "" : k.slice(i + 1); F.menu = false; tab = "leiri"; editing = null; touched.clear();
     go(); render(); window.scrollTo(0, 0);
   },
   openSec(k, el, ev) {
