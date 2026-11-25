@@ -145,8 +145,8 @@
 
   /* Etusivun kenttäkuvitus ja seuraava ottelu */
   .hero { position: relative; margin: 2px 0 6px; }
-  .hero .field { display: block; width: 100%; height: auto; border-radius: 26px; box-shadow: var(--sh); }
-  .glass { position: relative; margin: -58px 10px 0; background: rgba(255,255,255,.8); backdrop-filter: blur(18px) saturate(1.2); -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  .hero .field { display: block; width: 100%; height: auto; aspect-ratio: 1400 / 763; object-fit: cover; border-radius: 26px; box-shadow: var(--sh); background: #4F8A35; }
+  .glass { position: relative; margin: 10px 0 0; background: rgba(255,255,255,.8); backdrop-filter: blur(18px) saturate(1.2); -webkit-backdrop-filter: blur(18px) saturate(1.2);
            border-radius: 20px; padding: 12px 14px; box-shadow: 0 10px 30px rgba(30,35,25,.16); border: 1px solid rgba(255,255,255,.75); }
   .gh { display: flex; align-items: center; gap: 8px; font-size: 14.5px; font-weight: 500; margin-bottom: 2px; }
   .gh .gp { margin-left: auto; font-size: 12px; color: var(--sub); text-align: right; }
@@ -586,31 +586,7 @@ function gameCard(g, opts) {
 }
 
 function heroField() {
-  const rows = []; for (let y = 16; y < 60; y += 5) rows.push(`<path d="M0 ${y} H400" stroke="rgba(255,255,255,.09)" stroke-width="1.6"/>`);
-  return `<svg class="field" viewBox="0 0 400 236" role="img" aria-label="Pesäpallokenttä">
-    <defs>
-      <linearGradient id="gr" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7E9F52"/><stop offset="1" stop-color="#55762F"/></linearGradient>
-      <linearGradient id="sa" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D8BC8E"/><stop offset="1" stop-color="#C79E68"/></linearGradient>
-      <radialGradient id="li" cx=".5" cy="0" r=".9"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
-    </defs>
-    <rect width="400" height="236" fill="url(#gr)"/>
-    <path d="M0 236 L60 60 H90 L40 236Z M110 236 L130 60 H155 L150 236Z M250 236 L245 60 H270 L290 236Z M360 236 L310 60 H340 L400 236Z" fill="rgba(255,255,255,.05)"/>
-    <rect y="0" width="400" height="62" fill="#3F5135"/>${rows.join("")}
-    <path d="M0 0 H400 V12 L0 24Z" fill="#E6E8E2"/><path d="M0 24 L400 12" stroke="#C9CCC4" stroke-width="2"/>
-    <path d="M40 20 V60 M120 17 V60 M200 15 V60 M280 14 V60 M360 13 V60" stroke="rgba(255,255,255,.18)" stroke-width="2"/>
-    <rect y="58" width="400" height="6" fill="#2D3B26"/>
-    <path d="M70 236 L140 76 H260 L330 236Z" fill="url(#sa)"/>
-    <g fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round" opacity=".95">
-      <path d="M70 236 L140 76 H260 L330 236"/>
-      <path d="M150 96 H250" stroke-dasharray="5 5" opacity=".8"/>
-      <path d="M172 236 A28 20 0 0 1 228 236"/>
-      <path d="M200 218 L94 196 L292 154 L126 108 L200 218" stroke-dasharray="3 6" stroke-width="1.6" opacity=".75"/>
-    </g>
-    <g fill="#fff"><circle cx="200" cy="218" r="5"/><rect x="89" y="191" width="9" height="9" rx="2"/><rect x="287" y="149" width="9" height="9" rx="2"/><rect x="121" y="103" width="9" height="9" rx="2"/></g>
-    <g fill="#2B3824"><circle cx="160" cy="150" r="3.6"/><circle cx="236" cy="128" r="3.6"/><circle cx="200" cy="96" r="3.6"/><circle cx="112" cy="168" r="3.6"/><circle cx="262" cy="188" r="3.6"/><circle cx="214" cy="160" r="3.6"/></g>
-    <circle cx="206" cy="212" r="4.2" fill="#D8483E"/>
-    <rect width="400" height="236" fill="url(#li)"/>
-  </svg>`;
+  return `<img class="field" src="kentta.jpg" width="1400" height="763" alt="Pesäpallokenttä ja pelipaikat: lukkari, sieppari, vahdit, polttajat ja kopparit">`;
 }
 function heroCard(g) {
   const [ta, tb] = teamsOf(g);
