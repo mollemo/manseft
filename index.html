@@ -291,7 +291,7 @@ const TABS = [
   ["koti", "Etusivu", "grid"], ["ottelut", "Ottelut", "ball"], ["talkoot", "Talkoot", "people"],
   ["kyydit", "Kyydit", "car"], ["kalenteri", "Kalenteri", "cal"], ["ohjeet", "Ohjeet", "book"],
 ];
-const TITLES = { koti: "Kauden kooste", ottelut: "Otteluohjelma", talkoot: "Talkoovuorot", kyydit: "Kyydit", kalenteri: "Kalenteri", ohjeet: "Ohjeet", tiedotteet: "Tiedotteet" };
+const TITLES = { koti: "Kausi", ottelut: "Otteluohjelma", talkoot: "Talkoovuorot", kyydit: "Kyydit", kalenteri: "Kalenteri", ohjeet: "Ohjeet", tiedotteet: "Tiedotteet" };
 
 // ─── Viivakuvakkeet ──────────────────────────────────────────────────────
 const ICONS = {
@@ -1242,14 +1242,14 @@ function renderClock() {
   const n = nowFi();
   document.getElementById("clock").textContent =
     `${WD[n.getDay()]} ${n.getDate()}.${n.getMonth() + 1}. klo ${String(n.getHours()).padStart(2, "0")}:${String(n.getMinutes()).padStart(2, "0")}`
-    + (D && D.settings && D.settings.season ? ` · kausi ${D.settings.season}` : "");
+;
 }
 function render() {
   const team = D && D.settings && D.settings.team ? D.settings.team : "Manse";
   document.getElementById("teamTitle").textContent = team;
   document.title = team + " – kausi";
   renderTabs(); renderClock();
-  document.getElementById("ptitle").textContent = tab === "leiri" ? (F.leiri || "Leiri") : tab === "osio" ? (F.sec || OTHER) : TITLES[tab] || team;
+  document.getElementById("ptitle").textContent = tab === "leiri" ? (F.leiri || "Leiri") : tab === "osio" ? (F.sec || OTHER) : (tab === "koti" && D && D.settings && D.settings.season ? "Kausi " + D.settings.season : TITLES[tab] || team);
   const v = document.getElementById("view");
   v.classList.toggle("busy", busy);
   if (!D) {
@@ -1414,7 +1414,7 @@ function makeDemo() {
   });
   return {
     ok: true, locked: false, today: todayIso(),
-    settings: { team: "Manse F-tytöt", season: String(t0.getFullYear()), homeTag: "Manse",
+    settings: { team: "Manse F-tytöt", season: "2027", homeTag: "Manse",
                 homeRoles: HOME_ROLES, awayRoles: [], sections: [AS, AL, VL], roleSection: AS, lockedSections: [AS], campDays: 14 },
     games,
     talkoot: [
