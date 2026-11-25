@@ -15,7 +15,7 @@ Etusivu on jaettu osioihin (oletuksena **Aluesarja**, **Alueleiri** ja **Valtaku
 Rivin osio valitaan **Osio**-sarakkeesta Ottelut-, Talkoot- ja Tapahtumat-välilehdillä. Jos Osio on tyhjä, osio päätellään Sarja-/Tapahtuma-/Otsikko-tekstistä, ja muuten rivi näkyy kohdassa *Muut talkoot* (seuran yhteiset talkoot, esim. Sappee ja lipunmyynti edustusjoukkueen peleissä).
 Ottelutalkoot (kotipelit) ja vieraspelien kyydit koskevat vain Asetusten *Ottelutalkoot osiossa* -kohdan osiota (oletus Aluesarja). Leirien talkoot kirjataan Talkoot-välilehdelle ja leirin kyydit Tapahtumat-riville (*Kyydit = Kyllä*).
 
-**Talkoovuorot** jakaa talkoovastaava: nimet kirjoitetaan suoraan Sheetiin (Ottelut-välilehden roolisarakkeet ja Talkoot-välilehden Nimet-sarake), ja sivu näyttää ne. Sivustolla voi ilmoittautua vain kyyteihin. *Lukko = LUKITTU* sulkee myös kyytien muokkauksen.
+**Talkoovuorot** jakaa talkoovastaava: nimet kirjoitetaan suoraan Sheetiin (Ottelut-välilehden roolisarakkeet ja Talkoot-välilehden Nimet-sarake) pelaajien niminä Pelaajat-listalta, ja sivu näyttää ne. Sivustolla voi ilmoittautua vain kyyteihin. *Lukko = LUKITTU* sulkee myös kyytien muokkauksen.
 
 ## Leirisivut
 Alueleirillä ja Valtakunnallisella leirillä on oma leirisivu (kuten erillisillä leirisivustoilla): päiväkohtainen ohjelma, ruokalista, paikat, talkoot, kyydit ja leirin info.
@@ -43,7 +43,7 @@ Sivu on asennettava verkkosovellus (`manifest.webmanifest`, kuvakkeet `icon-*.pn
 | **Kyydit** | Täyttyy sivustolta. Valmentaja voi muokata tai poistaa rivejä. |
 | **Tiedotteet** | Näkyvät etusivulla *Näytä asti* -päivään saakka (tyhjä = aina). |
 | **Ohjeet** | Sivun Ohjeet-välilehdelle: Otsikko, Teksti (rivinvaihdot säilyvät), Linkki. Järjestys = rivien järjestys. Jos otsikko on sama kuin talkoorooli (esim. *Kirjuri* tai *Kioski*, joka kattaa Kioski 1 ja Kioski 2), roolin viereen tulee ⓘ-linkki ohjeeseen. |
-| **Nimet** | Kaikki nimet yhdessä muodossa (esim. perheiden sukunimet). Sivun nimivalinnat (Minun tehtävät, kyydin kuljettaja ja kyytiläinen) käyttävät tätä listaa, ja Sheetin roolisarakkeissa ja kyytien kuljettajasarakkeessa on sama lista pudotusvalikkona. Kun lista on täytetty, kyytejä voi tarjota ja niihin liittyä vain listan nimillä. |
+| **Pelaajat** | Joukkueen pelaajat, yksi rivi per pelaaja (esim. *Ella Virtanen*). Vuorot ja kyydit kirjataan pelaajan nimellä, eli nimi edustaa pelaajan perhettä. Sivun valinnat (Valitse pelaaja, kyydin kuljettaja ja kyytiläinen) käyttävät tätä listaa, ja Sheetin roolisarakkeissa ja kyytien kuljettajasarakkeessa on sama lista pudotusvalikkona. Kun lista on täytetty, kyytejä voi tarjota ja niihin liittyä vain listan nimillä. |
 | **Kentät** | Ohjeet-välilehdelle. Kentän osoitteesta tulee karttalinkki kaikkialle, missä kenttää käytetään. |
 | **Asetukset** | Joukkueen nimi, kausi, **Osiot**, ottelutalkoiden osio, koti- ja vieraspelin talkooroolit, **leiripelin talkooroolit** (leirien koti- ja vieraspelit) sekä **Lukko** (AUKI / LUKITTU, koskee kyytejä). |
 

@@ -578,7 +578,7 @@ async function saveEdit() {
   if (!el || !editing) return;
   const v = el.value.trim();
   const [type, id, extra] = editing.key.split("|");
-  if (!v) { if (type === "join") { toast("Valitse nimi listalta"); el.focus(); return; } editing = null; render(); return; }
+  if (!v) { if (type === "join") { toast("Valitse pelaaja listalta"); el.focus(); return; } editing = null; render(); return; }
   if (type === "role") {
     const g = D.games.find(x => x.id === id);
     const old = g ? g.roles[extra] : "";
@@ -750,7 +750,7 @@ function rideBlock(target) {
     const jkey = `join|${r.id}`;
     const pas = r.passengers.map(p => `<span class="pas ${isMe(p) ? "mine" : ""}">${esc(p)}${canEdit && canRemovePassenger(r, p) ? `<button class="x" title="Poista kyydistä" data-act="leave" data-key="${esc(r.id + "|" + p)}">✕</button>` : ""}</span>`).join("");
     let join = "";
-    if (editing && editing.key === jkey) join = `<div class="rrow"><select id="inl" class="inp" style="flex:1;min-width:150px;">${nameOptions(myName(), "— valitse nimi —")}</select>
+    if (editing && editing.key === jkey) join = `<div class="rrow"><select id="inl" class="inp" style="flex:1;min-width:150px;">${nameOptions(myName(), "— valitse pelaaja —")}</select>
           <button class="btn" data-act="save">Liity</button><button class="btn ghost" data-act="cancel">Peruuta</button></div>`;
     else if (canEdit && free > 0) join = `<div class="rrow"><button class="btn sm" data-act="edit" data-key="${esc(jkey)}" data-val="">Liity kyytiin</button></div>`;
     return `<div class="ride">
@@ -766,7 +766,7 @@ function rideBlock(target) {
     html += `<div class="ride rform">
       <strong>Tarjoa kyytiä</strong>
       <div class="form">
-        <div><label for="rName">Kuljettaja</label><br><select id="rName" class="inp wide">${nameOptions(myName(), "— valitse nimi —")}</select></div>
+        <div><label for="rName">Kuljettaja (pelaajan perhe)</label><br><select id="rName" class="inp wide">${nameOptions(myName(), "— valitse pelaaja —")}</select></div>
         <div><label for="rSeats">Vapaita paikkoja pelaajille (oma lapsi ei mukaan)</label><br><input id="rSeats" class="inp" style="width:80px;" type="number" min="1" max="8" value="3"></div>
         <div><label for="rDepart">Lähtö (paikka ja aika)</label><br><input id="rDepart" class="inp wide" maxlength="80" placeholder="esim. Kaupin kenttä klo 8.30"></div>
         <div><button class="btn" data-act="rideSubmit" data-key="${esc(target.id)}">Tallenna</button> <button class="btn ghost" data-act="cancel">Peruuta</button></div>
@@ -836,7 +836,7 @@ function welcomeBlock() {
   if (me) {
     const mine = myShifts(me, false), n = mine.length;
     return `<button class="hello" data-act="toMine"><span class="mic">${ic("user")}</span>
-      <span class="hb"><b>Hei, ${esc(me)}!</b><span>${n ? `Sinulla on ${n} ${n === 1 ? "tuleva tehtävä" : "tulevaa tehtävää"} · seuraava ${esc(dayLabel(mine[0].date))}` : "Sinulla ei ole tulevia tehtäviä"}</span></span>
+      <span class="hb"><b>${esc(me)}</b><span>${n ? `Perheen ${n} ${n === 1 ? "tuleva tehtävä" : "tulevaa tehtävää"} · seuraava ${esc(dayLabel(mine[0].date))}` : "Perheellä ei ole tulevia tehtäviä"}</span></span>
       <span class="chev">${ic("chev")}</span></button>`;
   }
   const row = (icon, title, text) => `<li><span class="mic">${ic(icon)}</span><span><b>${title}</b><br><span class="small muted">${text}</span></span></li>`;
@@ -849,7 +849,7 @@ function welcomeBlock() {
       ${row("car", "Kyydit", "Tarjoa kyytiä tai liity toisen kyytiin.")}
       ${row("tent", "Leirit", "Alueleirin ja Naperoleirin ohjelma, ottelut ja ruoka.")}
     </ul>
-    ${nameList().length ? `<div class="wsel"><label for="meSel"><b>Aloita valitsemalla nimesi</b><br><span class="small muted">Näet sen jälkeen omat talkoovuorosi ja kyytisi. Valinta muistetaan tällä laitteella.</span></label>
+    ${nameList().length ? `<div class="wsel"><label for="meSel"><b>Aloita valitsemalla pelaaja</b><br><span class="small muted">Valitse oma pelaajasi, niin näet perheesi talkoovuorot ja kyydit. Valinta muistetaan tällä laitteella.</span></label>
       <select id="meSel" class="inp wide" style="margin-top:8px;">${nameOptions("")}</select></div>` : ""}
     <button class="btn ghost sm" data-act="tab" data-key="ohjeet" style="margin-top:10px;">Lue, miten sivu toimii →</button>
   </div>`;
@@ -1010,7 +1010,7 @@ function myShifts(me, withPast) {
   });
   return out.sort(byWhen);
 }
-// Nimilista: Sheetin Nimet-välilehti. Jos se on tyhjä, nimet kootaan vuoroista ja kyydeistä.
+// Nimilista: Sheetin Pelaajat-välilehti (vuorot ja kyydit kirjataan pelaajan nimellä). Jos se on tyhjä, nimet kootaan vuoroista ja kyydeistä.
 function nameList() {
   const listed = (D.names || []).map(n => String(n).trim()).filter(Boolean);
   return listed.length ? listed.slice().sort((a, b) => a.localeCompare(b, "fi")) : allNames();
@@ -1022,7 +1022,7 @@ function nameOptions(selected, placeholder) {
     names.map(n => `<option value="${esc(n)}" ${n.toLowerCase() === sel ? "selected" : ""}>${esc(n)}</option>`).join("");
 }
 function nameSelect() {
-  return `<label class="small muted" for="meSel" style="font-weight:700;">Valitse nimesi</label>
+  return `<label class="small muted" for="meSel" style="font-weight:700;">Valitse pelaaja</label>
     <select id="meSel" class="inp wide" style="margin:3px 0 6px;">${nameOptions(myName())}</select>`;
 }
 function myBlock() {
@@ -1070,14 +1070,14 @@ function viewTalkoot() {
   if (mode === "menneet") items = items.filter(i => i.date < t).sort((a, b) => byWhen(b, a));
   else items = items.filter(i => i.date >= t).sort(byWhen);
   if (mode === "omat") {
-    if (!myName()) return h + `<div class="box" style="padding:12px 14px;">${nameSelect()}<p class="small muted">Valitse nimesi, niin näet omat talkoovuorosi.</p></div>`;
+    if (!myName()) return h + `<div class="box" style="padding:12px 14px;">${nameSelect()}<p class="small muted">Valitse oma pelaajasi, niin näet perheesi talkoovuorot.</p></div>`;
     items = items.filter(i => i.mine);
   }
   h += `<p class="note">Talkoovuorot jakaa talkoovastaava. Jos et pääse vuoroosi, sovi vaihdosta talkoovastaavan kanssa.</p>`;
   h += items.length
     ? groupByMonth(items, i => i.kind === "game" ? gameCard(i.ref, { noRides: true }) : talkooCard(i.ref))
     : mode === "omat"
-      ? `<div class="box" style="padding:14px;"><p class="small">Sinulla (${esc(myName())}) ei ole tulevia talkoovuoroja.</p>
+      ? `<div class="box" style="padding:14px;"><p class="small">Perheellä (${esc(myName())}) ei ole tulevia talkoovuoroja.</p>
           <button class="btn ghost sm" data-act="filter" data-key="talkoot|tulevat" style="margin-top:8px;">Näytä kaikki tulevat vuorot</button></div>`
       : `<p class="note">Ei vuoroja tässä näkymässä.</p>`;
 
@@ -1096,8 +1096,8 @@ function viewTalkoot() {
 function viewKyydit() {
   const t = todayIso();
   let h = statusBanners();
-  h += `<p class="note">Vieraspelien ja tapahtumien kyydit. Kuljettaja ilmoittaa vapaat paikat, ja kyytiin liitytään valitsemalla nimi listalta.</p>`;
-  if (!myName()) h += `<div class="box" style="padding:12px 14px;">${nameSelect()}<p class="small muted">Valitse nimesi, niin voit muokata ja poistaa omia kyytejäsi.</p></div>`;
+  h += `<p class="note">Vieraspelien ja tapahtumien kyydit. Kuljettaja ilmoittaa vapaat paikat, ja kyytiin liitytään valitsemalla pelaaja listalta.</p>`;
+  if (!myName()) h += `<div class="box" style="padding:12px 14px;">${nameSelect()}<p class="small muted">Valitse oma pelaajasi, niin voit muokata ja poistaa perheesi kyytejä.</p></div>`;
   h += secChips(rideTargets().filter(x => x.date >= t).map(x => x.ref));
   const targets = rideTargets().filter(x => x.date >= t && secOk(x.ref));
   if (!targets.length) return h + `<p class="note"><em>Ei tulevia vieraspelejä tai kyytitapahtumia.</em></p>`;
@@ -1300,9 +1300,9 @@ function viewOhjeet() {
     : `<p class="note">Ohjeita ei ole vielä lisätty. Ne kirjoitetaan Sheetin Ohjeet-välilehdelle.</p>`;
 
   h += `<div class="h2 navy">Näin sivu toimii</div><div class="box small" style="line-height:1.6;">
-    <b>Minun tehtävät:</b> Valitse etusivulla nimesi listalta, niin näet omat talkoovuorosi ja kyytisi paikkoineen. <i>Omat kalenteriin</i> -napilla saat ne kerralla puhelimen kalenteriin.<br>
+    <b>Minun tehtävät:</b> Valitse etusivulla oma pelaajasi, niin näet perheesi talkoovuorot ja kyydit paikkoineen. Vuorot ja kyydit kirjataan aina pelaajan nimellä. <i>Omat kalenteriin</i> -napilla saat ne kerralla puhelimen kalenteriin.<br>
     <b>Talkoovuorot:</b> Talkoovastaava jakaa vuorot ja kirjaa ne sivulle. Jos et pääse vuoroosi, sovi vaihdosta talkoovastaavan kanssa.<br>
-    <b>Kyydit:</b> Sivulla voi ilmoittautua vain kyyteihin. Kuljettaja tarjoaa paikkoja, ja kyytiin liitytään valitsemalla nimi listalta. Omaa kyytiä voi muokata, kun oma nimi on valittuna.<br>
+    <b>Kyydit:</b> Sivulla voi ilmoittautua vain kyyteihin. Kuljettaja tarjoaa paikkoja, ja kyytiin liitytään valitsemalla pelaaja listalta. Perheen kyytiä voi muokata, kun oma pelaaja on valittuna.<br>
     <b>ⓘ roolin vieressä:</b> avaa kyseisen tehtävän ohjeen.<br>
     <b>Leirit:</b> Alapalkin Leirit-kohdasta löytyy kummankin leirin ohjelma, ottelut, ruoka, talkoot, kyydit ja info.<br>
     <b>Kalenteri:</b> Yläreunan kalenterinapista näet koko kauden. Rivin kalenterikuvakkeella saat tapahtuman puhelimen kalenteriin.</div>`;
@@ -1447,7 +1447,7 @@ const ACTIONS = {
   leave(k) {
     const i = k.indexOf("|"), id = k.slice(0, i), name = k.slice(i + 1);
     const r = (D.rides || []).find(x => x.id === id);
-    if (!r || !canRemovePassenger(r, name)) { toast("Valitse ensin nimesi etusivun Minun tehtävät -kohdasta"); return; }
+    if (!r || !canRemovePassenger(r, name)) { toast("Valitse ensin oma pelaajasi etusivulta"); return; }
     if (!confirm(`Poistetaanko ${name} kyydistä?`)) return;
     act({ action: "ride_leave", id, name });
   },
@@ -1531,9 +1531,9 @@ function makeDemo() {
     // Yksi esimerkkiottelu per osio
     games: [
       { id: "o1", section: AS, rides: false, date: day(2), time: "18:00", teams: "Manse – Esimerkki PP", field: "Kotikenttä", series: AS, home: true,
-        result: "", link: "", info: "", roles: roles({ "Kirjuri": "Esimerkki Vanhempi", "Kioski 1": "Toinen Vanhempi" }) },
+        result: "", link: "", info: "", roles: roles({ "Kirjuri": "Ella Esimerkki", "Kioski 1": "Venla Esimerkki" }) },
       { id: "o2", section: AL, rides: false, date: "2027-06-12", time: "10:00", teams: "Manse – Esimerkki Joukkue", field: "Alueleirin kenttä", series: AL, home: true,
-        result: "", link: "", info: "", roles: { "Kirjuri": "Esimerkki Vanhempi", "Tulostaulu": "" } },
+        result: "", link: "", info: "", roles: { "Kirjuri": "Ella Esimerkki", "Tulostaulu": "" } },
       { id: "o3", section: VL, rides: false, date: "2027-08-03", time: "10:00", teams: "Esimerkki Joukkue – Manse", field: "Leiripaikka", series: VL, home: false,
         result: "", link: "", info: "", roles: { "Kirjuri": "", "Tulostaulu": "" } },
     ],
@@ -1550,7 +1550,7 @@ function makeDemo() {
       { id: "e3", section: VL, date: "2027-08-02", time: "13:00", end: "", title: "Esimerkki: saapuminen leirille", type: "Majoitus", place: "Leiripaikka", info: "", link: "", rides: true },
     ],
     rides: [
-      { id: "k1", target: "e2", driver: "Esimerkki Kuljettaja", seats: 3, passengers: ["Esimerkki Pelaaja"], depart: "Kotikenttä klo 15.00", info: "" },
+      { id: "k1", target: "e2", driver: "Aino Esimerkki", seats: 3, passengers: ["Iida Esimerkki"], depart: "Kotikenttä klo 15.00", info: "" },
     ],
     news: [
       { date: day(-1), title: "Tervetuloa kauden sivustolle", text: "Täältä löydät ottelut, talkoot, kyydit ja leirit.", until: "" },
@@ -1567,7 +1567,7 @@ function makeDemo() {
       { title: "Kirjuri", text: EX + "tehtävän ohje kirjoitetaan Sheetin Ohjeet-välilehdelle.", link: "" },
       { section: VL, title: "Pakkauslista", text: EX + "leirin oma ohje (Osio = Valtakunnallinen leiri).", link: "" },
     ],
-    names: ["Esimerkki Kuljettaja", "Esimerkki Pelaaja", "Esimerkki Vanhempi", "Toinen Vanhempi"],
+    names: ["Aino Esimerkki", "Iida Esimerkki", "Ella Esimerkki", "Venla Esimerkki"],
     fields: [
       { name: "Kotikenttä", address: "Tampere", surface: "" },
       { name: "Alueleirin kenttä", address: "Loimaa", surface: "" },
