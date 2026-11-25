@@ -31,6 +31,9 @@ Leirit eivät ole yläpalkissa. Ne löytyvät **☰-valikosta** ja etusivun pain
 ## Toimii myös heikossa verkossa
 Sivu tallentaa viimeksi haetut kauden tiedot puhelimeen (muutamia kymmeniä kilotavuja) ja `sw.js` sivun omat tiedostot (sivu, logo, kenttäkuva). Sivu aukeaa heti ja toimii ilman verkkoa; ylhäällä kerrotaan, milloin tiedot on haettu. Tuoreet tiedot haetaan aina, kun yhteys on olemassa. Kyytien tallentaminen vaatii verkon.
 
+## Asennus puhelimen kotinäytölle
+Sivu on asennettava verkkosovellus (`manifest.webmanifest`, kuvakkeet `icon-*.png` ja `apple-touch-icon.png`). ☰-valikon kohdassa **Asenna puhelimeen** on Androidille suora Asenna-nappi (kun selain tarjoaa asennusta) ja ohjeet sekä Androidille että iPhonelle. Asennettuna sivu aukeaa omasta Manse-kuvakkeestaan ilman selaimen palkkeja. Sovelluskauppaa tai tunnuksia ei tarvita.
+
 ## Sheetin välilehdet
 | Välilehti | Mitä sinne kirjoitetaan |
 |---|---|

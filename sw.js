@@ -1,7 +1,7 @@
 // Manse – kauden sivusto: sivun tiedostot talteen, jotta sivu aukeaa myös ilman verkkoa.
 // Kauden tiedot (Apps Script) tallennetaan erikseen selaimen muistiin index.html:ssä.
-const CACHE = "manse-kausi-v1";
-const ASSETS = ["./", "./index.html", "./logo.png", "./kentta.jpg"];
+const CACHE = "manse-kausi-v2";
+const ASSETS = ["./", "./index.html", "./logo.png", "./kentta.jpg", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
 
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));

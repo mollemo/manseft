@@ -3,10 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#CC1F1F">
+<meta name="theme-color" content="#F5F6F3">
 <title>Manse – kausi</title>
 <link rel="icon" href="logo.png">
-<link rel="apple-touch-icon" href="logo.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Manse">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <style>
   :root {
     --bg: #EEEFEB; --card: #FFFFFF; --soft: #F4F5F1; --text: #1D2019; --sub: #8A8D85; --border: #E7E8E3;
@@ -266,6 +271,14 @@
   .tile .chev { color: #B9BCB4; display: grid; }
   .tile .chev svg { width: 16px; height: 16px; }
   .back { margin: 0 0 10px; }
+  .inst-hero { display: flex; gap: 14px; align-items: center; padding: 14px; }
+  .inst-hero img { border-radius: 16px; box-shadow: 0 2px 10px rgba(0,0,0,.12); flex: none; }
+  .inst-hero b { font-size: 16px; }
+  .inst-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 13px; font-size: 15px; margin: 2px 0 6px; }
+  .inst-btn svg { width: 20px; height: 20px; }
+  ol.steps { list-style: none; counter-reset: s; padding: 4px 0; }
+  ol.steps li { display: flex; gap: 12px; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 14px; line-height: 1.45; }
+  ol.steps li:last-child { border-bottom: none; }
   .lcard { background: #fff; border-radius: 24px; box-shadow: var(--sh); margin-bottom: 14px; overflow: hidden; }
   .lcard.ended { opacity: .6; }
   .lcard > .sech { width: 100%; border: none; border-radius: 0; box-shadow: none; text-align: left; cursor: pointer; font: inherit; }
@@ -348,8 +361,8 @@ const TABS = [
   ["kyydit", "Kyydit", "car"], ["leirit", "Leirit", "tent"],
 ];
 // Nämä sivut avataan ☰-valikosta
-const MENU_PAGES = [["kalenteri", "Kalenteri", "cal"], ["ohjeet", "Ohjeet", "book"], ["tiedotteet", "Tiedotteet", "bell"]];
-const TITLES = { koti: "Kausi", ottelut: "Otteluohjelma", talkoot: "Talkoovuorot", kyydit: "Kyydit", leirit: "Leirit", kalenteri: "Kalenteri", ohjeet: "Ohjeet", tiedotteet: "Tiedotteet" };
+const MENU_PAGES = [["kalenteri", "Kalenteri", "cal"], ["ohjeet", "Ohjeet", "book"], ["tiedotteet", "Tiedotteet", "bell"], ["asenna", "Asenna puhelimeen", "phone"]];
+const TITLES = { koti: "Kausi", ottelut: "Otteluohjelma", talkoot: "Talkoovuorot", kyydit: "Kyydit", leirit: "Leirit", kalenteri: "Kalenteri", ohjeet: "Ohjeet", tiedotteet: "Tiedotteet", asenna: "Asenna puhelimeen" };
 
 // ─── Viivakuvakkeet ──────────────────────────────────────────────────────
 const ICONS = {
@@ -365,6 +378,10 @@ const ICONS = {
   pin: '<path d="M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/>',
   chev: '<path d="M9 6l6 6-6 6"/>',
   user: '<circle cx="12" cy="8.5" r="3.6"/><path d="M5 20c.8-3.8 3.6-6 7-6s6.2 2.2 7 6"/>',
+  phone: '<rect x="7" y="2.8" width="10" height="18.4" rx="2.6"/><path d="M10.5 18h3"/>',
+  share: '<path d="M12 15V3.5M8 7.2 12 3.5l4 3.7M6.5 11H5.8A1.8 1.8 0 0 0 4 12.8v6.4A1.8 1.8 0 0 0 5.8 21h12.4a1.8 1.8 0 0 0 1.8-1.8v-6.4a1.8 1.8 0 0 0-1.8-1.8h-.7"/>',
+  plusbox: '<rect x="4" y="4" width="16" height="16" rx="3.5"/><path d="M12 8.5v7M8.5 12h7"/>',
+  dots: '<circle cx="12" cy="5.5" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="12" cy="18.5" r="1.3"/>',
   flag: '<path d="M5.5 21V4M5.5 4.5h11l-2.2 4 2.2 4h-11"/>',
   food: '<path d="M7 3.5v7.5M5 3.5v4.5a2 2 0 0 0 4 0V3.5M7 11v9.5M17 20.5v-17c-2.3 1.2-3.6 3.6-3.6 7.2v3.3H17"/>',
 };
@@ -847,6 +864,40 @@ function unreadNews() { const seen = seenNews(); return activeNews().filter(n =>
 function markNewsSeen() {
   try { const all = new Set(seenNews().concat((D.news || []).map(newsKey))); localStorage.setItem(SEEN_KEY, JSON.stringify([...all].slice(-200))); } catch (e) {}
 }
+// ─── Asennus puhelimen kotinäytölle ──────────────────────────────────────
+let installPrompt = null;   // Android/Chrome: selaimen asennuskehote talteen omaa nappia varten
+window.addEventListener("beforeinstallprompt", ev => { ev.preventDefault(); installPrompt = ev; if (tab === "asenna") render(); });
+window.addEventListener("appinstalled", () => { installPrompt = null; toast("✅ Sovellus asennettu"); if (tab === "asenna") render(); });
+function isInstalled() { return (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true; }
+function platform() {
+  const ua = navigator.userAgent || "";
+  if (/iPhone|iPad|iPod/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)) return "ios";
+  if (/Android/i.test(ua)) return "android";
+  return "muu";
+}
+function stepList(steps) {
+  return `<ol class="steps">${steps.map(([icon, text]) => `<li><span class="mic">${icon}</span><span>${text}</span></li>`).join("")}</ol>`;
+}
+function viewAsenna() {
+  const pf = platform();
+  let h = statusBanners();
+  if (isInstalled()) return h + `<div class="banner ok">✅ Sovellus on asennettu tähän puhelimeen. Avaa se jatkossa kotinäytön Manse-kuvakkeesta.</div>`;
+  h += `<div class="box inst-hero"><img src="icon-192.png" alt="" width="64" height="64">
+    <div><b>Manse kotinäytölle</b><div class="small muted">Sivu aukeaa omasta kuvakkeestaan kuin sovellus, ilman selaimen palkkeja, ja toimii myös heikossa verkossa. Ei sovelluskauppaa, ei tunnuksia.</div></div></div>`;
+  if (installPrompt) h += `<button class="btn inst-btn" data-act="install">${ic("phone")} Asenna puhelimeen</button>`;
+  const android = `<div class="h3">Android (Chrome)</div><div class="box">${stepList([
+      [ic("dots"), "Avaa selaimen valikko oikeasta yläkulmasta (⋮)."],
+      [ic("plusbox"), "Valitse <b>Asenna sovellus</b> tai <b>Lisää aloitusnäytölle</b>."],
+      [ic("phone"), "Vahvista <b>Asenna</b>. Manse-kuvake ilmestyy kotinäytölle."]])}</div>`;
+  const ios = `<div class="h3">iPhone (Safari)</div><div class="box">${stepList([
+      [ic("share"), "Napauta Safarin alareunan <b>Jaa</b>-painiketta (neliö ja nuoli ylös)."],
+      [ic("plusbox"), "Selaa alaspäin ja valitse <b>Lisää Koti-valikkoon</b>."],
+      [ic("phone"), "Napauta oikeasta yläkulmasta <b>Lisää</b>. Manse-kuvake ilmestyy kotinäytölle."]])}
+      <p class="small muted" style="margin:4px 2px 8px;">Vanhemmissa iPhoneissa (iOS alle 16.4) asennus onnistuu vain Safari-selaimella.</p></div>`;
+  h += pf === "ios" ? ios + android : android + ios;
+  return h;
+}
+
 function viewTiedotteet() {
   markNewsSeen();
   const news = (D.news || []).slice().sort((a, b) => (b.date || "").localeCompare(a.date || ""));
@@ -1174,7 +1225,7 @@ function renderMenu() {
   const camps = sectionList().filter(isCamp);
   const item = (act, key, icon, label, small, on) => `<button class="${on ? "on" : ""}" data-act="${act}" data-key="${esc(key)}"><span class="mi">${ic(icon)}</span>
       <span class="mt">${label}${small ? `<small>${small}</small>` : ""}</span></button>`;
-  m.innerHTML = MENU_PAGES.map(([k, l, icon]) => item("tab", k, icon, l, "", tab === k)).join("")
+  m.innerHTML = MENU_PAGES.filter(([k]) => k !== "asenna" || !isInstalled()).map(([k, l, icon]) => item("tab", k, icon, l, "", tab === k)).join("")
     + (camps.length ? `<div class="mh">Leirit</div>` + camps.map(x => item("openLeiri", x, "tent", esc(x) + (campLive(x) ? " · käynnissä" : ""),
         esc([campLabel(x), campRange(x) || "päivät tulossa"].filter(Boolean).join(" · ")), tab === "leiri" && F.leiri === x)).join("") : "");
   m.hidden = false;
@@ -1292,7 +1343,7 @@ function render() {
     return;
   }
   renderMenu();
-  const views = { leirit: viewLeirit, tiedotteet: viewTiedotteet, leiri: viewLeiri, koti: viewKoti, ottelut: viewOttelut, talkoot: viewTalkoot, kyydit: viewKyydit, kalenteri: viewKalenteri, ohjeet: viewOhjeet };
+  const views = { asenna: viewAsenna, leirit: viewLeirit, tiedotteet: viewTiedotteet, leiri: viewLeiri, koti: viewKoti, ottelut: viewOttelut, talkoot: viewTalkoot, kyydit: viewKyydit, kalenteri: viewKalenteri, ohjeet: viewOhjeet };
   v.innerHTML = views[tab]() + `<footer>${esc(team)} · kauden sivusto</footer>`;
 }
 
@@ -1303,6 +1354,12 @@ const ACTIONS = {
     ev.preventDefault(); F.ohje = k; tab = "ohjeet"; editing = null;
     go(); render();
     const el2 = document.getElementById("ohje-" + k); if (el2) el2.scrollIntoView({ block: "start" }); else window.scrollTo(0, 0);
+  },
+  async install() {
+    if (!installPrompt) { toast("Seuraa alla olevia ohjeita"); return; }
+    installPrompt.prompt();
+    try { await installPrompt.userChoice; } catch (e) {}
+    installPrompt = null; render();
   },
   menu(k, el, ev) { ev.preventDefault(); F.menu = !F.menu; renderMenu(); },
   openLeiri(k, el, ev) {
