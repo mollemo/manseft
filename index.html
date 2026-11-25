@@ -1116,7 +1116,7 @@ function viewLeiri() {
   const targets = rideTargets().filter(x => secName(x.ref) === s);
   const ohjeet = (D.ohjeet || []).filter(o => secName(o) === s);
   const infoTabs = [
-    menu.length ? ["ruoka", "Ruokalista"] : null,
+    ["ruoka", "Ruokalista"],
     ["paikat", "Paikat"],
     talk.length || gamesWithRoles.length ? ["talkoot", "Talkoot"] : null,
     targets.length ? ["kyydit", "Kyydit"] : null,
@@ -1140,6 +1140,7 @@ function viewLeiri() {
     h += `<div class="h3">${esc(dayLabel(v))}${v === t ? " · tänään" : ""}</div>`;
     h += rows.length ? `<div class="box">${tlHtml(rows, v)}</div>` : `<p class="note">Tälle päivälle ei ole vielä ohjelmaa.</p>`;
   } else if (v === "ruoka") {
+    if (!menu.length) h += `<p class="note">Ruokalista lisätään lähempänä leiriä. Se kirjoitetaan Sheetin Ruokalista-välilehdelle (Osio = ${esc(s)}).</p>`;
     const byDay = {};
     menu.slice().sort((a, b) => a.date.localeCompare(b.date) || sortMin(a.time) - sortMin(b.time)).forEach(m => (byDay[m.date] = byDay[m.date] || []).push(m));
     Object.keys(byDay).forEach(d => {
@@ -1183,7 +1184,6 @@ function viewLeirit() {
     const n = c.start ? daysUntil(c.start) : null;
     const when = live ? "Käynnissä nyt" : ended ? "Päättynyt" : n === null ? "Päivät tulossa" : n === 0 ? "Alkaa tänään" : n === 1 ? "Alkaa huomenna" : `Alkaa ${n} pv päästä`;
     const days = campDays(s);
-    const hasMenu = (D.menu || []).some(m => secName(m) === s);
     const btn = (key, label, icon) => `<button class="lbtn" data-act="openLeiri" data-key="${esc(s + "|" + key)}">${ic(icon)}<span>${label}</span></button>`;
     h += `<div class="lcard ${ended ? "ended" : ""}">
       <button class="sech sec-${secColor(s)}-bg" data-act="openLeiri" data-key="${esc(s)}">
@@ -1192,7 +1192,7 @@ function viewLeirit() {
       ${days.length ? `<div class="ldays">${days.map(d => `<button class="chip ${d === t ? "on" : ""}" data-act="openLeiri" data-key="${esc(s + "|" + d)}">${esc(dayLabel(d))}</button>`).join("")}</div>` : ""}
       <div class="lbtns">
         ${btn(days.includes(t) ? t : days[0] || "info", "Ohjelma", "cal")}
-        ${hasMenu ? btn("ruoka", "Ruokalista", "food") : ""}
+        ${btn("ruoka", "Ruokalista", "food")}
         ${btn("talkoot", "Talkoot", "people")}
         ${btn("info", "Info", "book")}
       </div>
@@ -1440,6 +1440,9 @@ function makeDemo() {
   const mealPlan = [["Lounas", "Päivällinen", "Iltapala"], ["Aamupala", "Lounas", "Päivällinen", "Iltapala"], ["Aamupala", "Lounas", "Päivällinen", "Iltapala"], ["Aamupala", "Lounas", "Päivällinen", "Iltapala"], ["Aamupala", "Lounas"]];
   let fi = 0;
   const vlMenu = VLD.flatMap((d, i) => mealPlan[i].map(m => ({ section: VL, date: d, meal: m, time: MEALS[m], food: FOODS[m][(fi++) % FOODS[m].length], place: "Leiriruokala" })));
+  const alPlan = [["Iltapala"], ["Aamupala", "Lounas", "Päivällinen", "Iltapala"], ["Aamupala", "Lounas"]];
+  const alTimes = { Aamupala: "07:30–08:30", Lounas: "12:00–13:00", Päivällinen: "17:00–18:00", Iltapala: "20:00–20:45" };
+  const alMenu = ALD.flatMap((d, i) => alPlan[i].map(m => ({ section: AL, date: d, meal: m, time: alTimes[m], food: FOODS[m][(fi++) % FOODS[m].length], place: "Alueleirin ruokala" })));
   const G = (id, sec, d, time, teams, field, home, roles, extra) => Object.assign({ id, section: sec, date: typeof d === "string" ? d : day(d), time, teams, field,
     series: sec, home, result: "", link: "", info: "", roles: roles || {} }, extra || {});
   const games = [
@@ -1499,7 +1502,7 @@ function makeDemo() {
       { section: AL, name: "Alueleiri Loimaa", start: ALD[0], end: ALD[2], town: "Loimaa", info: "Esimerkki: ota mukaan eväät, juomapullo ja pelivarusteet.", link: "" },
       { section: VL, name: "Naperoleiri Laitila", start: VLD[0], end: VLD[4], town: "Laitila", info: "Esimerkki: majoitus leirikoululla luokissa, ruokailut leiriruokalassa.\nPelaajat ovat aikuisten valvonnassa koko leirin ajan.", link: "" },
     ],
-    menu: vlMenu,
+    menu: alMenu.concat(vlMenu),
     ohjeet: [
       { section: VL, title: "Pakkauslista", text: "Esimerkki:\n• makuupussi ja patja\n• pelivarusteet ja vaihtovaatteet\n• pyyhe ja peseytymisvälineet\n• juomapullo", link: "" },
       { title: "Kirjuri", text: "Esimerkkiohje: tule paikalle 30 min ennen ottelua. Pöytäkirja ja kynät ovat kioskin laatikossa.\nKirjaa vaihdot ja tulokset, ja palauta pöytäkirja valmentajalle ottelun jälkeen.", link: "" },
@@ -1512,6 +1515,7 @@ function makeDemo() {
       { name: "Kotikenttä", address: "Esimerkkikatu 1, Tampere", surface: "Hiekka" },
       { name: "Vieraskenttä", address: "Toinen katu 5, Nokia", surface: "Tekonurmi" },
       { name: "Alueleirin kenttä", address: "Loimaa", surface: "" },
+      { name: "Alueleirin ruokala", address: "Loimaa", surface: "" },
       { name: "Leiripaikka", address: "Laitila", surface: "" },
       { name: "Leirikoulu", address: "Laitila", surface: "" },
       { name: "Leiriruokala", address: "Laitila", surface: "" },
