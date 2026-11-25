@@ -179,7 +179,8 @@
   .mcard.past { opacity: .62; }
   .mcard.today { box-shadow: 0 0 0 2px var(--now-border), var(--sh); }
   .mcard.hero { box-shadow: 0 0 0 2px var(--ac), var(--sh); }
-  .mmain { display: grid; grid-template-columns: 74px 1fr 76px; align-items: center; gap: 6px; padding: 12px; }
+  .mmain { display: grid; grid-template-columns: 74px 1fr; align-items: center; gap: 10px; padding: 12px; }
+  .mtag { text-align: center; margin: -2px 0 6px; }
   .mdate { font-size: 11.5px; color: var(--sub); font-weight: 600; text-transform: uppercase; letter-spacing: .2px; }
   .mtime { font-size: 18px; font-weight: 500; letter-spacing: -.3px; line-height: 1.2; }
   .mplace { font-size: 11.5px; color: var(--sub); margin: 1px 0 6px; line-height: 1.3; word-break: break-word; }
@@ -199,7 +200,8 @@
   .mfoot .sub { margin-top: 4px; }
   .mlink { display: flex; align-items: center; gap: 6px; background: none; border: none; color: #4A4E45; font-size: 12.8px; cursor: pointer; padding: 4px 0; width: 100%; text-align: left; }
   .mlink .bar { flex: 1; max-width: 120px; }
-  @media (max-width: 370px) { .mmain { grid-template-columns: 64px 1fr 64px; gap: 4px; padding: 10px; } .mteam .av { width: 34px; height: 34px; } }
+  @media (max-width: 370px) { .mmain { grid-template-columns: 64px 1fr; gap: 6px; padding: 10px; } .mteam .av { width: 34px; height: 34px; }
+                              .mmain > div:first-child .badge, .ileft .badge { font-size: 10px; padding: 2px 6px; } }
 
   /* Yhteinen kortti (talkoot, tapahtumat, kyydit) */
   .imain { display: grid; grid-template-columns: 74px 1fr; gap: 10px; padding: 12px; align-items: start; }
@@ -573,8 +575,9 @@ function gameCard(g, opts) {
   const rides = g.rides ? ridesFor(g.id) : [];
   const free = rides.reduce((s, r) => s + Math.max(r.seats - r.passengers.length, 0), 0);
   const rel = opts.rel ? relDay(g.date, g.time) : "";
-  const status = past ? (g.result ? "" : `<span class="badge b-away">Pelattu</span>`)
-    : today ? `<span class="badge b-now">Tänään</span>` : rel ? `<span class="badge b-up">${esc(rel)}</span>` : `<span class="badge b-up">Tuleva</span>`;
+  const status = past ? (g.result ? "" : `<span class="badge b-away">Pelattu</span>`) : statusPill(g.date, g.time);
+  // Sarja näytetään vain, kun lista ei ole jo suodatettu siihen osioon
+  const tag = (g.series || secName(g) !== OTHER) && !(tab === "ottelut" && F.sec) ? (g.series || secName(g)) : "";
   const f = g.field ? fieldByName(g.field) : null;
   const team = (n, side) => n ? `<div class="mteam">${teamAvatar(n)}<div class="tn">${esc(n)}</div><div class="ts">${isHomeTeam(n) ? (g.home ? "Koti" : "Vieras") : side}</div></div>` : `<div></div>`;
   let foot = "";
@@ -594,9 +597,8 @@ function gameCard(g, opts) {
         <div class="mtime">${esc(g.time || "–")}</div>
         <div class="mplace">${g.field ? `<a href="${esc(mapUrl(f && f.address ? f.address : g.field))}" target="_blank" rel="noopener">${esc(g.field)}</a>` : ""}</div>
         ${status}</div>
-      <div class="mteams">${team(ta, "Koti")}<div class="vs ${g.result ? "res" : ""}">${g.result ? esc(g.result) : "vs"}</div>${team(tb, "Vieras")}</div>
-      <div class="mright">${g.series || secName(g) !== OTHER ? `<span class="badge b-ser">${esc(g.series || secName(g))}</span>` : ""}
-        <span class="badge ${g.home ? "b-home" : "b-away"}">${g.home ? "Kotipeli" : "Vieraspeli"}</span></div>
+      <div>${tag ? `<div class="mtag"><span class="badge b-ser">${esc(tag)}</span></div>` : ""}
+        <div class="mteams">${team(ta, "Koti")}<div class="vs ${g.result ? "res" : ""}">${g.result ? esc(g.result) : "vs"}</div>${team(tb, "Vieras")}</div></div>
     </div>${foot ? `<div class="mfoot">${foot}</div>` : ""}</div>`;
 }
 
