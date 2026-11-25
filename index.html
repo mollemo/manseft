@@ -117,6 +117,7 @@
   /* Suodattimet: pillerit ja alleviivatut välilehdet */
   .chips { display: flex; gap: 7px; overflow-x: auto; scrollbar-width: none; margin: 0 -2px 12px; padding: 2px; }
   .chips::-webkit-scrollbar { display: none; }
+  .chips.wrap { flex-wrap: wrap; overflow: visible; margin-left: 0; margin-right: 0; }
   .chip { flex: none; font-size: 12.5px; font-weight: 600; padding: 7px 13px; border-radius: 999px; border: none; background: #fff; color: #454941;
           cursor: pointer; box-shadow: var(--sh); white-space: nowrap; }
   .chip.on { background: var(--text); color: #fff; }
@@ -412,9 +413,12 @@ function secLockedName(s) { return ((D.settings && D.settings.lockedSections) ||
 function talkooLocked(x) { return locked() || secLockedName(secName(x)); }
 function secOk(x) { return !F.sec || secName(x) === F.sec; }
 function secIcon(s) { s = s.toLowerCase(); return s.includes("leiri") ? "⛺" : s.includes("sarja") ? "⚾" : "📌"; }
-function secChips() {
-  const l = sectionList();
-  return l.length > 1 ? chips("sec", [["", "Kaikki"]].concat(l.map(x => [x, esc(x)])), F.sec) : "";
+// Osiosuodatin: vain osiot, joissa tällä välilehdellä on sisältöä. Rivittyy, joten kaikki osiot näkyvät aina.
+function secChips(items) {
+  const present = new Set((items || []).map(secName));
+  const l = sectionList().filter(x => !items || present.has(x));
+  if (F.sec && !l.includes(F.sec)) F.sec = "";
+  return l.length > 1 ? chips("sec", [["", "Kaikki"]].concat(l.map(x => [x, esc(x)])), F.sec).replace('class="chips"', 'class="chips wrap"') : "";
 }
 
 // ─── Laskurit ────────────────────────────────────────────────────────────
@@ -967,7 +971,7 @@ function viewOttelut() {
   const t = todayIso();
   let h = statusBanners();
   h += seg("games", [["tulevat", "Tulevat"], ["pelatut", "Pelatut"], ["kaikki", "Kaikki"]], F.games);
-  h += secChips();
+  h += secChips(D.games);
   let list = D.games.filter(secOk);
   if (F.games === "tulevat") list = list.filter(g => g.date >= t).sort(byWhen);
   else if (F.games === "pelatut") list = list.filter(g => g.date < t).sort((a, b) => byWhen(b, a));
@@ -987,9 +991,10 @@ function viewTalkoot() {
   h += o.all === 0
     ? `<div class="banner ok">✅ Kaikki tulevat talkoovuorot on täytetty — kiitos!</div>`
     : `<div class="banner warn">Avoimia vuoroja <b>${o.all}</b> · otteluissa ${o.games}, muissa talkoissa ${o.talkoot}</div>`;
+  const sc = secChips([].concat(D.games.filter(g => Object.keys(g.roles).length), D.talkoot));
   const lockedSecs = sectionList().filter(secLockedName).filter(x => !F.sec || x === F.sec);
   if (lockedSecs.length && !locked()) h += `<div class="banner lock">🔒 ${esc(lockedSecs.join(", "))}: vuorot jakaa talkoovastaava. Ilmoittautuminen sivulla on suljettu — näet täältä oman vuorosi.</div>`;
-  h += secChips();
+  h += sc;
 
   let items = [].concat(
     D.games.filter(g => Object.keys(g.roles).length).map(g => ({ kind: "game", date: g.date, time: g.time, ref: g, open: gameOpen(g) })),
@@ -1020,7 +1025,7 @@ function viewKyydit() {
   const t = todayIso();
   let h = statusBanners();
   h += `<p class="note">Vieraspelien ja tapahtumien kyydit. Kuljettaja ilmoittaa vapaat paikat, ja pelaajat liittyvät kyytiin omalla nimellään.</p>`;
-  h += secChips();
+  h += secChips(rideTargets().filter(x => x.date >= t).map(x => x.ref));
   const targets = rideTargets().filter(x => x.date >= t && secOk(x.ref));
   if (!targets.length) return h + `<p class="note"><em>Ei tulevia vieraspelejä tai kyytitapahtumia.</em></p>`;
   h += groupByMonth(targets, tg => {
@@ -1041,7 +1046,7 @@ function viewKalenteri() {
   const t = todayIso();
   let h = statusBanners();
   h += seg("kal", [["kaikki", "Kaikki"], ["game", "Ottelut"], ["talkoo", "Talkoot"], ["event", "Tapahtumat"]], F.kal);
-  h += secChips();
+  h += secChips(allItems().map(x => x.ref));
   h += `<div class="chips"><button class="chip ${F.kalPast ? "on" : ""}" data-act="filter" data-key="kalPast|x">Näytä menneet</button>
         <button class="chip" data-act="icsAll">📥 Lataa kaikki kalenteriin</button></div>`;
   let items = allItems().filter(it => (F.kal === "kaikki" || it.kind === F.kal) && secOk(it.ref));
