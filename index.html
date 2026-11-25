@@ -201,6 +201,23 @@
   .mlink .bar { flex: 1; max-width: 120px; }
   @media (max-width: 370px) { .mmain { grid-template-columns: 64px 1fr 64px; gap: 4px; padding: 10px; } .mteam .av { width: 34px; height: 34px; } }
 
+  /* Yhteinen kortti (talkoot, tapahtumat, kyydit) */
+  .imain { display: grid; grid-template-columns: 74px 1fr; gap: 10px; padding: 12px; align-items: start; }
+  .ileft .mplace { margin-bottom: 6px; }
+  .mend { display: block; font-size: 12.5px; color: var(--sub); font-weight: 500; letter-spacing: 0; }
+  .ihead { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; min-height: 26px; }
+  .iic { width: 26px; height: 26px; border-radius: 50%; background: var(--soft); color: var(--acd); display: grid; place-items: center; flex: none; }
+  .iic svg { width: 15px; height: 15px; }
+  .iic .emo { font-size: 13px; line-height: 1; }
+  .icard .title { font-size: 15px; margin-top: 0; }
+  .ifoot-h { font-size: 12.5px; color: var(--sub); margin: 2px 0 4px; }
+  .mfoot .ride { margin-top: 6px; }
+  .mfoot .ride:first-child { margin-top: 2px; }
+  .rdrv { display: inline-flex; align-items: center; gap: 6px; }
+  .rdrv svg { width: 17px; height: 17px; color: var(--acd); flex: none; }
+  .ride.rform { background: #fff; box-shadow: inset 0 0 0 1.5px var(--border); }
+  @media (max-width: 370px) { .imain { grid-template-columns: 64px 1fr; } }
+
   .news { border-left: none; }
   .news .title { font-size: 14.5px; }
   .news .sub { white-space: pre-line; color: var(--text); }
@@ -523,9 +540,6 @@ async function submitRide(target) {
 }
 
 // ─── Komponentit ─────────────────────────────────────────────────────────
-function dateBox(iso, cls, icon) {
-  return `<div class="datebox ${cls || ""}"><div class="wd">${wd(iso)}</div><div class="dm">${dm(iso)}</div>${icon ? `<div class="ic">${icon}</div>` : ""}</div>`;
-}
 
 function roleRow(g, role) {
   const name = g.roles[role] || "";
@@ -608,38 +622,50 @@ function heroCard(g) {
     </div></div>`;
 }
 
+// Yhteinen kortti talkoille, tapahtumille ja kyytikohteille:
+// vasemmalla päivä, kellonaika ja paikka; keskellä kuvake, otsikko ja tiedot; oikealla tunniste; alaosassa lisäsisältö.
+function statusPill(date, time) {
+  if (isPast(date)) return "";
+  if (date === todayIso()) return `<span class="badge b-now">Tänään</span>`;
+  const n = daysUntil(date);
+  return n === 1 ? `<span class="badge b-up">Huomenna</span>` : n <= 6 ? `<span class="badge b-up">${n} pv päästä</span>` : "";
+}
+function placeShort(name) {
+  if (!name) return "";
+  const f = fieldByName(name);
+  return `<a href="${esc(mapUrl(f && f.address ? f.address : name))}" target="_blank" rel="noopener">${esc(name)}</a>`;
+}
+function itemCard(o) {
+  const past = isPast(o.date), today = o.date === todayIso();
+  return `<div class="mcard icard ${past ? "past" : ""} ${today ? "today" : ""}">
+    <div class="imain">
+      <div class="ileft">${o.showDate === false ? "" : `<div class="mdate">${esc(dayLabel(o.date))}</div>`}
+        <div class="mtime">${esc(o.time || "–")}${o.end ? `<span class="mend">– ${esc(o.end)}</span>` : ""}</div>
+        <div class="mplace">${placeShort(o.place)}</div>${statusPill(o.date, o.time)}</div>
+      <div class="icenter">
+        <div class="ihead"><span class="iic">${o.icon || ""}</span>${o.tag ? `<span class="badge b-ser">${esc(o.tag)}</span>` : ""}</div>
+        <div class="title">${o.title}</div>${o.sub ? `<div class="sub">${o.sub}</div>` : ""}</div>
+    </div>${o.foot ? `<div class="mfoot">${o.foot}</div>` : ""}</div>`;
+}
+
 function talkooCard(t) {
-  const past = isPast(t.date), today = t.date === todayIso();
-  const time = t.time ? `klo ${esc(t.time)}${t.end ? "–" + esc(t.end) : ""}` : "";
-  const names = t.names.map(n => `<span class="pas ${isMe(n) ? "mine" : ""}">${esc(n)}</span>`).join("");
   const missing = Math.max(t.need - t.names.length, 0);
-  return `<div class="card ${past ? "past" : ""} ${today ? "today" : ""}">
-    ${dateBox(t.date, "talkoo", "🙋")}
-    <div class="cbody">
-      <div class="meta">${time}${t.event ? ` <span class="badge b-ser">${esc(t.event)}</span>` : ""}${today ? ` <span class="badge b-today">Tänään</span>` : ""}</div>
-      <div class="title">${esc(t.task || "Talkoovuoro")}</div>
-      ${t.place ? `<div class="sub">${placeHtml(t.place)}</div>` : ""}
-      ${t.info ? `<div class="sub">${esc(t.info)}</div>` : ""}
-      <div class="roles"><div class="small muted" style="margin-top:3px;">Tekijät ${t.names.length}/${t.need}</div>
-        <div>${names}${missing ? `<span class="small muted" style="margin-left:2px;">${t.names.length ? "+ " : ""}${missing} jakamatta</span>` : ""}</div></div>
-    </div></div>`;
+  const names = t.names.map(n => `<span class="pas ${isMe(n) ? "mine" : ""}">${esc(n)}</span>`).join("");
+  return itemCard({ date: t.date, time: t.time, end: t.end, place: t.place, icon: ic("people"), tag: t.event,
+    title: esc(t.task || "Talkoovuoro"), sub: t.info ? esc(t.info) : "",
+    foot: `<div class="ifoot-h">Tekijät ${t.names.length}/${t.need}${missing ? ` · ${missing} jakamatta` : ""}</div>${names ? `<div>${names}</div>` : ""}` });
 }
 
 const EVENT_ICONS = { harjoitus: "🏃", turnaus: "🏆", leiri: "⛺", ohjelma: "🎯", majoitus: "🛏️", ruokailu: "🍽️", palaveri: "💬", varainhankinta: "💶", juhla: "🎉" };
 function eventIcon(e) { return EVENT_ICONS[String(e.type || "").toLowerCase()] || "📌"; }
 function eventCard(e) {
-  const past = isPast(e.date), today = e.date === todayIso();
-  const time = e.time ? `klo ${esc(e.time)}${e.end ? "–" + esc(e.end) : ""}` : "";
-  return `<div class="card ${past ? "past" : ""} ${today ? "today" : ""}">
-    ${dateBox(e.date, "event", eventIcon(e))}
-    <div class="cbody">
-      <div class="meta" style="color:var(--blue);">${time}${e.type ? ` <span class="badge b-ser">${esc(e.type)}</span>` : ""}${today ? ` <span class="badge b-today">Tänään</span>` : ""}</div>
-      <div class="title">${esc(e.title)}</div>
-      ${e.place ? `<div class="sub">${placeHtml(e.place)}</div>` : ""}
-      ${e.info ? `<div class="sub" style="white-space:pre-line;">${esc(e.info)}</div>` : ""}
-      ${e.link ? `<div class="sub"><a class="lnk" href="${esc(e.link)}" target="_blank" rel="noopener">🔗 Lisätiedot</a></div>` : ""}
-      ${e.rides && !past ? `<div class="sub" style="margin-top:6px;">🚗 <a class="lnk navy" href="#kyydit" data-act="tab" data-key="kyydit">Kyydit</a></div>` : ""}
-    </div></div>`;
+  return itemCard({ date: e.date, time: e.time, end: e.end, place: e.place, icon: `<span class="emo">${eventIcon(e)}</span>`, tag: e.type,
+    title: esc(e.title), sub: [e.info ? esc(e.info) : "", e.link ? `<a class="lnk" href="${esc(e.link)}" target="_blank" rel="noopener">Lisätiedot</a>` : ""].filter(Boolean).join("<br>") });
+}
+function rideTargetCard(tg) {
+  const isGame = tg.kind === "game";
+  return itemCard({ date: tg.date, time: tg.time, place: tg.place, icon: isGame ? ic("ball") : `<span class="emo">${eventIcon(tg.ref)}</span>`,
+    tag: isGame ? "Vieraspeli" : (secName(tg.ref) !== OTHER ? secName(tg.ref) : ""), title: esc(tg.title), foot: rideBlock(tg) });
 }
 
 // Kyytien muokkausoikeus ilman kirjautumista: nimi valittuna tällä laitteella (Minun tehtävät).
@@ -662,9 +688,9 @@ function rideBlock(target) {
     const pas = r.passengers.map(p => `<span class="pas ${isMe(p) ? "mine" : ""}">${esc(p)}${canEdit && canRemovePassenger(r, p) ? `<button class="x" title="Poista kyydistä" data-act="leave" data-key="${esc(r.id + "|" + p)}">✕</button>` : ""}</span>`).join("");
     let join = "";
     if (editing && editing.key === jkey) join = `<div class="rrow">${inlineInput("Pelaajan nimi")}</div>`;
-    else if (canEdit && free > 0) join = `<div class="rrow"><button class="btn navy sm" data-act="edit" data-key="${esc(jkey)}" data-val="">Liity kyytiin</button></div>`;
+    else if (canEdit && free > 0) join = `<div class="rrow"><button class="btn sm" data-act="edit" data-key="${esc(jkey)}" data-val="">Liity kyytiin</button></div>`;
     return `<div class="ride">
-      <div class="rh"><strong>🚗 ${meTag(r.driver)}${isMe(r.driver) ? ` <span class="small muted" style="font-weight:500;">(sinun kyytisi)</span>` : ""}</strong><span class="seats ${free ? "" : "full"}">${free ? `${free} vapaana / ${r.seats}` : "Täynnä"}</span></div>
+      <div class="rh"><strong class="rdrv">${ic("car")} ${meTag(r.driver)}${isMe(r.driver) ? ` <span class="small muted" style="font-weight:500;">(sinun kyytisi)</span>` : ""}</strong><span class="seats ${free ? "" : "full"}">${free ? `${free} vapaana / ${r.seats}` : "Täynnä"}</span></div>
       ${r.depart ? `<div class="small muted">Lähtö: ${esc(r.depart)}</div>` : ""}
       ${r.info ? `<div class="small muted">${esc(r.info)}</div>` : ""}
       <div>${pas}</div>${join}
@@ -673,16 +699,16 @@ function rideBlock(target) {
   }).join("");
   const fkey = `rideform|${target.id}`;
   if (editing && editing.key === fkey) {
-    html += `<div class="ride" style="background:#fff;border-color:var(--navy);">
+    html += `<div class="ride rform">
       <strong>Tarjoa kyytiä</strong>
       <div class="form">
         <div><label for="rName">Kuljettaja</label><br><input id="rName" class="inp wide" maxlength="60" value="${esc(myName())}" placeholder="Nimesi"></div>
         <div><label for="rSeats">Vapaita paikkoja pelaajille (oma lapsi ei mukaan)</label><br><input id="rSeats" class="inp" style="width:80px;" type="number" min="1" max="8" value="3"></div>
         <div><label for="rDepart">Lähtö (paikka ja aika)</label><br><input id="rDepart" class="inp wide" maxlength="80" placeholder="esim. Kaupin kenttä klo 8.30"></div>
-        <div><button class="btn navy" data-act="rideSubmit" data-key="${esc(target.id)}">Tallenna</button> <button class="btn navy ghost" data-act="cancel">Peruuta</button></div>
+        <div><button class="btn" data-act="rideSubmit" data-key="${esc(target.id)}">Tallenna</button> <button class="btn ghost" data-act="cancel">Peruuta</button></div>
       </div></div>`;
   } else if (canEdit) {
-    html += `<div style="margin-top:8px;"><button class="btn navy ghost" data-act="edit" data-key="${esc(fkey)}">＋ Tarjoa kyytiä</button></div>`;
+    html += `<div style="margin-top:8px;"><button class="btn ghost" data-act="edit" data-key="${esc(fkey)}">＋ Tarjoa kyytiä</button></div>`;
   } else if (!rides.length) {
     html += `<div class="small muted" style="margin-top:6px;">Ei kyytejä.</div>`;
   }
@@ -926,17 +952,7 @@ function viewKyydit() {
   h += secChips(rideTargets().filter(x => x.date >= t).map(x => x.ref));
   const targets = rideTargets().filter(x => x.date >= t && secOk(x.ref));
   if (!targets.length) return h + `<p class="note"><em>Ei tulevia vieraspelejä tai kyytitapahtumia.</em></p>`;
-  h += groupByMonth(targets, tg => {
-    const isGame = tg.kind === "game";
-    return `<div class="card">
-      ${dateBox(tg.date, isGame ? "away" : "event", isGame ? "⚾" : eventIcon(tg.ref))}
-      <div class="cbody">
-        <div class="meta" style="color:var(--navy);">${tg.time ? "klo " + esc(tg.time) : ""} ${isGame ? `<span class="badge b-away">Vieras</span>` : ""}</div>
-        <div class="title">${esc(tg.title)}</div>
-        ${tg.place ? `<div class="sub">${placeHtml(tg.place)}</div>` : ""}
-        ${rideBlock(tg)}
-      </div></div>`;
-  });
+  h += groupByMonth(targets, rideTargetCard);
   return h;
 }
 
@@ -1061,9 +1077,7 @@ function viewLeiri() {
       talk.map(x => ({ date: x.date, time: x.time, html: talkooCard(x) }))).sort(byWhen);
     h += items.map(i => i.html).join("");
   } else if (v === "kyydit") {
-    h += targets.map(tg => `<div class="card">${dateBox(tg.date, tg.kind === "game" ? "away" : "event", tg.kind === "game" ? "⚾" : eventIcon(tg.ref))}
-      <div class="cbody"><div class="meta" style="color:var(--navy);">${tg.time ? "klo " + esc(tg.time) : ""}</div><div class="title">${esc(tg.title)}</div>
-      ${tg.place ? `<div class="sub">${placeHtml(tg.place)}</div>` : ""}${rideBlock(tg)}</div></div>`).join("");
+    h += targets.map(rideTargetCard).join("");
   } else if (v === "info") {
     if (c.info || c.link) h += `<div class="box" style="white-space:pre-line;font-size:14px;line-height:1.55;">${esc(c.info)}${c.link ? `${c.info ? "\n" : ""}<a class="lnk" href="${esc(c.link)}" target="_blank" rel="noopener">🔗 Leirin sivut</a>` : ""}</div>`;
     h += ohjeet.map(ohjeCard).join("");
