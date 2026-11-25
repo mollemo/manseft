@@ -50,20 +50,17 @@
   main.busy button { pointer-events: none; opacity: .6; }
 
   /* Kelluva alapalkki */
-  .bnav { position: fixed; left: 50%; bottom: calc(14px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 20;
-          display: flex; gap: 2px; padding: 6px; background: rgba(255,255,255,.84); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-          border-radius: 999px; box-shadow: 0 10px 30px rgba(30,35,25,.18), inset 0 0 0 1px rgba(255,255,255,.8); max-width: calc(100vw - 16px); }
-  .bnav button { position: relative; height: 48px; min-width: 48px; padding: 0 12px; border: none; background: transparent; border-radius: 999px;
-                 display: flex; align-items: center; justify-content: center; gap: 7px; color: #3F433B; cursor: pointer; font-weight: 600; font-size: 13.5px; }
+  .bnav { position: fixed; left: 50%; bottom: calc(12px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 20;
+          display: flex; gap: 2px; padding: 5px; width: min(420px, calc(100vw - 20px)); background: rgba(255,255,255,.88);
+          backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-radius: 26px;
+          box-shadow: 0 10px 30px rgba(30,35,25,.18), inset 0 0 0 1px rgba(255,255,255,.8); }
+  .bnav button { position: relative; flex: 1; min-width: 0; height: 54px; padding: 0 2px; border: none; background: transparent; border-radius: 21px;
+                 display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: #4A4E45; cursor: pointer;
+                 font-weight: 600; font-size: 11px; letter-spacing: -.1px; }
   .bnav button svg { width: 21px; height: 21px; flex: none; }
-  .bnav button .lb { display: none; }
-  .bnav button.active { background: linear-gradient(180deg, var(--ac2), var(--ac)); color: #fff; padding: 0 17px;
-                        box-shadow: 0 4px 14px rgba(var(--acrgb),.38), inset 0 1px 0 rgba(255,255,255,.3); }
-  .bnav button.active .lb { display: inline; }
-  .bnav .cnt { position: absolute; top: 6px; right: 6px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: var(--red);
-               color: #fff; font-size: 10px; font-weight: 800; line-height: 16px; text-align: center; }
-  .bnav button.active .cnt { display: none; }
-  @media (max-width: 360px) { .bnav button { min-width: 44px; padding: 0 10px; } .bnav button.active { padding: 0 14px; } }
+  .bnav button .lb { display: block; white-space: nowrap; }
+  .bnav button.active { background: linear-gradient(180deg, var(--ac2), var(--ac)); color: #fff;
+                        box-shadow: 0 4px 14px rgba(var(--acrgb),.35), inset 0 1px 0 rgba(255,255,255,.3); }
 
   /* Typografia */
   .h2 { font-size: 17px; font-weight: 600; color: var(--text); margin: 24px 4px 10px; display: flex; align-items: center; gap: 8px; letter-spacing: -.2px; }
@@ -271,6 +268,18 @@
   .tile .chev { color: #9EA199; display: grid; }
   .tile .chev svg { width: 16px; height: 16px; }
   .back { margin: 0 0 10px; }
+  .welcome { background: #fff; border-radius: var(--r); box-shadow: var(--sh); padding: 16px; margin: 2px 0 14px; }
+  .welcome .wt { font-size: 18px; font-weight: 600; letter-spacing: -.3px; line-height: 1.3; }
+  .welcome .wl { list-style: none; }
+  .welcome .wl li { display: flex; gap: 12px; align-items: center; padding: 8px 0; font-size: 14px; line-height: 1.35; }
+  .welcome .wsel { margin-top: 12px; padding: 12px; border-radius: 16px; background: var(--acs); font-size: 14px; }
+  .welcome .wsel select { border-color: var(--ac); }
+  .hello { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; background: #fff; border: none; border-radius: var(--r);
+           box-shadow: var(--sh); padding: 12px 14px; margin: 2px 0 14px; cursor: pointer; color: var(--text); }
+  .hello .mic { background: var(--acs); }
+  .hello .hb { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; font-size: 13px; color: var(--sub); }
+  .hello .hb b { font-size: 15.5px; color: var(--text); font-weight: 600; }
+  .hello .chev { color: #9EA199; display: grid; } .hello .chev svg { width: 16px; height: 16px; }
   .kal-tools { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin: 0 0 12px; }
   .btn.dl { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; }
   .btn.dl svg { width: 16px; height: 16px; color: var(--acd); }
@@ -408,7 +417,7 @@ function parseHash() {
   return { tab: TABS.some(t => t[0] === h) || MENU_PAGES.some(t => t[0] === h) ? h : "koti" };
 }
 let tab = parseHash().tab;
-const F = { leiri: parseHash().leiri || "", sec: parseHash().sec || "", lday: "", menu: false, ohje: "", games: "tulevat", talkoot: "tulevat", kal: "kaikki", kalPast: false, mePast: false };
+const F = { leiri: parseHash().leiri || "", sec: parseHash().sec || "", lday: "", menu: false, ohje: "", games: "tulevat", talkoot: null, kal: "kaikki", kalPast: false, mePast: false };
 
 // ─── Apufunktiot ─────────────────────────────────────────────────────────
 const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -821,9 +830,34 @@ function statusBanners() {
 }
 
 // ─── Välilehdet ──────────────────────────────────────────────────────────
+function welcomeBlock() {
+  const me = myName();
+  if (me) {
+    const mine = myShifts(me, false), n = mine.length;
+    return `<button class="hello" data-act="toMine"><span class="mic">${ic("user")}</span>
+      <span class="hb"><b>Hei, ${esc(me)}!</b><span>${n ? `Sinulla on ${n} ${n === 1 ? "tuleva tehtävä" : "tulevaa tehtävää"} · seuraava ${esc(dayLabel(mine[0].date))}` : "Sinulla ei ole tulevia tehtäviä"}</span></span>
+      <span class="chev">${ic("chev")}</span></button>`;
+  }
+  const row = (icon, title, text) => `<li><span class="mic">${ic(icon)}</span><span><b>${title}</b><br><span class="small muted">${text}</span></span></li>`;
+  return `<div class="welcome">
+    <div class="wt">Tervetuloa Manse F-tyttöjen kauden sivulle!</div>
+    <p class="small muted" style="margin:4px 0 10px;">Täältä löydät kaiken kauteen liittyvän yhdestä paikasta.</p>
+    <ul class="wl">
+      ${row("ball", "Ottelut", "Koko kauden otteluohjelma paikkoineen.")}
+      ${row("people", "Talkoovuorot", "Talkoovastaavan jakamat vuorot – myös omasi.")}
+      ${row("car", "Kyydit", "Tarjoa kyytiä tai liity toisen kyytiin.")}
+      ${row("tent", "Leirit", "Alueleirin ja Naperoleirin ohjelma, ottelut ja ruoka.")}
+    </ul>
+    ${nameList().length ? `<div class="wsel"><label for="meSel"><b>Aloita valitsemalla nimesi</b><br><span class="small muted">Näet sen jälkeen omat talkoovuorosi ja kyytisi. Valinta muistetaan tällä laitteella.</span></label>
+      <select id="meSel" class="inp wide" style="margin-top:8px;">${nameOptions("")}</select></div>` : ""}
+    <button class="btn ghost sm" data-act="tab" data-key="ohjeet" style="margin-top:10px;">Lue, miten sivu toimii →</button>
+  </div>`;
+}
+
 function viewKoti() {
   const t = todayIso();
   let h = statusBanners();
+  h += welcomeBlock();
 
   const next = heroGame();
   if (next) h += heroCard(next);
@@ -991,10 +1025,9 @@ function nameSelect() {
 }
 function myBlock() {
   const me = myName();
-  let h = `<div class="h2 navy">Minun tehtävät</div><div class="box" style="padding-top:12px;padding-bottom:10px;">`;
-  if (!nameList().length) return h + `<p class="small muted">Kun nimet on lisätty, valitse tästä nimesi ja näet omat tehtäväsi.</p></div>`;
+  if (!me) return "";
+  let h = `<div class="h2 navy" id="minun">Minun tehtävät</div><div class="box" style="padding-top:12px;padding-bottom:10px;">`;
   h += nameSelect();
-  if (!me) return h + `<p class="small muted">Nimi muistetaan tällä laitteella.</p></div>`;
   const list = myShifts(me, F.mePast);
   const upcoming = F.mePast ? list.filter(x => x.date >= todayIso()) : list;
   h += `<div class="chips" style="margin:2px 0 4px;"><button class="chip ${F.mePast ? "on" : ""}" data-act="mePast">Näytä myös menneet</button>
@@ -1024,22 +1057,27 @@ function viewOttelut() {
 
 function viewTalkoot() {
   const t = todayIso();
-  let h = statusBanners() + seg("talkoot", [["tulevat", "Tulevat"], ["omat", "Omat"], ["menneet", "Menneet"]], F.talkoot);
+  // Oletus: omat vuorot, kun nimi on valittu. Käyttäjän oma valinta (F.talkoot) muistetaan.
+  const mode = F.talkoot || (myName() ? "omat" : "tulevat");
+  let h = statusBanners() + seg("talkoot", [["tulevat", "Tulevat"], ["omat", "Omat"], ["menneet", "Menneet"]], mode);
   h += secChips([].concat(D.games.filter(g => Object.keys(g.roles).length), D.talkoot));
   let items = [].concat(
     D.games.filter(g => Object.keys(g.roles).length).map(g => ({ kind: "game", date: g.date, time: g.time, ref: g, mine: Object.values(g.roles).some(isMe) })),
     D.talkoot.map(x => ({ kind: "talkoo", date: x.date, time: x.time, ref: x, mine: x.names.some(isMe) }))
   ).filter(i => secOk(i.ref));
-  if (F.talkoot === "menneet") items = items.filter(i => i.date < t).sort((a, b) => byWhen(b, a));
+  if (mode === "menneet") items = items.filter(i => i.date < t).sort((a, b) => byWhen(b, a));
   else items = items.filter(i => i.date >= t).sort(byWhen);
-  if (F.talkoot === "omat") {
+  if (mode === "omat") {
     if (!myName()) return h + `<div class="box" style="padding:12px 14px;">${nameSelect()}<p class="small muted">Valitse nimesi, niin näet omat talkoovuorosi.</p></div>`;
     items = items.filter(i => i.mine);
   }
   h += `<p class="note">Talkoovuorot jakaa talkoovastaava. Jos et pääse vuoroosi, sovi vaihdosta talkoovastaavan kanssa.</p>`;
   h += items.length
     ? groupByMonth(items, i => i.kind === "game" ? gameCard(i.ref, { noRides: true }) : talkooCard(i.ref))
-    : `<p class="note">${F.talkoot === "omat" ? `Ei tulevia talkoovuoroja nimellä ${esc(myName())}.` : "Ei vuoroja tässä näkymässä."}</p>`;
+    : mode === "omat"
+      ? `<div class="box" style="padding:14px;"><p class="small">Sinulla (${esc(myName())}) ei ole tulevia talkoovuoroja.</p>
+          <button class="btn ghost sm" data-act="filter" data-key="talkoot|tulevat" style="margin-top:8px;">Näytä kaikki tulevat vuorot</button></div>`
+      : `<p class="note">Ei vuoroja tässä näkymässä.</p>`;
 
   // Talkootilasto: montako vuoroa kullakin nimellä kaudella
   const counts = {};
@@ -1363,6 +1401,7 @@ const ACTIONS = {
     try { await installPrompt.userChoice; } catch (e) {}
     installPrompt = null; render();
   },
+  toMine(k, el, ev) { ev.preventDefault(); const el2 = document.getElementById("minun"); if (el2) el2.scrollIntoView({ behavior: "smooth", block: "start" }); },
   menu(k, el, ev) { ev.preventDefault(); F.menu = !F.menu; renderMenu(); },
   openLeiri(k, el, ev) {
     const i = k.indexOf("|");
@@ -1381,6 +1420,7 @@ const ACTIONS = {
   goSec(k, el, ev) {
     ev.preventDefault();
     const i = k.indexOf("|"); tab = k.slice(0, i); F.sec = k.slice(i + 1);
+    if (tab === "talkoot") F.talkoot = "tulevat";
     editing = null; touched.clear(); go(); render(); window.scrollTo(0, 0);
   },
   edit(k, el, ev) { ev.preventDefault(); startEdit(k, el.dataset.val); },
@@ -1445,7 +1485,7 @@ document.addEventListener("click", ev => {
   if (fn) fn(el.dataset.key || "", el, ev);
 });
 document.addEventListener("change", ev => {
-  if (ev.target.id === "meSel") { setMyName(ev.target.value); render(); }
+  if (ev.target.id === "meSel") { setMyName(ev.target.value); F.talkoot = null; render(); }
 });
 document.addEventListener("keydown", ev => {
   if (ev.target.id === "inl") {
