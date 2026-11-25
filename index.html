@@ -24,7 +24,9 @@
 
   /* Yläosa */
   header.top { max-width: 560px; margin: 0 auto; padding: 14px 16px 0; display: flex; align-items: center; gap: 10px; position: relative; }
-  .brand { display: flex; align-items: center; gap: 9px; font-weight: 600; font-size: 15.5px; letter-spacing: -.1px; }
+  .brand { display: flex; align-items: center; gap: 9px; font-weight: 600; font-size: 15.5px; letter-spacing: -.1px;
+           background: none; border: none; padding: 4px 6px 4px 0; cursor: pointer; color: var(--text); border-radius: 999px; }
+  .brand:active { opacity: .7; }
   .brand .logo { width: 30px; height: 30px; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.15); object-fit: cover; }
   .tbtns { margin-left: auto; display: flex; gap: 8px; }
   .ibtn { position: relative; width: 44px; height: 44px; border-radius: 50%; border: none; background: #fff; box-shadow: var(--sh);
@@ -267,7 +269,7 @@
 <body>
 
 <header class="top">
-  <div class="brand"><img class="logo" src="logo.png" alt=""><span id="teamTitle">Manse</span></div>
+  <button class="brand" data-act="tab" data-key="koti" aria-label="Etusivulle"><img class="logo" src="logo.png" alt=""><span id="teamTitle">Manse</span></button>
   <div class="tbtns">
     <button class="ibtn" id="bellBtn" data-act="tab" data-key="tiedotteet" aria-label="Tiedotteet"></button>
     <button class="ibtn" id="menuBtn" data-act="menu" aria-label="Valikko"></button>
