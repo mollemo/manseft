@@ -28,7 +28,12 @@
            background: none; border: none; padding: 4px 6px 4px 0; cursor: pointer; color: var(--text); border-radius: 999px; }
   .brand:active { opacity: .7; }
   .brand .logo { width: 30px; height: 30px; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.15); object-fit: cover; }
-  .tbtns { margin-left: auto; display: flex; gap: 8px; }
+  .tbtns { margin-left: auto; display: flex; gap: 7px; flex: none; }
+  .brand { min-width: 0; }
+  #teamTitle { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  @media (max-width: 400px) { .ibtn { width: 40px; height: 40px; } .ibtn svg { width: 19px; height: 19px; } .ibtn .dot { top: 8px; right: 9px; } .tbtns { gap: 6px; } }
+  @media (max-width: 400px) { .brand { font-size: 14px; gap: 7px; } .brand .logo { width: 28px; height: 28px; } .tbtns { gap: 5px; } .ibtn { width: 39px; height: 39px; } }
+  @media (max-width: 349px) { #teamTitle { display: none; } }
   .ibtn { position: relative; width: 44px; height: 44px; border-radius: 50%; border: none; background: #fff; box-shadow: var(--sh);
           display: grid; place-items: center; cursor: pointer; color: var(--text); }
   .ibtn svg { width: 20px; height: 20px; }
@@ -318,7 +323,9 @@
 <header class="top">
   <button class="brand" data-act="tab" data-key="koti" aria-label="Etusivulle"><img class="logo" src="logo.png" alt=""><span id="teamTitle">Manse</span></button>
   <div class="tbtns">
-    <button class="ibtn" id="bellBtn" data-act="tab" data-key="tiedotteet" aria-label="Tiedotteet"></button>
+    <button class="ibtn" id="calBtn" data-act="tab" data-key="kalenteri" aria-label="Kalenteri" title="Kalenteri"></button>
+    <button class="ibtn" id="helpBtn" data-act="tab" data-key="ohjeet" aria-label="Ohjeet" title="Ohjeet"></button>
+    <button class="ibtn" id="bellBtn" data-act="tab" data-key="tiedotteet" aria-label="Tiedotteet" title="Tiedotteet"></button>
     <button class="ibtn" id="menuBtn" data-act="menu" aria-label="Valikko"></button>
   </div>
   <div class="menu" id="menu" hidden></div>
@@ -1233,7 +1240,10 @@ function renderTabs() {
   const fresh = D && tab !== "tiedotteet" && unreadNews().length > 0;
   document.getElementById("bellBtn").innerHTML = ic("bell") + (fresh ? `<span class="dot"></span>` : "");
   document.getElementById("menuBtn").innerHTML = ic("menu");
-  document.getElementById("menuBtn").classList.toggle("on", MENU_PAGES.some(t => t[0] === tab));
+  document.getElementById("calBtn").innerHTML = ic("cal");
+  document.getElementById("helpBtn").innerHTML = ic("book");
+  document.getElementById("calBtn").classList.toggle("on", tab === "kalenteri");
+  document.getElementById("helpBtn").classList.toggle("on", tab === "ohjeet");
   document.getElementById("bellBtn").classList.toggle("on", tab === "tiedotteet");
 }
 function renderClock() {
