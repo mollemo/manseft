@@ -752,8 +752,8 @@ function viewKoti() {
   // Leirit näkyvät painikkeina aina leirin loppuun asti; lähestyvä tai käynnissä oleva leiri korostetaan ja nostetaan ylös.
   const tiles = sectionList().filter(x => !isCamp(x) || !campInfo(x).start || campInfo(x).end >= t)
     .sort((a, b) => (isCamp(b) && campVisible(b) ? 1 : 0) - (isCamp(a) && campVisible(a) ? 1 : 0));
-  h += `<div class="h2">Kausi</div>` + tiles.map(x => sectionTile(x)).join("");
   h += myBlock();
+  h += `<div class="h2">Kausi</div>` + tiles.map(x => sectionTile(x)).join("");
   h += statsBlock();
   return h;
 }
