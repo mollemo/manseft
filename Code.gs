@@ -28,6 +28,7 @@ var SHEETS = {
   "Ruokalista":   ["Osio", "Pvm", "Ateria", "Klo", "Ruoka", "Paikka"],
   "Ohjeet":       ["Osio", "Otsikko", "Teksti", "Linkki"],
   "Kentät":       ["Nimi", "Osoite", "Pinta"],
+  "Nimet":        ["Nimi", "Lisätiedot"],
   "Asetukset":    ["Asetus", "Arvo", "Selite"]
 };
 
@@ -104,6 +105,14 @@ function setup() {
   // Pudotusvalikot
   var kentat = ss.getSheetByName("Kentät");
   var hm = headerMap_(ott);
+  // Nimet-välilehden lista pudotusvalikoksi roolisarakkeisiin ja kyytien kuljettajaan, jotta nimet pysyvät samassa muodossa
+  var nimet = ss.getSheetByName("Nimet").getRange("A2:A");
+  var nameRule = SpreadsheetApp.newDataValidation().requireValueInRange(nimet, true).setAllowInvalid(true).build();
+  allRoles_(settings).forEach(function (role) {
+    if (role in hm) ott.getRange(2, hm[role] + 1, Math.max(ott.getMaxRows() - 1, 1), 1).setDataValidation(nameRule);
+  });
+  var kyy = ss.getSheetByName("Kyydit"), kh = headerMap_(kyy);
+  kyy.getRange(2, kh["Kuljettaja"] + 1, Math.max(kyy.getMaxRows() - 1, 1), 1).setDataValidation(nameRule);
   var maxRows = Math.max(ott.getMaxRows() - 1, 1);
   ott.getRange(2, hm["Kenttä"] + 1, maxRows, 1).setDataValidation(
     SpreadsheetApp.newDataValidation().requireValueInRange(kentat.getRange("A2:A"), true).setAllowInvalid(true).build());
@@ -336,6 +345,7 @@ function buildPayload_() {
     return { section: sectionOf_(r["Osio"], "", sections), date: fmtDate_(r["Pvm"], year), meal: str_(r["Ateria"]),
              time: r["Klo"] instanceof Date ? fmtTime_(r["Klo"]) : str_(r["Klo"]), food: str_(r["Ruoka"]), place: str_(r["Paikka"]) };
   }).filter(function (m) { return m.date && (m.meal || m.food); });
+  var names = readTable_("Nimet").map(function (r) { return str_(r["Nimi"]); }).filter(function (n) { return n; });
   var fields = readTable_("Kentät").map(function (r) {
     return { name: str_(r["Nimi"]), address: str_(r["Osoite"]), surface: str_(r["Pinta"]) };
   }).filter(function (f) { return f.name; });
@@ -347,7 +357,7 @@ function buildPayload_() {
                 campDays: parseInt(s["Leiri etusivulla"], 10) || 14 },
     locked: /^lukit/i.test(s["Lukko"] || ""),
     today: todayIso_(),
-    games: games, talkoot: talkoot, events: events, rides: rides, news: news, ohjeet: ohjeet, fields: fields, camps: camps, menu: menu
+    games: games, talkoot: talkoot, events: events, rides: rides, news: news, ohjeet: ohjeet, fields: fields, camps: camps, menu: menu, names: names
   };
 }
 
@@ -380,10 +390,14 @@ function handle_(b, s) {
   }
 
   var ksh = sheet_("Kyydit"), khm = headerMap_(ksh);
+  // Jos Nimet-välilehdellä on nimiä, kyytien nimet hyväksytään vain listalta
+  var known = readTable_("Nimet").map(function (r) { return str_(r["Nimi"]).toLowerCase(); }).filter(function (n) { return n; });
+  var listed = function (n) { return !known.length || known.indexOf(str_(n).toLowerCase()) !== -1; };
 
   if (b.action === "ride_add") {           // { target, driver, seats, depart, info }
     var driver = str_(b.driver).slice(0, 60);
     if (!driver || !str_(b.target)) return { ok: false, error: "Nimi puuttuu." };
+    if (!listed(driver)) return { ok: false, error: "Valitse nimi listalta." };
     var rowVals = [];
     rowVals[khm["ID"]] = "k" + Utilities.getUuid().slice(0, 8);
     rowVals[khm["KohdeID"]] = str_(b.target);
@@ -408,6 +422,7 @@ function handle_(b, s) {
     var pas = splitList_(pc.getValue());
     var seats = parseInt(ksh.getRange(krow, khm["Paikat"] + 1).getValue(), 10) || 0;
     if (b.action === "ride_join") {
+      if (!listed(name)) return { ok: false, error: "Valitse nimi listalta." };
       if (pas.some(function (n) { return n.toLowerCase() === name.toLowerCase(); })) return { ok: true };
       if (pas.length >= seats) return { ok: false, error: "Kyyti ehti juuri täyttyä." };
       pas.push(name);

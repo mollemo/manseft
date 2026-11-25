@@ -37,6 +37,7 @@ Leirit eivät ole yläpalkissa. Ne löytyvät **☰-valikosta** ja etusivun pain
 | **Kyydit** | Täyttyy sivustolta. Valmentaja voi muokata tai poistaa rivejä. |
 | **Tiedotteet** | Näkyvät etusivulla *Näytä asti* -päivään saakka (tyhjä = aina). |
 | **Ohjeet** | Sivun Ohjeet-välilehdelle: Otsikko, Teksti (rivinvaihdot säilyvät), Linkki. Järjestys = rivien järjestys. Jos otsikko on sama kuin talkoorooli (esim. *Kirjuri* tai *Kioski*, joka kattaa Kioski 1 ja Kioski 2), roolin viereen tulee ⓘ-linkki ohjeeseen. |
+| **Nimet** | Kaikki nimet yhdessä muodossa (esim. perheiden sukunimet). Sivun nimivalinnat (Minun tehtävät, kyydin kuljettaja ja kyytiläinen) käyttävät tätä listaa, ja Sheetin roolisarakkeissa ja kyytien kuljettajasarakkeessa on sama lista pudotusvalikkona. Kun lista on täytetty, kyytejä voi tarjota ja niihin liittyä vain listan nimillä. |
 | **Kentät** | Ohjeet-välilehdelle. Kentän osoitteesta tulee karttalinkki kaikkialle, missä kenttää käytetään. |
 | **Asetukset** | Joukkueen nimi, kausi, **Osiot**, ottelutalkoiden osio, koti- ja vieraspelin talkooroolit sekä **Lukko** (AUKI / LUKITTU, koskee kyytejä). |
 

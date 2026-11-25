@@ -522,7 +522,7 @@ async function saveEdit() {
   if (!el || !editing) return;
   const v = el.value.trim();
   const [type, id, extra] = editing.key.split("|");
-  if (!v) { editing = null; render(); return; }
+  if (!v) { if (type === "join") { toast("Valitse nimi listalta"); el.focus(); return; } editing = null; render(); return; }
   if (type === "role") {
     const g = D.games.find(x => x.id === id);
     const old = g ? g.roles[extra] : "";
@@ -541,7 +541,7 @@ async function submitRide(target) {
   const n = (document.getElementById("rName") || {}).value || "";
   const seats = parseInt((document.getElementById("rSeats") || {}).value, 10) || 1;
   const depart = (document.getElementById("rDepart") || {}).value || "";
-  if (!n.trim()) { document.getElementById("rName").focus(); return; }
+  if (!n.trim()) { toast("Valitse kuljettaja listalta"); document.getElementById("rName").focus(); return; }
   setMyName(n.trim()); editing = null;
   await act({ action: "ride_add", target, driver: n.trim(), seats, depart: depart.trim() });
 }
@@ -694,7 +694,8 @@ function rideBlock(target) {
     const jkey = `join|${r.id}`;
     const pas = r.passengers.map(p => `<span class="pas ${isMe(p) ? "mine" : ""}">${esc(p)}${canEdit && canRemovePassenger(r, p) ? `<button class="x" title="Poista kyydistä" data-act="leave" data-key="${esc(r.id + "|" + p)}">✕</button>` : ""}</span>`).join("");
     let join = "";
-    if (editing && editing.key === jkey) join = `<div class="rrow">${inlineInput("Pelaajan nimi")}</div>`;
+    if (editing && editing.key === jkey) join = `<div class="rrow"><select id="inl" class="inp" style="flex:1;min-width:150px;">${nameOptions(myName(), "— valitse nimi —")}</select>
+          <button class="btn" data-act="save">Liity</button><button class="btn ghost" data-act="cancel">Peruuta</button></div>`;
     else if (canEdit && free > 0) join = `<div class="rrow"><button class="btn sm" data-act="edit" data-key="${esc(jkey)}" data-val="">Liity kyytiin</button></div>`;
     return `<div class="ride">
       <div class="rh"><strong class="rdrv">${ic("car")} ${meTag(r.driver)}${isMe(r.driver) ? ` <span class="small muted" style="font-weight:500;">(sinun kyytisi)</span>` : ""}</strong><span class="seats ${free ? "" : "full"}">${free ? `${free} vapaana / ${r.seats}` : "Täynnä"}</span></div>
@@ -709,7 +710,7 @@ function rideBlock(target) {
     html += `<div class="ride rform">
       <strong>Tarjoa kyytiä</strong>
       <div class="form">
-        <div><label for="rName">Kuljettaja</label><br><input id="rName" class="inp wide" maxlength="60" value="${esc(myName())}" placeholder="Nimesi"></div>
+        <div><label for="rName">Kuljettaja</label><br><select id="rName" class="inp wide">${nameOptions(myName(), "— valitse nimi —")}</select></div>
         <div><label for="rSeats">Vapaita paikkoja pelaajille (oma lapsi ei mukaan)</label><br><input id="rSeats" class="inp" style="width:80px;" type="number" min="1" max="8" value="3"></div>
         <div><label for="rDepart">Lähtö (paikka ja aika)</label><br><input id="rDepart" class="inp wide" maxlength="80" placeholder="esim. Kaupin kenttä klo 8.30"></div>
         <div><button class="btn" data-act="rideSubmit" data-key="${esc(target.id)}">Tallenna</button> <button class="btn ghost" data-act="cancel">Peruuta</button></div>
@@ -891,25 +892,26 @@ function myShifts(me, withPast) {
   });
   return out.sort(byWhen);
 }
+// Nimilista: Sheetin Nimet-välilehti. Jos se on tyhjä, nimet kootaan vuoroista ja kyydeistä.
+function nameList() {
+  const listed = (D.names || []).map(n => String(n).trim()).filter(Boolean);
+  return listed.length ? listed.slice().sort((a, b) => a.localeCompare(b, "fi")) : allNames();
+}
+function nameOptions(selected, placeholder) {
+  const names = nameList(), sel = String(selected || "").toLowerCase();
+  if (selected && !names.some(n => n.toLowerCase() === sel)) names.unshift(selected);
+  return `<option value="">${placeholder || "— valitse —"}</option>` +
+    names.map(n => `<option value="${esc(n)}" ${n.toLowerCase() === sel ? "selected" : ""}>${esc(n)}</option>`).join("");
+}
 function nameSelect() {
-  const me = myName(), names = allNames();
-  if (me && !names.some(n => n.toLowerCase() === me.toLowerCase())) names.unshift(me);
   return `<label class="small muted" for="meSel" style="font-weight:700;">Valitse nimesi</label>
-    <select id="meSel" class="inp wide" style="margin:3px 0 6px;">
-      <option value="">— valitse —</option>
-      ${names.map(n => `<option value="${esc(n)}" ${n.toLowerCase() === me.toLowerCase() ? "selected" : ""}>${esc(n)}</option>`).join("")}
-    </select>`;
+    <select id="meSel" class="inp wide" style="margin:3px 0 6px;">${nameOptions(myName())}</select>`;
 }
 function myBlock() {
-  const me = myName(), names = allNames();
-  if (me && !names.some(n => n.toLowerCase() === me.toLowerCase())) names.unshift(me);
+  const me = myName();
   let h = `<div class="h2 navy">Minun tehtävät</div><div class="box" style="padding-top:12px;padding-bottom:10px;">`;
-  if (!names.length) return h + `<p class="small muted">Kun vuoroja on jaettu tai kyytejä sovittu, valitse tästä nimesi ja näet omat tehtäväsi.</p></div>`;
-  h += `<label class="small muted" for="meSel" style="font-weight:700;">Valitse nimesi</label>
-        <select id="meSel" class="inp wide" style="margin:3px 0 6px;background:#fff;">
-          <option value="">— valitse —</option>
-          ${names.map(n => `<option value="${esc(n)}" ${n.toLowerCase() === me.toLowerCase() ? "selected" : ""}>${esc(n)}</option>`).join("")}
-        </select>`;
+  if (!nameList().length) return h + `<p class="small muted">Kun nimet on lisätty, valitse tästä nimesi ja näet omat tehtäväsi.</p></div>`;
+  h += nameSelect();
   if (!me) return h + `<p class="small muted">Nimi muistetaan tällä laitteella.</p></div>`;
   const list = myShifts(me, F.mePast);
   const upcoming = F.mePast ? list.filter(x => x.date >= todayIso()) : list;
@@ -972,7 +974,7 @@ function viewTalkoot() {
 function viewKyydit() {
   const t = todayIso();
   let h = statusBanners();
-  h += `<p class="note">Vieraspelien ja tapahtumien kyydit. Kuljettaja ilmoittaa vapaat paikat, ja pelaajat liittyvät kyytiin omalla nimellään.</p>`;
+  h += `<p class="note">Vieraspelien ja tapahtumien kyydit. Kuljettaja ilmoittaa vapaat paikat, ja kyytiin liitytään valitsemalla nimi listalta.</p>`;
   if (!myName()) h += `<div class="box" style="padding:12px 14px;">${nameSelect()}<p class="small muted">Valitse nimesi, niin voit muokata ja poistaa omia kyytejäsi.</p></div>`;
   h += secChips(rideTargets().filter(x => x.date >= t).map(x => x.ref));
   const targets = rideTargets().filter(x => x.date >= t && secOk(x.ref));
@@ -1439,6 +1441,7 @@ function makeDemo() {
       { title: "Kirjuri", text: EX + "tehtävän ohje kirjoitetaan Sheetin Ohjeet-välilehdelle.", link: "" },
       { section: VL, title: "Pakkauslista", text: EX + "leirin oma ohje (Osio = Valtakunnallinen leiri).", link: "" },
     ],
+    names: ["Esimerkki Kuljettaja", "Esimerkki Pelaaja", "Esimerkki Vanhempi", "Toinen Vanhempi"],
     fields: [
       { name: "Kotikenttä", address: "Tampere", surface: "" },
       { name: "Alueleirin kenttä", address: "Loimaa", surface: "" },
