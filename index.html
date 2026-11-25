@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <style>
   :root {
-    --bg: #EEEFEB; --card: #FFFFFF; --soft: #F4F5F1; --text: #1D2019; --sub: #8A8D85; --border: #E7E8E3;
+    --bg: #EEEFEB; --card: #FFFFFF; --soft: #F4F5F1; --text: #1D2019; --sub: #65685F; --border: #E7E8E3;
     --ac: #C41E28; --ac2: #E8463F; --acd: #A3161E; --acs: #FBE7E5; --acrgb: 196,30,40;
     --ok: #3E7D45; --oks: #E7F2E6;
     --red: #C41E28; --darkred: #A3161E; --deep: #7A1218; --green: #3E7D45; --navy: #38432F; --blue: #56708F;
@@ -268,9 +268,15 @@
   .tile .tp { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px; white-space: nowrap; background: var(--now-bg); color: #7A5A0E; }
   .tile .tp.lock { background: #F1F2EE; color: var(--navy); }
   .tile .tp.ok { background: var(--oks); color: var(--ok); }
-  .tile .chev { color: #B9BCB4; display: grid; }
+  .tile .chev { color: #9EA199; display: grid; }
   .tile .chev svg { width: 16px; height: 16px; }
   .back { margin: 0 0 10px; }
+  .kal-tools { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin: 0 0 12px; }
+  .btn.dl { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; }
+  .btn.dl svg { width: 16px; height: 16px; color: var(--acd); }
+  .rowbtn { width: 38px; height: 38px; flex: none; border: none; border-radius: 50%; background: var(--soft); color: var(--acd); display: grid; place-items: center; cursor: pointer; }
+  .rowbtn svg { width: 18px; height: 18px; }
+  .rowbtn:active { background: var(--acs); }
   .inst-hero { display: flex; gap: 14px; align-items: center; padding: 14px; }
   .inst-hero img { border-radius: 16px; box-shadow: 0 2px 10px rgba(0,0,0,.12); flex: none; }
   .inst-hero b { font-size: 16px; }
@@ -328,7 +334,7 @@
            padding: 10px 18px; border-radius: 999px; font-size: 13.5px; font-weight: 600; box-shadow: 0 6px 20px rgba(0,0,0,.25);
            opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 50; max-width: 92vw; text-align: center; }
   #toast.show { opacity: 1; }
-  footer { text-align: center; font-size: 11px; color: #A6A9A2; margin-top: 26px; }
+  footer { text-align: center; font-size: 11px; color: #85887F; margin-top: 26px; }
 </style>
 </head>
 <body>
@@ -378,6 +384,8 @@ const ICONS = {
   pin: '<path d="M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/>',
   chev: '<path d="M9 6l6 6-6 6"/>',
   user: '<circle cx="12" cy="8.5" r="3.6"/><path d="M5 20c.8-3.8 3.6-6 7-6s6.2 2.2 7 6"/>',
+  download: '<path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 19.5h14"/>',
+  calplus: '<rect x="4" y="5.5" width="16" height="14.5" rx="3"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4M12 12.6v5M9.5 15.1h5"/>',
   phone: '<rect x="7" y="2.8" width="10" height="18.4" rx="2.6"/><path d="M10.5 18h3"/>',
   share: '<path d="M12 15V3.5M8 7.2 12 3.5l4 3.7M6.5 11H5.8A1.8 1.8 0 0 0 4 12.8v6.4A1.8 1.8 0 0 0 5.8 21h12.4a1.8 1.8 0 0 0 1.8-1.8v-6.4a1.8 1.8 0 0 0-1.8-1.8h-.7"/>',
   plusbox: '<rect x="4" y="4" width="16" height="16" rx="3.5"/><path d="M12 8.5v7M8.5 12h7"/>',
@@ -1062,8 +1070,8 @@ function viewKalenteri() {
   let h = statusBanners();
   h += seg("kal", [["kaikki", "Kaikki"], ["game", "Ottelut"], ["talkoo", "Talkoot"], ["event", "Tapahtumat"]], F.kal);
   h += secChips(allItems().map(x => x.ref));
-  h += `<div class="chips"><button class="chip ${F.kalPast ? "on" : ""}" data-act="filter" data-key="kalPast|x">Näytä menneet</button>
-        <button class="chip" data-act="icsAll">📥 Lataa kaikki kalenteriin</button></div>`;
+  h += `<div class="kal-tools"><button class="chip ${F.kalPast ? "on" : ""}" data-act="filter" data-key="kalPast|x">Näytä menneet</button>
+        <button class="btn ghost sm dl" data-act="icsAll">${ic("download")}<span>Lataa kaikki kalenteriin</span></button></div>`;
   let items = allItems().filter(it => (F.kal === "kaikki" || it.kind === F.kal) && secOk(it.ref));
   if (!F.kalPast) items = items.filter(it => it.date >= t);
   if (!items.length) return h + `<p class="note">Ei tapahtumia.</p>`;
@@ -1072,7 +1080,7 @@ function viewKalenteri() {
     const d = dOf(it.date), k = d.getFullYear() + "-" + d.getMonth();
     if (!months.length || months[months.length - 1].k !== k) months.push({ k, label: MONTHS[d.getMonth()] + " " + d.getFullYear(), rows: [] });
     months[months.length - 1].rows.push(miniRow(it).replace(/<\/div>$/,
-      `<button class="x" title="Lisää kalenteriin" data-act="ics" data-key="${esc(it.kind + "|" + it.id)}">📅</button></div>`));
+      `<button class="rowbtn" title="Lisää kalenteriin" aria-label="Lisää kalenteriin" data-act="ics" data-key="${esc(it.kind + "|" + it.id)}">${ic("calplus")}</button></div>`));
   });
   months.forEach(m => h += `<div class="h3">${m.label}</div><div class="box">${m.rows.join("")}</div>`);
   return h;
@@ -1260,15 +1268,9 @@ function viewOhjeet() {
     <b>Kalenteri:</b> Yläreunan kalenterinapista näet koko kauden. Rivin kalenterikuvakkeella saat tapahtuman puhelimen kalenteriin.</div>`;
 
   if ((D.fields || []).length) {
-    h += `<div class="h2">📍 Kentät</div>`;
+    h += `<div class="h2">Kentät</div>`;
     D.fields.forEach(f => h += `<div class="card"><div class="cbody"><div class="title">${placeHtml(f.name).replace(/<br>.*$/, "")}</div>
       <div class="sub">${esc([f.address, f.surface].filter(Boolean).join(" · "))}</div></div></div>`);
-  }
-  const news = (D.news || []).slice().sort((a, b) => (b.date || "").localeCompare(a.date || ""));
-  if (news.length) {
-    h += `<div class="h2">📣 Tiedotteet</div>`;
-    news.forEach(n => h += `<div class="card news"><div class="cbody">${n.date ? `<div class="meta">${dayLabel(n.date)}</div>` : ""}
-      <div class="title">${esc(n.title)}</div>${n.text ? `<div class="sub">${esc(n.text)}</div>` : ""}</div></div>`);
   }
   return h;
 }
