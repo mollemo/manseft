@@ -741,7 +741,7 @@ function allItems() {
     D.games.map(g => ({ kind: "game", id: g.id, date: g.date, time: g.time, title: g.teams, place: g.field, ref: g,
                         extra: esc([g.home ? "Koti" : "Vieras", g.series, g.field].filter(Boolean).join(" · ")) })),
     D.talkoot.map(t => ({ kind: "talkoo", id: t.id, date: t.date, time: t.time, end: t.end, title: (t.task || "Talkoot") + (t.event ? " – " + t.event : ""), place: t.place, ref: t,
-                          extra: talkooOpen(t) ? `<span class="open">${talkooOpen(t)} vapaana</span>` : "Täynnä" })),
+                          extra: esc([t.place, t.names.length ? `${t.names.length}/${t.need} tekijää` : `${t.need} tekijää, ei vielä jaettu`].filter(Boolean).join(" · ")) })),
     D.events.map(e => ({ kind: "event", id: e.id, date: e.date, time: e.time, end: e.end, title: e.title, place: e.place, ref: e,
                          extra: esc([e.type, e.place].filter(Boolean).join(" · ")) }))
   ).sort(byWhen);
@@ -1179,18 +1179,18 @@ function ohjeFor(role) {
 function viewOhjeet() {
   let h = statusBanners();
   const ohjeet = generalOhjeet();
-  h += `<div class="h2">📖 Ohjeet</div>`;
+  h += `<div class="h2">Tehtävien ohjeet</div>`;
   h += ohjeet.length
     ? ohjeet.map(ohjeCard).join("")
     : `<p class="note">Ohjeita ei ole vielä lisätty. Ne kirjoitetaan Sheetin Ohjeet-välilehdelle.</p>`;
 
   h += `<div class="h2 navy">Näin sivu toimii</div><div class="box small" style="line-height:1.6;">
-    <b>Minun tehtävät:</b> Valitse etusivulla nimesi, niin näet omat talkoovuorosi ja kyytisi paikkoineen. 📅-napilla saat ne kaikki kerralla kalenteriin.<br>
+    <b>Minun tehtävät:</b> Valitse etusivulla nimesi listalta, niin näet omat talkoovuorosi ja kyytisi paikkoineen. <i>Omat kalenteriin</i> -napilla saat ne kerralla puhelimen kalenteriin.<br>
     <b>Talkoovuorot:</b> Talkoovastaava jakaa vuorot ja kirjaa ne sivulle. Jos et pääse vuoroosi, sovi vaihdosta talkoovastaavan kanssa.<br>
-
-    <b>Kyydit:</b> Sivulla voi ilmoittautua vain kyyteihin. Kyydit-välilehdellä kuljettaja tarjoaa paikkoja ja pelaajat liittyvät kyytiin.<br>
+    <b>Kyydit:</b> Sivulla voi ilmoittautua vain kyyteihin. Kuljettaja tarjoaa paikkoja, ja kyytiin liitytään valitsemalla nimi listalta. Omaa kyytiä voi muokata, kun oma nimi on valittuna.<br>
     <b>ⓘ roolin vieressä:</b> avaa kyseisen tehtävän ohjeen.<br>
-    <b>Kalenteri:</b> 📅-napilla saat tapahtuman puhelimen kalenteriin.</div>`;
+    <b>Leirit:</b> Alapalkin Leirit-kohdasta löytyy kummankin leirin ohjelma, ottelut, ruoka, talkoot, kyydit ja info.<br>
+    <b>Kalenteri:</b> Yläreunan kalenterinapista näet koko kauden. Rivin kalenterikuvakkeella saat tapahtuman puhelimen kalenteriin.</div>`;
 
   if ((D.fields || []).length) {
     h += `<div class="h2">📍 Kentät</div>`;
