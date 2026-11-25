@@ -776,7 +776,7 @@ function viewKoti() {
   const t = todayIso();
   let h = statusBanners();
 
-  const next = D.games.filter(g => g.date >= t).sort(byWhen)[0];
+  const next = heroGame();
   if (next) h += heroCard(next);
 
   const unread = unreadNews().map(newsKey);
@@ -832,14 +832,21 @@ function viewTiedotteet() {
 }
 
 function secColor(s) { const i = sections().indexOf(s); return i === -1 ? 3 : i % 3; }
+// Etusivun isossa kortissa näkyvä seuraava ottelu (kaikista osioista)
+function heroGame() { const t = todayIso(); return D.games.filter(g => g.date >= t).sort(byWhen)[0] || null; }
+
 function sectionTile(s) {
   const t = todayIso();
   const items = allItems().filter(it => secName(it.ref) === s);
-  const next = items.find(it => it.date >= t);
+  const upcoming = items.filter(it => it.date >= t);
+  // Jos osion seuraava kohde on sama ottelu kuin isossa kortissa, näytetään sitä seuraava ("Sitten: …")
+  const hero = heroGame();
+  const skip = upcoming.length && hero && upcoming[0].kind === "game" && upcoming[0].ref === hero;
+  const next = skip ? upcoming[1] : upcoming[0];
+  const when = it => `${esc(daysUntil(it.date) <= 1 ? relDay(it.date, it.time) : dayLabel(it.date))}${it.time && !relDay(it.date, it.time).startsWith("Alkaa") ? " klo " + esc(it.time) : ""}`;
   const pill = "";
-  const line = next
-    ? `${esc(daysUntil(next.date) <= 1 ? relDay(next.date, next.time) : dayLabel(next.date))}${next.time && !relDay(next.date, next.time).startsWith("Alkaa") ? " klo " + esc(next.time) : ""} · ${esc(next.title)}`
-    : items.length ? "Ei tulevaa ohjelmaa" : "Ei vielä ohjelmaa";
+  const line = next ? `${skip ? "Sitten: " : ""}${when(next)} · ${esc(next.title)}`
+    : skip ? "Ei muita tulevia" : items.length ? "Ei tulevaa ohjelmaa" : "Ei vielä ohjelmaa";
   const camp = isCamp(s), live = camp && campLive(s), near = camp && campVisible(s);
   return `<button class="tile c${secColor(s)} ${near ? "live" : ""}" data-act="${camp ? "openLeiri" : "openSec"}" data-key="${esc(s)}">
     <span class="ti">${ic(camp ? "tent" : /sarja/i.test(s) ? "ball" : "flag")}</span>
