@@ -45,7 +45,7 @@ Sivu on asennettava verkkosovellus (`manifest.webmanifest`, kuvakkeet `icon-*.pn
 | **Ohjeet** | Sivun Ohjeet-välilehdelle: Otsikko, Teksti (rivinvaihdot säilyvät), Linkki. Järjestys = rivien järjestys. Jos otsikko on sama kuin talkoorooli (esim. *Kirjuri* tai *Kioski*, joka kattaa Kioski 1 ja Kioski 2), roolin viereen tulee ⓘ-linkki ohjeeseen. |
 | **Nimet** | Kaikki nimet yhdessä muodossa (esim. perheiden sukunimet). Sivun nimivalinnat (Minun tehtävät, kyydin kuljettaja ja kyytiläinen) käyttävät tätä listaa, ja Sheetin roolisarakkeissa ja kyytien kuljettajasarakkeessa on sama lista pudotusvalikkona. Kun lista on täytetty, kyytejä voi tarjota ja niihin liittyä vain listan nimillä. |
 | **Kentät** | Ohjeet-välilehdelle. Kentän osoitteesta tulee karttalinkki kaikkialle, missä kenttää käytetään. |
-| **Asetukset** | Joukkueen nimi, kausi, **Osiot**, ottelutalkoiden osio, koti- ja vieraspelin talkooroolit sekä **Lukko** (AUKI / LUKITTU, koskee kyytejä). |
+| **Asetukset** | Joukkueen nimi, kausi, **Osiot**, ottelutalkoiden osio, koti- ja vieraspelin talkooroolit, **leiripelin talkooroolit** (leirien koti- ja vieraspelit) sekä **Lukko** (AUKI / LUKITTU, koskee kyytejä). |
 
 ID-sarakkeen täyttää skripti itse, joten jätä se tyhjäksi. Päivämäärän voi kirjoittaa muodossa `16.5.` tai päivämääränä.
 Jos muutat talkoorooleja Asetuksissa, aja **Kausisivusto → Luo / korjaa välilehdet**, niin uudet roolisarakkeet syntyvät.

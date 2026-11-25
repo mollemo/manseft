@@ -1527,15 +1527,15 @@ function makeDemo() {
   return {
     ok: true, locked: false, today: todayIso(),
     settings: { team: "Manse F-tytöt", season: "2027", homeTag: "Manse",
-                homeRoles: HOME_ROLES, awayRoles: [], sections: [AS, AL, VL], roleSection: AS, campDays: 14 },
+                homeRoles: HOME_ROLES, awayRoles: [], campRoles: ["Kirjuri", "Tulostaulu"], sections: [AS, AL, VL], roleSection: AS, campDays: 14 },
     // Yksi esimerkkiottelu per osio
     games: [
       { id: "o1", section: AS, rides: false, date: day(2), time: "18:00", teams: "Manse – Esimerkki PP", field: "Kotikenttä", series: AS, home: true,
         result: "", link: "", info: "", roles: roles({ "Kirjuri": "Esimerkki Vanhempi", "Kioski 1": "Toinen Vanhempi" }) },
       { id: "o2", section: AL, rides: false, date: "2027-06-12", time: "10:00", teams: "Manse – Esimerkki Joukkue", field: "Alueleirin kenttä", series: AL, home: true,
-        result: "", link: "", info: "", roles: {} },
+        result: "", link: "", info: "", roles: { "Kirjuri": "Esimerkki Vanhempi", "Tulostaulu": "" } },
       { id: "o3", section: VL, rides: false, date: "2027-08-03", time: "10:00", teams: "Esimerkki Joukkue – Manse", field: "Leiripaikka", series: VL, home: false,
-        result: "", link: "", info: "", roles: {} },
+        result: "", link: "", info: "", roles: { "Kirjuri": "", "Tulostaulu": "" } },
     ],
     talkoot: [
       // Oikeat talkoot: Sappee
@@ -1546,7 +1546,6 @@ function makeDemo() {
       { id: "t2", section: VL, date: "2027-08-04", time: "12:00", end: "14:00", event: "Naperoleiri", task: "Esimerkkivuoro", place: "Leiripaikka", need: 2, names: [], info: "" },
     ],
     events: [
-      { id: "e1", section: "", date: day(1), time: "17:00", end: "18:30", title: "Esimerkki: harjoitukset", type: "Harjoitus", place: "Kotikenttä", info: "", link: "", rides: false },
       { id: "e2", section: AL, date: "2027-06-11", time: "17:00", end: "", title: "Esimerkki: saapuminen leirille", type: "Leiri", place: "Alueleirin kenttä", info: "", link: "", rides: true },
       { id: "e3", section: VL, date: "2027-08-02", time: "13:00", end: "", title: "Esimerkki: saapuminen leirille", type: "Majoitus", place: "Leiripaikka", info: "", link: "", rides: true },
     ],

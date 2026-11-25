@@ -40,6 +40,7 @@ var DEFAULT_SETTINGS = [
   ["Kotijoukkueen tunniste", "Manse", "Jos Joukkueet alkaa tällä sanalla, peli on kotipeli (ellei Koti/Vieras-sarakkeessa toisin lue)"],
   ["Kotipelin talkoot", "Kirjuri, Tulostaulu / ottelun vanhin, 2. tuomari, 3. tuomari, Takarajatuomari, Kioski 1, Kioski 2, Kentän piirtäjä", "Pilkulla erotettu lista. Jokaiselle tulee oma sarake Ottelut-välilehdelle. Kaksi samaa tehtävää = kaksi riviä (esim. Kioski 1, Kioski 2)"],
   ["Vieraspelin talkoot", "", "Pilkulla erotettu lista. Tyhjä = vieraspeleissä ei talkoita, vain kyydit"],
+  ["Leiripelin talkoot", "Kirjuri, Tulostaulu", "Leirien otteluiden (koti- ja vieraspelit) talkooroolit. Pilkulla erotettu lista. Tyhjä = ei talkoita"],
   ["Leiri etusivulla", "14", "Montako päivää ennen leirin alkua leirin painike korostetaan ja nostetaan etusivun ylimmäksi"],
   ["Lukko", "AUKI", "AUKI = kyytejä voi tarjota ja niihin voi liittyä sivustolla. LUKITTU = kyytejäkään ei voi muuttaa sivustolla"]
 ];
@@ -233,7 +234,7 @@ function sectionOf_(explicit, fallback, sections) {
 
 
 function allRoles_(settings) {
-  var a = splitList_(settings["Kotipelin talkoot"]).concat(splitList_(settings["Vieraspelin talkoot"]));
+  var a = splitList_(settings["Kotipelin talkoot"]).concat(splitList_(settings["Vieraspelin talkoot"]), splitList_(settings["Leiripelin talkoot"]));
   return a.filter(function (x, i) { return a.indexOf(x) === i; });
 }
 
@@ -283,6 +284,10 @@ function buildPayload_() {
   var tag = (s["Kotijoukkueen tunniste"] || "").toLowerCase();
   var sections = splitList_(s["Osiot"]);
   var roleSec = str_(s["Ottelutalkoot osiossa"]).toLowerCase();
+  var campRoles = splitList_(s["Leiripelin talkoot"]);
+  // Leiriosiot: Leirit-välilehdellä mainitut tai nimessä "leiri"
+  var campSecs = readTable_("Leirit").map(function (r) { return sectionOf_(r["Osio"], "", sections).toLowerCase(); });
+  var isCampSec = function (sec) { sec = String(sec || "").toLowerCase(); return !!sec && (campSecs.indexOf(sec) !== -1 || /leiri/.test(sec)); };
 
   var games = readTable_("Ottelut").map(function (r) {
     var teams = str_(r["Joukkueet"]);
@@ -290,8 +295,11 @@ function buildPayload_() {
     var home = kv ? kv.charAt(0) === "k" : (tag && teams.toLowerCase().indexOf(tag) === 0);
     var section = sectionOf_(r["Osio"], r["Sarja"], sections);
     var applies = !roleSec || section.toLowerCase() === roleSec;
+    var camp = isCampSec(section);
+    // Aluesarja: kotipelin roolit (vieraspeleissä kyydit). Leirit: leiripelin roolit sekä koti- että vieraspeleissä.
+    var list = camp ? campRoles : applies ? (home ? homeRoles : awayRoles) : [];
     var roles = {};
-    if (applies) (home ? homeRoles : awayRoles).forEach(function (role) { roles[role] = str_(r[role]); });
+    list.forEach(function (role) { roles[role] = str_(r[role]); });
     return {
       id: str_(r["ID"]), section: section, rides: !home && applies, date: fmtDate_(r["Pvm"], year), time: fmtTime_(r["Klo"]),
       teams: teams, field: str_(r["Kenttä"]), series: str_(r["Sarja"]), home: !!home,
@@ -352,7 +360,7 @@ function buildPayload_() {
 
   return {
     ok: true,
-    settings: { team: s["Joukkue"], season: s["Kausi"], homeTag: s["Kotijoukkueen tunniste"], homeRoles: homeRoles, awayRoles: awayRoles,
+    settings: { team: s["Joukkue"], season: s["Kausi"], homeTag: s["Kotijoukkueen tunniste"], homeRoles: homeRoles, awayRoles: awayRoles, campRoles: campRoles,
                 sections: sections, roleSection: s["Ottelutalkoot osiossa"],
                 campDays: parseInt(s["Leiri etusivulla"], 10) || 14 },
     locked: /^lukit/i.test(s["Lukko"] || ""),
