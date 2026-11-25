@@ -348,7 +348,7 @@ function parseHash() {
   let h = location.hash.slice(1);
   try { h = decodeURIComponent(h); } catch (e) {}
   if (h.startsWith("leiri=")) return { tab: "leiri", leiri: h.slice(6) };
-  if (h.startsWith("osio=")) return { tab: "osio", sec: h.slice(5) };
+  if (h.startsWith("osio=")) return { tab: "ottelut", sec: h.slice(5) };
   return { tab: TABS.some(t => t[0] === h) || MENU_PAGES.some(t => t[0] === h) ? h : "koti" };
 }
 let tab = parseHash().tab;
@@ -778,16 +778,6 @@ function viewTiedotteet() {
 }
 
 function secColor(s) { const i = sections().indexOf(s); return i === -1 ? 3 : i % 3; }
-function secStatus(s) {
-  const t = todayIso();
-  const upG = D.games.filter(g => secName(g) === s && g.date >= t);
-  const upT = D.talkoot.filter(x => secName(x) === s && x.date >= t);
-  return {
-    open: upG.reduce((n, g) => n + gameOpen(g), 0) + upT.reduce((n, x) => n + talkooOpen(x), 0),
-    has: upG.some(g => Object.keys(g.roles).length) || upT.length > 0,
-    locked: locked() || secLockedName(s),
-  };
-}
 function sectionTile(s) {
   const t = todayIso();
   const items = allItems().filter(it => secName(it.ref) === s);
@@ -802,79 +792,6 @@ function sectionTile(s) {
     <span class="tb"><span class="tn">${esc(s)}${live ? " · käynnissä" : ""}</span><span class="tx">${live ? "Avaa leirin ohjelma ja ruokalista" : camp ? esc([campLabel(s), campRange(s)].filter(Boolean).join(" · ")) + (daysUntil(campInfo(s).start) > 0 ? ` · alkaa ${daysUntil(campInfo(s).start) === 1 ? "huomenna" : daysUntil(campInfo(s).start) + " pv päästä"}` : "") : line}</span></span>
     ${pill}<span class="chev">${ic("chev")}</span></button>`;
 }
-function viewOsio() {
-  const s = F.sec || OTHER;
-  return statusBanners() + `<div class="back"><button class="btn ghost sm" data-act="tab" data-key="koti">← Etusivu</button></div>` + sectionBlock(s, secColor(s));
-}
-
-function sectionBlock(s, color) {
-  const t = todayIso();
-  const games = D.games.filter(g => secName(g) === s);
-  const talk = D.talkoot.filter(x => secName(x) === s);
-  const evs = D.events.filter(e => secName(e) === s);
-  const dates = [].concat(games, talk, evs).map(x => x.date).sort();
-  const upGames = games.filter(g => g.date >= t).sort(byWhen);
-  const upEvs = evs.filter(e => e.date >= t).sort(byWhen);
-  const openG = upGames.reduce((n, g) => n + gameOpen(g), 0);
-  const openT = talk.filter(x => x.date >= t).reduce((n, x) => n + talkooOpen(x), 0);
-  const open = openG + openT;
-  const hasTalkoot = upGames.some(g => Object.keys(g.roles).length) || talk.some(x => x.date >= t);
-  const secLocked = locked() || secLockedName(s);
-  const range = !dates.length ? "" : dates[0] === dates[dates.length - 1] ? dayLabel(dates[0]) : dm(dates[0]) + "–" + dm(dates[dates.length - 1]);
-  const metaBits = [range, games.length ? `${upGames.length}/${games.length} ottelua tulossa` : ""].filter(Boolean).join(" · ");
-
-  let b = "";
-  if (!dates.length) b += `<p class="note" style="margin-top:10px;">Ei vielä ohjelmaa.</p>`;
-
-  // Ottelut
-  if (games.length) {
-    b += `<div class="h3">⚾ Ottelut</div>`;
-    if (upGames.length) {
-      b += gameCard(upGames[0], { hero: true, rel: true });
-      if (upGames.length > 1) b += `<div class="box">${upGames.slice(1, 4).map(g => miniRow({ kind: "game", date: g.date, time: g.time, title: g.teams, ref: g,
-        extra: esc([g.home ? "Koti" : "Vieras", g.field].filter(Boolean).join(" · ")) + (gameOpen(g) ? ` · <span class="open">${gameOpen(g)} avointa vuoroa</span>` : "") })).join("")}</div>`;
-    } else b += `<p class="note">Kaikki ottelut on pelattu.</p>`;
-    b += `<div class="more"><button class="btn ghost sm" data-act="goSec" data-key="ottelut|${esc(s)}">Kaikki ottelut (${games.length}) →</button></div>`;
-  }
-
-  // Talkoovuorot
-  if (hasTalkoot) {
-    b += `<div class="h3">🙋 Talkoovuorot</div>`;
-    if (open) {
-      const openList = allItems().filter(it => it.date >= t && secName(it.ref) === s &&
-        (it.kind === "game" ? gameOpen(it.ref) : it.kind === "talkoo" ? talkooOpen(it.ref) : 0));
-      b += `<div class="box">${openList.slice(0, 5).map(it => {
-        const what = it.kind === "game" ? Object.keys(it.ref.roles).filter(r => !it.ref.roles[r]).join(", ") : `${talkooOpen(it.ref)} ${secLocked ? "jakamatta" : "vapaana"}`;
-        return miniRow(Object.assign({}, it, { extra: secLocked ? `<span class="muted">Jakamatta: ${esc(what)}</span>` : `<span class="open">${esc(what)}</span>` }));
-      }).join("")}${openList.length > 5 ? `<div class="small muted" style="padding-top:6px;">+ ${openList.length - 5} muuta</div>` : ""}</div>`;
-    } else b += `<div class="banner ok" style="margin-bottom:4px;">✅ Kaikki vuorot ${secLocked ? "jaettu" : "täytetty — kiitos"}!</div>`;
-    if (secLocked) b += `<p class="note" style="margin:6px 2px 0;">🔒 Vuorot jakaa talkoovastaava.</p>`;
-    b += `<div class="more"><button class="btn sm ${secLocked ? "ghost" : ""}" data-act="goSec" data-key="talkoot|${esc(s)}">${secLocked ? "Näytä vuorot →" : "Ilmoittaudu talkoisiin →"}</button></div>`;
-  }
-
-  // Tapahtumat
-  if (upEvs.length) {
-    b += `<div class="h3">📌 Tapahtumat</div><div class="box">${upEvs.slice(0, 4).map(e => miniRow({ kind: "event", date: e.date, time: e.time, title: e.title, ref: e,
-      extra: esc([e.type, e.place].filter(Boolean).join(" · ")) })).join("")}</div>`;
-  }
-
-  // Kyydit
-  const targets = rideTargets().filter(x => x.date >= t && secName(x.ref) === s);
-  if (targets.length) {
-    const rides = targets.reduce((a, x) => a.concat(ridesFor(x.id)), []);
-    const free = rides.reduce((n, r) => n + Math.max(r.seats - r.passengers.length, 0), 0);
-    b += `<div class="h3">🚗 Kyydit</div><div class="box small">${targets.length} ${targets.length === 1 ? "kohde" : "kohdetta"} ·
-      ${rides.length ? `${rides.length} ${rides.length === 1 ? "kyytitarjous" : "kyytitarjousta"}, vapaita paikkoja ${free}` : "ei vielä kyytitarjouksia"}
-      <div class="more"><button class="btn navy ghost sm" data-act="goSec" data-key="kyydit|${esc(s)}">Kyydit →</button></div></div>`;
-  }
-
-  return `<section class="sec sec-${color}">
-    <div class="sech"><div><div class="sect">${esc(metaBits || s)}</div></div>
-      ${hasTalkoot ? `<span class="secpill ${open && !secLocked ? "" : "ok"}">${secLocked ? (open ? `🔒 ${open} jakamatta` : "🔒 jaettu") : open ? `${open} avointa` : "✓ täynnä"}</span>` : ""}</div>
-    <div class="secb">${b}</div></section>`;
-}
-
-// ─── Minun tehtävät ──────────────────────────────────────────────────────
 function allNames() {
   const m = new Map();
   const add = n => { n = String(n || "").trim(); if (n && !m.has(n.toLowerCase())) m.set(n.toLowerCase(), n); };
@@ -1099,7 +1016,6 @@ function viewLeiri() {
   ].filter(Boolean);
   const valid = days.concat(infoTabs.map(x => x[0]));
   if (!valid.includes(F.lday)) F.lday = days.includes(t) ? t : days.find(d => d >= t) || days[0] || "info";
-  const st = secStatus(s);
 
   let h = statusBanners();
   h += `<div class="back"><button class="btn ghost sm" data-act="tab" data-key="leirit">← Leirit</button></div>`;
@@ -1155,7 +1071,7 @@ function viewLeirit() {
   if (!camps.length) return h + `<p class="note">Leirejä ei ole vielä lisätty. Ne kirjoitetaan Sheetin Leirit-välilehdelle.</p>`;
   h += `<p class="note">Valitse leiri, niin näet sen päiväohjelman, ruokalistan, talkoot, kyydit ja leirin ohjeet.</p>`;
   camps.forEach(s => {
-    const c = campInfo(s), st = secStatus(s), ended = c.end && c.end < t, live = campLive(s);
+    const c = campInfo(s), ended = c.end && c.end < t, live = campLive(s);
     const n = c.start ? daysUntil(c.start) : null;
     const when = live ? "Käynnissä nyt" : ended ? "Päättynyt" : n === null ? "Päivät tulossa" : n === 0 ? "Alkaa tänään" : n === 1 ? "Alkaa huomenna" : `Alkaa ${n} pv päästä`;
     const days = campDays(s);
@@ -1280,7 +1196,7 @@ function render() {
   document.getElementById("teamTitle").textContent = team;
   document.title = team + " – kausi";
   renderTabs(); renderClock();
-  document.getElementById("ptitle").textContent = tab === "leiri" ? (F.leiri || "Leiri") : tab === "osio" ? (F.sec || OTHER) : (tab === "koti" && D && D.settings && D.settings.season ? "Kausi " + D.settings.season : TITLES[tab] || team);
+  document.getElementById("ptitle").textContent = tab === "leiri" ? (F.leiri || "Leiri") : (tab === "koti" && D && D.settings && D.settings.season ? "Kausi " + D.settings.season : TITLES[tab] || team);
   const v = document.getElementById("view");
   v.classList.toggle("busy", busy);
   if (!D) {
@@ -1290,7 +1206,7 @@ function render() {
     return;
   }
   renderMenu();
-  const views = { leirit: viewLeirit, tiedotteet: viewTiedotteet, leiri: viewLeiri, osio: viewOsio, koti: viewKoti, ottelut: viewOttelut, talkoot: viewTalkoot, kyydit: viewKyydit, kalenteri: viewKalenteri, ohjeet: viewOhjeet };
+  const views = { leirit: viewLeirit, tiedotteet: viewTiedotteet, leiri: viewLeiri, koti: viewKoti, ottelut: viewOttelut, talkoot: viewTalkoot, kyydit: viewKyydit, kalenteri: viewKalenteri, ohjeet: viewOhjeet };
   v.innerHTML = views[tab]() + `<footer>${esc(team)} · kauden sivusto</footer>`;
 }
 
@@ -1310,7 +1226,11 @@ const ACTIONS = {
   },
   openSec(k, el, ev) {
     if (isCamp(k)) return ACTIONS.openLeiri(k, el, ev);
-    ev.preventDefault(); F.sec = k; tab = "osio"; editing = null; touched.clear();
+    const has = list => list.some(x => secName(x) === k);
+    ev.preventDefault(); F.sec = k; F.menu = false; editing = null; touched.clear();
+    if (has(D.games)) { tab = "ottelut"; F.games = "tulevat"; }
+    else if (has(D.talkoot)) { tab = "talkoot"; F.talkoot = "tulevat"; }
+    else { tab = "kalenteri"; F.kal = "kaikki"; }
     go(); render(); window.scrollTo(0, 0);
   },
   goSec(k, el, ev) {
@@ -1384,7 +1304,7 @@ document.addEventListener("keydown", ev => {
 });
 // ─── Selaimen historia: jokainen siirtymä on oma kohtansa, joten Takaisin/Eteenpäin toimivat ──
 function navState() { return { tab, sec: F.sec, leiri: F.leiri, lday: F.lday }; }
-function navHash() { return tab === "leiri" ? "#leiri=" + encodeURIComponent(F.leiri) : tab === "osio" ? "#osio=" + encodeURIComponent(F.sec) : "#" + tab; }
+function navHash() { return tab === "leiri" ? "#leiri=" + encodeURIComponent(F.leiri) : "#" + tab; }
 function go() {
   const st = navState();
   if (history.state && JSON.stringify(history.state) === JSON.stringify(st)) return;
