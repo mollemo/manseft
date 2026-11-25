@@ -477,6 +477,19 @@ function rideTargets() {
 }
 
 // ─── Datan haku ──────────────────────────────────────────────────────────
+// Viimeksi haetut tiedot tallennetaan puhelimeen (muutamia kymmeniä kilotavuja), jotta sivu aukeaa heti
+// ja toimii myös ilman verkkoa. Tuoreet tiedot haetaan aina taustalla.
+const CACHE_KEY = "kausi_data_v1";
+let cachedAt = 0;
+function readCache() { try { const c = JSON.parse(localStorage.getItem(CACHE_KEY) || "null"); return c && c.data && c.url === API_URL ? c : null; } catch (e) { return null; } }
+function saveCache(data) { try { localStorage.setItem(CACHE_KEY, JSON.stringify({ at: Date.now(), url: API_URL, data })); } catch (e) {} }
+function fmtStamp(ms) {
+  const d = new Date(new Date(ms).toLocaleString("en-US", { timeZone: "Europe/Helsinki" }));
+  const hm = String(d.getHours()).padStart(2, "0") + "." + String(d.getMinutes()).padStart(2, "0");
+  return isoOf(d) === todayIso() ? "klo " + hm : `${WD[d.getDay()]} ${d.getDate()}.${d.getMonth() + 1}. klo ${hm}`;
+}
+if (!DEMO) { const c = readCache(); if (c) { D = c.data; cachedAt = c.at; } }
+
 async function load(silent) {
   if (DEMO) { if (!D) D = makeDemo(); render(); return; }
   try {
@@ -484,7 +497,7 @@ async function load(silent) {
     if (!res.ok) throw new Error("HTTP " + res.status);
     const data = await res.json();
     if (data.ok === false) throw new Error(data.error || "virhe");
-    D = data; loadError = false;
+    D = data; loadError = false; cachedAt = 0; saveCache(data);
   } catch (err) {
     console.warn("Haku epäonnistui:", err);
     loadError = true;
@@ -496,18 +509,19 @@ async function act(body) {
   if (locked()) { toast("🔒 Lista on lukittu"); return; }
   if (body.id) touched.add(body.id);
   busy = true; render(); toast("⏳ Tallennetaan…", 8000);
-  let res = null;
+  let res = null, offline = false;
   if (DEMO) { await sleep(250); res = demoHandle(body); }
   else {
     try {
       const r = await fetch(API_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(body) });
       res = await r.json().catch(() => null);
-    } catch (err) { console.warn("Tallennus:", err); }
+    } catch (err) { console.warn("Tallennus:", err); offline = true; }
     await sleep(300);
     await load(true);
   }
   busy = false;
-  if (res && res.ok === false) toast("⚠️ " + (res.error || "Tallennus ei onnistunut"), 4000);
+  if (offline) toast("⚠️ Ei verkkoyhteyttä – tallennus ei onnistunut. Yritä uudelleen.", 4500);
+  else if (res && res.ok === false) toast("⚠️ " + (res.error || "Tallennus ei onnistunut"), 4000);
   else toast("✅ Tallennettu");
   render();
 }
@@ -774,7 +788,9 @@ function chips(group, options, current) {
 function statusBanners() {
   let h = "";
   if (DEMO) h += `<div class="banner demo"><b>Esikatselu:</b> sivulla on esimerkkidataa. Kun Apps Scriptin osoite lisätään koodiin (API_URL), sisältö tulee Google Sheetistä.</div>`;
-  if (loadError) h += `<div class="banner err">⚠️ Tietojen päivitys ei juuri nyt onnistu. Yritetään uudelleen automaattisesti.</div>`;
+  if (loadError) h += cachedAt
+    ? `<div class="banner lock">Ei verkkoyhteyttä. Näytetään tiedot, jotka haettiin ${fmtStamp(cachedAt)}. Päivitetään, kun yhteys palaa.</div>`
+    : `<div class="banner err">⚠️ Tietojen päivitys ei juuri nyt onnistu. Yritetään uudelleen automaattisesti.</div>`;
   if (locked()) h += `<div class="banner lock">🔒 Ilmoittautuminen on lukittu. Muutokset sovitaan talkoovastaavan kanssa.</div>`;
   return h;
 }
@@ -1490,6 +1506,11 @@ function demoHandle(b) {
 // ─── Käynnistys ──────────────────────────────────────────────────────────
 render();
 load();
+// Sivun tiedostot talteen (toimii GitHub Pagesissa https-osoitteessa)
+if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
+  navigator.serviceWorker.register("sw.js").catch(err => console.warn("Service worker:", err));
+}
+window.addEventListener("online", () => load());
 setInterval(() => { if (!editing && !busy && document.visibilityState === "visible") load(); }, 60000);
 setInterval(renderClock, 15000);
 </script>
