@@ -1478,6 +1478,8 @@ function makeDemo() {
       { id: "t1", section: AL, date: ALD[1], time: "08:00", end: "12:00", event: "Alueleiri", task: "Kioski, aamuvuoro", place: "Alueleirin kenttä", need: 3, names: ["Sanna R.", "Mikko L."], info: "Kassalipas ja kahvinkeitin ovat varastossa." },
       { id: "t2", section: AL, date: ALD[1], time: "12:00", end: "16:00", event: "Alueleiri", task: "Kioski, iltapäivävuoro", place: "Alueleirin kenttä", need: 3, names: [], info: "" },
       { id: "t3", section: AL, date: ALD[2], time: "08:30", end: "09:30", event: "Alueleiri", task: "Kenttien kunnostus", place: "Alueleirin kenttä", need: 2, names: ["Pekka K."], info: "" },
+      ...["2027-01-03", "2027-02-13", "2027-04-03"].map((d, i) => ({ id: "ts" + (i + 1), section: "", date: d, time: "09:30", end: "14:00", event: "Sappee",
+        task: "Pysäköinnin ohjaus", place: "Sappee", need: 4, names: [], info: "Vuoro päättyy viimeistään klo 15." })),
       { id: "t4", section: VL, date: day(25), time: "17:00", end: "19:00", event: "Leirin varainhankinta", task: "Arpojen myynti kaupan edessä", place: "", need: 2, names: [], info: "" },
     ],
     events: [

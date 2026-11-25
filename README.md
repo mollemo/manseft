@@ -22,6 +22,7 @@ Alueleirillä ja Valtakunnallisella leirillä on oma leirisivu (kuten erillisill
 Leirit eivät ole yläpalkissa. Ne löytyvät **☰-valikosta** ja etusivun painikkeista leirin loppuun asti. *Leiri etusivulla* -asetuksen verran päiviä ennen alkua (oletus 14) ja leirin aikana painike on korostettu ja ylimpänä. Leirisivulle voi myös jakaa suoran linkin, esim. `…/manseft/#leiri=Alueleiri`.
 
 - **Leirit**-välilehti: Osio, Nimi, Alkaa, Päättyy, Paikkakunta, Lisätiedot (näkyy leirin Info-kohdassa), Linkki. Setup täyttää valmiiksi kauden 2027 leirit: **Alueleiri Loimaa 11.–13.6.2027** ja **Naperoleiri Laitila 2.–6.8.2027**.
+- **Talkoot**-välilehdelle setup kirjoittaa valmiiksi Sappeen pysäköinninohjauksen 3.1., 13.2. ja 3.4.2027 (klo 9.30–14, enintään klo 15, 4 henkilöä / päivä).
 - **Päivän ohjelma** kootaan automaattisesti: osion ottelut, Tapahtumat-rivit (esim. Tyyppi *Ohjelma* tai *Majoitus*), ruokailut ja talkoovuorot kellonajan mukaan.
 - **Ruokalista**-välilehti: Osio, Pvm, Ateria (Aamupala/Lounas/Välipala/Päivällinen/Iltapala), Klo (esim. `07:00–09:00`), Ruoka, Paikka.
 - **Leirin ohjeet** (esim. pakkauslista): Ohjeet-välilehdelle, Osio = leirin nimi. Ne näkyvät vain leirisivulla.

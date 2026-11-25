@@ -50,6 +50,28 @@ var DEFAULT_CAMPS = [
   { "Osio": "Valtakunnallinen leiri", "Nimi": "Naperoleiri Laitila", "Alkaa": new Date(2027, 7, 2), "Päättyy": new Date(2027, 7, 6), "Paikkakunta": "Laitila" }
 ];
 
+// Kauden valmiiksi sovitut talkoot: kirjoitetaan Talkoot-välilehdelle setupissa, jos välilehti on vielä tyhjä.
+var SAPPEE = { "Klo": "09:30", "Loppu": "14:00", "Tapahtuma": "Sappee", "Tehtävä": "Pysäköinnin ohjaus", "Paikka": "Sappee",
+               "Tarve": 4, "Lisätiedot": "Vuoro päättyy viimeistään klo 15." };
+var DEFAULT_TALKOOT = [
+  merge_({ "Pvm": new Date(2027, 0, 3) }, SAPPEE),
+  merge_({ "Pvm": new Date(2027, 1, 13) }, SAPPEE),
+  merge_({ "Pvm": new Date(2027, 3, 3) }, SAPPEE)
+];
+function merge_(a, b) { Object.keys(b).forEach(function (k) { a[k] = b[k]; }); return a; }
+
+// Lisää rivit välilehdelle otsikoiden mukaan, jos välilehdellä ei ole vielä yhtään riviä.
+function seedRows_(sh, rows, dateCols) {
+  if (sh.getLastRow() >= 2 || !rows.length) return;
+  var hm = headerMap_(sh), width = sh.getLastColumn();
+  rows.forEach(function (c) {
+    var row = []; for (var i = 0; i < width; i++) row.push("");
+    Object.keys(c).forEach(function (k) { if (k in hm) row[hm[k]] = c[k]; });
+    sh.appendRow(row);
+  });
+  (dateCols || []).forEach(function (k) { if (k in hm) sh.getRange(2, hm[k] + 1, rows.length, 1).setNumberFormat("d.M.yyyy"); });
+}
+
 // ─── Valikko ja välilehtien luonti ────────────────────────────────────────
 function onOpen() {
   SpreadsheetApp.getUi()
@@ -95,16 +117,8 @@ function setup() {
   tap.getRange(2, th["Kyydit"] + 1, Math.max(tap.getMaxRows() - 1, 1), 1).setDataValidation(
     SpreadsheetApp.newDataValidation().requireValueInList(["Kyllä"], true).setAllowInvalid(true).build());
   var osiot = splitList_(settings["Osiot"]);
-  var lei = ss.getSheetByName("Leirit");
-  if (lei.getLastRow() < 2) {
-    var lh = headerMap_(lei), width = lei.getLastColumn();
-    DEFAULT_CAMPS.forEach(function (c) {
-      var row = []; for (var i = 0; i < width; i++) row.push("");
-      Object.keys(c).forEach(function (k) { if (k in lh) row[lh[k]] = c[k]; });
-      lei.appendRow(row);
-    });
-    lei.getRange(2, lh["Alkaa"] + 1, DEFAULT_CAMPS.length, 2).setNumberFormat("d.M.yyyy");
-  }
+  seedRows_(ss.getSheetByName("Leirit"), DEFAULT_CAMPS, ["Alkaa", "Päättyy"]);
+  seedRows_(ss.getSheetByName("Talkoot"), DEFAULT_TALKOOT, ["Pvm"]);
   var rl = ss.getSheetByName("Ruokalista");
   rl.getRange(2, headerMap_(rl)["Ateria"] + 1, Math.max(rl.getMaxRows() - 1, 1), 1).setDataValidation(
     SpreadsheetApp.newDataValidation().requireValueInList(["Aamupala", "Lounas", "Välipala", "Päivällinen", "Iltapala"], true).setAllowInvalid(true).build());
