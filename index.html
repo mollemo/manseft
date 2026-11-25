@@ -1377,7 +1377,16 @@ function makeDemo() {
   const day = n => isoOf(new Date(t0.getTime() + n * 864e5));
   const HOME_ROLES = ["Kirjuri", "Tulostaulu / ottelun vanhin", "2. tuomari", "3. tuomari", "Takarajatuomari", "Kioski 1", "Kioski 2", "Kentän piirtäjä"];
   const AS = "Aluesarja", AL = "Alueleiri", VL = "Valtakunnallinen leiri";
-  const G = (id, sec, d, time, teams, field, home, roles, extra) => Object.assign({ id, section: sec, date: day(d), time, teams, field,
+  // Leirien oikeat päivät: Alueleiri Loimaa pe–su 11.–13.6.2027, Naperoleiri Laitila ma–pe 2.–6.8.2027
+  const ALD = ["2027-06-11", "2027-06-12", "2027-06-13"];
+  const VLD = ["2027-08-02", "2027-08-03", "2027-08-04", "2027-08-05", "2027-08-06"];
+  const MEALS = { Aamupala: "07:00–09:00", Lounas: "11:00–12:30", Päivällinen: "16:30–17:30", Iltapala: "20:00–21:00" };
+  const FOODS = { Aamupala: ["Puuro, kananmuna, leivät", "Jogurtti, mysli, leivät"], Lounas: ["Lihapullat, perunat, salaatti", "Broilerikastike, riisi, salaatti", "Kasvislasagne, salaatti", "Jauhelihakastike, pasta", "Lohikeitto, leipä"],
+                  Päivällinen: ["Kalakeitto, leipä, marjakiisseli", "Makaronilaatikko, salaatti", "Pinaattiohukaiset, puolukka", "Kanawrapit, salaatti"], Iltapala: ["Leivät, mehu, hedelmät", "Jogurtti, leivät, hedelmät"] };
+  const mealPlan = [["Lounas", "Päivällinen", "Iltapala"], ["Aamupala", "Lounas", "Päivällinen", "Iltapala"], ["Aamupala", "Lounas", "Päivällinen", "Iltapala"], ["Aamupala", "Lounas", "Päivällinen", "Iltapala"], ["Aamupala", "Lounas"]];
+  let fi = 0;
+  const vlMenu = VLD.flatMap((d, i) => mealPlan[i].map(m => ({ section: VL, date: d, meal: m, time: MEALS[m], food: FOODS[m][(fi++) % FOODS[m].length], place: "Leiriruokala" })));
+  const G = (id, sec, d, time, teams, field, home, roles, extra) => Object.assign({ id, section: sec, date: typeof d === "string" ? d : day(d), time, teams, field,
     series: sec, home, result: "", link: "", info: "", roles: roles || {} }, extra || {});
   const games = [
     G("o1", AS, -9, "18:00", "Manse – Esimerkki PP", "Kotikenttä", true, { "Kirjuri": "Liisa M.", "Tulostaulu / ottelun vanhin": "Jari H.", "2. tuomari": "Anna V.", "3. tuomari": "Timo S.",
@@ -1387,12 +1396,16 @@ function makeDemo() {
     G("o4", AS, 6, "10:30", "Esimerkki Pesis – Manse", "Vieraskenttä", false),
     G("o5", AS, 9, "18:00", "Manse – Esimerkki Puhti", "Kotikenttä", true, { "Takarajatuomari": "Pekka K." }),
     G("o8", AS, 20, "17:00", "Esimerkki Jyske – Manse", "Vieraskenttä", false),
-    G("o6", AL, 13, "09:00", "Manse – Esimerkki Roihu", "Kotikenttä", true),
-    G("o7", AL, 13, "11:00", "Esimerkki Virkiä – Manse", "Kotikenttä", false),
-    G("o9", AL, 13, "14:00", "Manse – Esimerkki Viri", "Kotikenttä", true),
-    G("o10", VL, 31, "10:00", "Manse – Esimerkki Pesä", "Leiripaikka", true),
-    G("o11", VL, 31, "15:00", "Esimerkki Lippo – Manse", "Leiripaikka", false),
-    G("o12", VL, 32, "11:00", "Manse – Esimerkki Kunto", "Leiripaikka", true),
+    G("o6", AL, ALD[1], "09:00", "Manse – Esimerkki Roihu", "Alueleirin kenttä", true),
+    G("o7", AL, ALD[1], "11:30", "Esimerkki Virkiä – Manse", "Alueleirin kenttä", false),
+    G("o9", AL, ALD[1], "15:00", "Manse – Esimerkki Viri", "Alueleirin kenttä", true),
+    G("o13", AL, ALD[2], "10:00", "Esimerkki Kiri – Manse", "Alueleirin kenttä", false),
+    G("o14", AL, ALD[2], "13:00", "Manse – Esimerkki Jymy", "Alueleirin kenttä", true),
+    G("o10", VL, VLD[1], "10:00", "Manse – Esimerkki Pesä", "Leiripaikka", true),
+    G("o11", VL, VLD[1], "15:00", "Esimerkki Lippo – Manse", "Leiripaikka", false),
+    G("o12", VL, VLD[2], "11:00", "Manse – Esimerkki Kunto", "Leiripaikka", true),
+    G("o15", VL, VLD[3], "09:30", "Esimerkki Sampo – Manse", "Leiripaikka", false),
+    G("o16", VL, VLD[3], "14:00", "Manse – Esimerkki Hanka", "Leiripaikka", true),
   ];
   games.forEach(g => {
     const applies = g.section === AS;
@@ -1405,19 +1418,22 @@ function makeDemo() {
                 homeRoles: HOME_ROLES, awayRoles: [], sections: [AS, AL, VL], roleSection: AS, lockedSections: [AS], campDays: 14 },
     games,
     talkoot: [
-      { id: "t1", section: AL, date: day(13), time: "08:00", end: "12:00", event: "Alueleiri", task: "Kioski, aamuvuoro", place: "Kotikenttä", need: 3, names: ["Sanna R.", "Mikko L."], info: "Kassalipas ja kahvinkeitin ovat varastossa." },
-      { id: "t2", section: AL, date: day(13), time: "12:00", end: "16:00", event: "Alueleiri", task: "Kioski, iltapäivävuoro", place: "Kotikenttä", need: 3, names: [], info: "" },
-      { id: "t3", section: AL, date: day(13), time: "07:30", end: "08:30", event: "Alueleiri", task: "Kenttien kunnostus", place: "Kotikenttä", need: 2, names: ["Pekka K."], info: "" },
+      { id: "t1", section: AL, date: ALD[1], time: "08:00", end: "12:00", event: "Alueleiri", task: "Kioski, aamuvuoro", place: "Alueleirin kenttä", need: 3, names: ["Sanna R.", "Mikko L."], info: "Kassalipas ja kahvinkeitin ovat varastossa." },
+      { id: "t2", section: AL, date: ALD[1], time: "12:00", end: "16:00", event: "Alueleiri", task: "Kioski, iltapäivävuoro", place: "Alueleirin kenttä", need: 3, names: [], info: "" },
+      { id: "t3", section: AL, date: ALD[2], time: "08:30", end: "09:30", event: "Alueleiri", task: "Kenttien kunnostus", place: "Alueleirin kenttä", need: 2, names: ["Pekka K."], info: "" },
       { id: "t4", section: VL, date: day(25), time: "17:00", end: "19:00", event: "Leirin varainhankinta", task: "Arpojen myynti kaupan edessä", place: "", need: 2, names: [], info: "" },
     ],
     events: [
       { id: "e1", section: "", date: day(1), time: "17:00", end: "18:30", title: "Harjoitukset", type: "Harjoitus", place: "Kotikenttä", info: "", link: "", rides: false },
       { id: "e2", section: "", date: day(4), time: "18:30", end: "19:30", title: "Vanhempainpalaveri", type: "Palaveri", place: "Seuran toimisto", info: "Käydään läpi kauden talkoot ja leirit.", link: "", rides: false },
-      { id: "e4", section: AL, date: day(13), time: "08:15", end: "", title: "Joukkueen kokoontuminen", type: "Turnaus", place: "Kotikenttä", info: "Pelipaidat jaetaan paikan päällä.", link: "", rides: false },
-      { id: "e3", section: VL, date: day(30), time: "13:00", end: "", title: "Saapuminen leirille", type: "Majoitus", place: "Leirikoulu", info: "Majoittuminen luokkiin. Kyydit sovitaan Kyydit-välilehdellä.", link: "", rides: true },
-      { id: "e5", section: VL, date: day(30), time: "18:00", end: "19:00", title: "Leirin avajaiset", type: "Ohjelma", place: "Leiripaikka", info: "", link: "", rides: false },
-      { id: "e6", section: VL, date: day(31), time: "18:00", end: "20:00", title: "Toimintailta", type: "Ohjelma", place: "Leiripaikka", info: "Esimerkki: leiridisco ja kesätori.", link: "", rides: false },
-      { id: "e7", section: VL, date: day(32), time: "14:00", end: "", title: "Kotiinlähtö", type: "Majoitus", place: "Leirikoulu", info: "Tavarat pakataan ennen lounasta.", link: "", rides: false },
+      { id: "e4", section: AL, date: ALD[0], time: "17:00", end: "", title: "Saapuminen ja kokoontuminen", type: "Leiri", place: "Alueleirin kenttä", info: "Pelipaidat jaetaan paikan päällä.", link: "", rides: true },
+      { id: "e8", section: AL, date: ALD[0], time: "18:00", end: "19:30", title: "Yhteisharjoitus", type: "Harjoitus", place: "Alueleirin kenttä", info: "", link: "", rides: false },
+      { id: "e9", section: AL, date: ALD[2], time: "15:00", end: "", title: "Palkintojenjako ja kotiinlähtö", type: "Ohjelma", place: "Alueleirin kenttä", info: "", link: "", rides: false },
+      { id: "e3", section: VL, date: VLD[0], time: "13:00", end: "", title: "Saapuminen leirille", type: "Majoitus", place: "Leirikoulu", info: "Majoittuminen luokkiin. Kyydit sovitaan Kyydit-välilehdellä.", link: "", rides: true },
+      { id: "e5", section: VL, date: VLD[0], time: "18:00", end: "19:00", title: "Leirin avajaiset", type: "Ohjelma", place: "Leiripaikka", info: "", link: "", rides: false },
+      { id: "e6", section: VL, date: VLD[2], time: "18:00", end: "20:00", title: "Toimintailta", type: "Ohjelma", place: "Leiripaikka", info: "Esimerkki: leiridisco ja kesätori.", link: "", rides: false },
+      { id: "e10", section: VL, date: VLD[4], time: "10:00", end: "12:00", title: "Loppuottelut", type: "Ohjelma", place: "Leiripaikka", info: "", link: "", rides: false },
+      { id: "e7", section: VL, date: VLD[4], time: "14:00", end: "", title: "Kotiinlähtö", type: "Majoitus", place: "Leirikoulu", info: "Tavarat pakataan ennen lounasta.", link: "", rides: false },
     ],
     rides: [
       { id: "k1", target: "o4", driver: "Mikko L.", seats: 3, passengers: ["Ella", "Venla"], depart: "Kotikenttä klo 9.15", info: "" },
@@ -1426,20 +1442,10 @@ function makeDemo() {
       { date: day(-1), title: "Tervetuloa kauden sivustolle", text: "Täältä löydät kaikki ottelut, talkoot ja kyydit. Ilmoittaudu avoimiin vuoroihin suoraan sivulla.", until: "" },
     ],
     camps: [
-      { section: AL, name: "Alueleiri Loimaa", start: day(13), end: day(13), town: "Loimaa", info: "Esimerkki: alueleiri pelataan kotikentällä. Ota mukaan eväät, juomapullo ja pelivarusteet.", link: "" },
-      { section: VL, name: "Naperoleiri Laitila", start: day(30), end: day(32), town: "Laitila", info: "Esimerkki: majoitus leirikoululla luokissa, ruokailut leiriruokalassa.\nPelaajat ovat aikuisten valvonnassa koko leirin ajan.", link: "" },
+      { section: AL, name: "Alueleiri Loimaa", start: ALD[0], end: ALD[2], town: "Loimaa", info: "Esimerkki: ota mukaan eväät, juomapullo ja pelivarusteet.", link: "" },
+      { section: VL, name: "Naperoleiri Laitila", start: VLD[0], end: VLD[4], town: "Laitila", info: "Esimerkki: majoitus leirikoululla luokissa, ruokailut leiriruokalassa.\nPelaajat ovat aikuisten valvonnassa koko leirin ajan.", link: "" },
     ],
-    menu: [
-      { section: VL, date: day(30), meal: "Lounas", time: "12:30–13:30", food: "Lihapullat, perunat, salaatti", place: "Leiriruokala" },
-      { section: VL, date: day(30), meal: "Päivällinen", time: "16:30–17:30", food: "Kalakeitto, leipä, marjakiisseli", place: "Leiriruokala" },
-      { section: VL, date: day(30), meal: "Iltapala", time: "20:00–21:00", food: "Jogurtti, leivät, hedelmät", place: "Leiriruokala" },
-      { section: VL, date: day(31), meal: "Aamupala", time: "07:00–09:00", food: "Puuro, kananmuna, leivät", place: "Leiriruokala" },
-      { section: VL, date: day(31), meal: "Lounas", time: "11:00–13:00", food: "Broilerikastike, riisi, salaatti", place: "Leiriruokala" },
-      { section: VL, date: day(31), meal: "Päivällinen", time: "16:00–17:30", food: "Makaronilaatikko, salaatti", place: "Leiriruokala" },
-      { section: VL, date: day(31), meal: "Iltapala", time: "20:00–21:00", food: "Leivät, mehu, hedelmät", place: "Leiriruokala" },
-      { section: VL, date: day(32), meal: "Aamupala", time: "07:00–09:00", food: "Puuro, leivät", place: "Leiriruokala" },
-      { section: VL, date: day(32), meal: "Lounas", time: "11:00–12:30", food: "Jauhelihakastike, pasta", place: "Leiriruokala" },
-    ],
+    menu: vlMenu,
     ohjeet: [
       { section: VL, title: "Pakkauslista", text: "Esimerkki:\n• makuupussi ja patja\n• pelivarusteet ja vaihtovaatteet\n• pyyhe ja peseytymisvälineet\n• juomapullo", link: "" },
       { title: "Kirjuri", text: "Esimerkkiohje: tule paikalle 30 min ennen ottelua. Pöytäkirja ja kynät ovat kioskin laatikossa.\nKirjaa vaihdot ja tulokset, ja palauta pöytäkirja valmentajalle ottelun jälkeen.", link: "" },
@@ -1451,9 +1457,10 @@ function makeDemo() {
     fields: [
       { name: "Kotikenttä", address: "Esimerkkikatu 1, Tampere", surface: "Hiekka" },
       { name: "Vieraskenttä", address: "Toinen katu 5, Nokia", surface: "Tekonurmi" },
-      { name: "Leiripaikka", address: "Leirikatu 3, Esimerkkilä", surface: "Hiekka" },
-      { name: "Leirikoulu", address: "Koulutie 1, Esimerkkilä", surface: "" },
-      { name: "Leiriruokala", address: "Koulutie 1, Esimerkkilä", surface: "" },
+      { name: "Alueleirin kenttä", address: "Loimaa", surface: "" },
+      { name: "Leiripaikka", address: "Laitila", surface: "" },
+      { name: "Leirikoulu", address: "Laitila", surface: "" },
+      { name: "Leiriruokala", address: "Laitila", surface: "" },
     ],
   };
 }
