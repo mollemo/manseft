@@ -40,8 +40,7 @@ var DEFAULT_SETTINGS = [
   ["Kotipelin talkoot", "Kirjuri, Tulostaulu / ottelun vanhin, 2. tuomari, 3. tuomari, Takarajatuomari, Kioski 1, Kioski 2, Kentän piirtäjä", "Pilkulla erotettu lista. Jokaiselle tulee oma sarake Ottelut-välilehdelle. Kaksi samaa tehtävää = kaksi riviä (esim. Kioski 1, Kioski 2)"],
   ["Vieraspelin talkoot", "", "Pilkulla erotettu lista. Tyhjä = vieraspeleissä ei talkoita, vain kyydit"],
   ["Leiri etusivulla", "14", "Montako päivää ennen leirin alkua leirin painike korostetaan ja nostetaan etusivun ylimmäksi"],
-  ["Lukitut osiot", "Aluesarja", "Näiden osioiden talkoovuoroihin ei voi ilmoittautua sivustolla: talkoovastaava kirjoittaa nimet Sheetiin ja sivu näyttää ne. Pilkulla erotettu lista (esim. Aluesarja, Alueleiri, Valtakunnallinen leiri). Tyhjä = kaikki auki. Kyytejä voi aina sopia sivustolla"],
-  ["Lukko", "AUKI", "AUKI = ilmoittautuminen sivustolla toimii. LUKITTU = mitään (myöskään kyytejä) ei voi muuttaa sivustolla"]
+  ["Lukko", "AUKI", "AUKI = kyytejä voi tarjota ja niihin voi liittyä sivustolla. LUKITTU = kyytejäkään ei voi muuttaa sivustolla"]
 ];
 
 // Kauden leirit: kirjoitetaan Leirit-välilehdelle setupissa, jos välilehti on vielä tyhjä.
@@ -223,15 +222,6 @@ function sectionOf_(explicit, fallback, sections) {
   return "";
 }
 
-function rowSection_(sh, hm, row, fallbackCol, s) {
-  var get = function (c) { return c in hm ? sh.getRange(row, hm[c] + 1).getValue() : ""; };
-  return sectionOf_(get("Osio"), get(fallbackCol), splitList_(s["Osiot"]));
-}
-function sectionLocked_(sec, s) {
-  var l = splitList_(s["Lukitut osiot"]).map(function (x) { return x.toLowerCase(); });
-  return l.indexOf((sec || "Yleiset").toLowerCase()) !== -1;
-}
-var LOCKED_MSG = "Tämän osion talkoovuorot jakaa talkoovastaava. Ilmoittautuminen sivustolla on suljettu.";
 
 function allRoles_(settings) {
   var a = splitList_(settings["Kotipelin talkoot"]).concat(splitList_(settings["Vieraspelin talkoot"]));
@@ -353,7 +343,7 @@ function buildPayload_() {
   return {
     ok: true,
     settings: { team: s["Joukkue"], season: s["Kausi"], homeTag: s["Kotijoukkueen tunniste"], homeRoles: homeRoles, awayRoles: awayRoles,
-                sections: sections, roleSection: s["Ottelutalkoot osiossa"], lockedSections: splitList_(s["Lukitut osiot"]),
+                sections: sections, roleSection: s["Ottelutalkoot osiossa"],
                 campDays: parseInt(s["Leiri etusivulla"], 10) || 14 },
     locked: /^lukit/i.test(s["Lukko"] || ""),
     today: todayIso_(),
@@ -384,36 +374,9 @@ function handle_(b, s) {
   var today = todayIso_();
   var year = s["Kausi"];
 
-  if (b.action === "role") {               // { id, role, name } – tyhjä name = poisto
-    var sh = sheet_("Ottelut"), hm = headerMap_(sh);
-    if (allRoles_(s).indexOf(b.role) === -1 || !(b.role in hm)) return { ok: false, error: "Tuntematon rooli." };
-    var row = findRowById_(sh, hm, b.id);
-    if (!row) return { ok: false, error: "Ottelua ei löytynyt." };
-    if (sectionLocked_(rowSection_(sh, hm, row, "Sarja", s), s)) return { ok: false, error: LOCKED_MSG };
-    if (fmtDate_(sh.getRange(row, hm["Pvm"] + 1).getValue(), year) < today) return { ok: false, error: "Ottelu on jo pelattu." };
-    sh.getRange(row, hm[b.role] + 1).setValue(name);
-    return { ok: true };
-  }
-
-  if (b.action === "talkoo_add" || b.action === "talkoo_remove") {   // { id, name }
-    var sh2 = sheet_("Talkoot"), hm2 = headerMap_(sh2);
-    var row2 = findRowById_(sh2, hm2, b.id);
-    if (!row2) return { ok: false, error: "Talkoovuoroa ei löytynyt." };
-    if (sectionLocked_(rowSection_(sh2, hm2, row2, "Tapahtuma", s), s)) return { ok: false, error: LOCKED_MSG };
-    if (fmtDate_(sh2.getRange(row2, hm2["Pvm"] + 1).getValue(), year) < today) return { ok: false, error: "Vuoro on jo mennyt." };
-    var cell = sh2.getRange(row2, hm2["Nimet"] + 1);
-    var names = splitList_(cell.getValue());
-    var need = Math.max(parseInt(sh2.getRange(row2, hm2["Tarve"] + 1).getValue(), 10) || 1, 1);
-    if (!name) return { ok: false, error: "Nimi puuttuu." };
-    if (b.action === "talkoo_add") {
-      if (names.some(function (n) { return n.toLowerCase() === name.toLowerCase(); })) return { ok: true };
-      if (names.length >= need) return { ok: false, error: "Vuoro ehti juuri täyttyä." };
-      names.push(name);
-    } else {
-      names = names.filter(function (n) { return n !== name; });
-    }
-    cell.setValue(names.join(", "));
-    return { ok: true };
+  // Talkoovuorot jakaa talkoovastaava suoraan Sheetiin. Sivustolta voi ilmoittautua vain kyyteihin.
+  if (b.action === "role" || b.action === "talkoo_add" || b.action === "talkoo_remove") {
+    return { ok: false, error: "Talkoovuorot jakaa talkoovastaava. Sovi muutoksista hänen kanssaan." };
   }
 
   var ksh = sheet_("Kyydit"), khm = headerMap_(ksh);

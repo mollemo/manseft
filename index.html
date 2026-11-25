@@ -139,6 +139,8 @@
   .ride .rh { display: flex; justify-content: space-between; gap: 6px; align-items: baseline; flex-wrap: wrap; }
   .seats { font-size: 12px; font-weight: 700; color: var(--ok); }
   .seats.full { color: var(--sub); }
+  .pas.mine, b.me { color: var(--acd); font-weight: 700; }
+  .pas.mine { box-shadow: inset 0 0 0 1.5px var(--ac); }
   .pas { display: inline-flex; align-items: center; background: #fff; border-radius: 999px; padding: 2px 5px 2px 10px; margin: 5px 5px 0 0; font-size: 12.5px; box-shadow: inset 0 0 0 1px var(--border); }
   .form { display: grid; gap: 8px; margin-top: 8px; }
   .form label { font-size: 12px; font-weight: 600; color: var(--sub); }
@@ -345,7 +347,7 @@ function parseHash() {
   return { tab: TABS.some(t => t[0] === h) || h === "tiedotteet" ? h : "koti" };
 }
 let tab = parseHash().tab;
-const F = { leiri: parseHash().leiri || "", sec: parseHash().sec || "", lday: "", menu: false, ohje: "", games: "tulevat", talkoot: "avoimet", kal: "kaikki", kalPast: false, mePast: false };
+const F = { leiri: parseHash().leiri || "", sec: parseHash().sec || "", lday: "", menu: false, ohje: "", games: "tulevat", talkoot: "tulevat", kal: "kaikki", kalPast: false, mePast: false };
 
 // ─── Apufunktiot ─────────────────────────────────────────────────────────
 const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -408,9 +410,11 @@ function sectionList() {
   if ([].concat(D.games, D.talkoot, D.events).some(x => secName(x) === OTHER)) l.push(OTHER);
   return l;
 }
-function secLockedName(s) { return ((D.settings && D.settings.lockedSections) || []).some(x => x.toLowerCase() === String(s).toLowerCase()); }
-// Talkooilmoittautuminen suljettu: koko lista lukittu tai rivin osio on Lukitut osiot -listalla
-function talkooLocked(x) { return locked() || secLockedName(secName(x)); }
+// Talkoovuorot jakaa talkoovastaava Sheetissä; sivulla ne ovat vain luettavia. Sivulla voi ilmoittautua vain kyyteihin.
+function secLockedName() { return true; }
+function talkooLocked() { return true; }
+function isMe(n) { const me = myName().trim().toLowerCase(); return !!me && String(n || "").trim().toLowerCase() === me; }
+function meTag(n) { return isMe(n) ? `<b class="me">${esc(n)}</b>` : esc(n); }
 function secOk(x) { return !F.sec || secName(x) === F.sec; }
 function secIcon(s) { s = s.toLowerCase(); return s.includes("leiri") ? "⛺" : s.includes("sarja") ? "⚾" : "📌"; }
 // Osiosuodatin: vain osiot, joissa tällä välilehdellä on sisältöä. Rivittyy, joten kaikki osiot näkyvät aina.
@@ -519,15 +523,8 @@ function dateBox(iso, cls, icon) {
 }
 
 function roleRow(g, role) {
-  const key = `role|${g.id}|${role}`;
   const name = g.roles[role] || "";
-  let body;
-  if (editing && editing.key === key) body = inlineInput("Nimi");
-  else if (isPast(g.date)) body = name ? esc(name) : `<span class="muted">—</span>`;
-  else if (talkooLocked(g)) body = name ? esc(name) : `<span class="muted">Jakamatta</span>`;
-  else if (name) body = `${esc(name)} <button class="btn ghost sm" data-act="edit" data-key="${esc(key)}" data-val="${esc(name)}">Vaihda</button>
-                         <button class="x" title="Poista" data-act="rmRole" data-key="${esc(key)}">✕</button>`;
-  else body = `<span class="open">Avoin</span> <button class="btn sm" data-act="edit" data-key="${esc(key)}">Ilmoittaudu</button>`;
+  const body = name ? meTag(name) : `<span class="muted">—</span>`;
   const o = ohjeFor(role);
   return `<div class="rrow"><span class="rl">${esc(role)}${o ? ` <button class="x" style="font-size:13px;color:var(--navy);" title="Ohje" data-act="ohje" data-key="${esc(o.title)}">ⓘ</button>` : ""}:</span> ${body}</div>`;
 }
@@ -566,8 +563,7 @@ function gameCard(g, opts) {
   else if (roles.length) {
     const rf = rolesFilled(g);
     foot += `<button class="mlink" data-act="goSec" data-key="talkoot|${esc(secName(g))}">${ic("people").replace("<svg", '<svg width="15" height="15"')}
-      Talkoot ${rf.filled}/${rf.total} <span class="bar"><i style="width:${Math.round(100 * rf.filled / rf.total)}%"></i></span>
-      ${talkooLocked(g) ? "🔒" : rf.filled < rf.total && !past ? `<span class="open">${rf.total - rf.filled} avointa</span>` : ""}</button>`;
+      Talkoovuorot${Object.values(g.roles).some(isMe) ? ` · <b class="me">sinulla vuoro</b>` : ""} ›</button>`;
   }
   if (g.rides && !past && !opts.noRides) foot += `<button class="mlink" data-act="tab" data-key="kyydit">${ic("car").replace("<svg", '<svg width="15" height="15"')}
       ${rides.length ? `${rides.length} ${rides.length === 1 ? "auto" : "autoa"}, vapaita paikkoja ${free}` : "Ei vielä kyytitarjouksia"} ›</button>`;
@@ -594,8 +590,8 @@ function heroCard(g) {
   const rf = rolesFilled(g);
   const rides = g.rides ? ridesFor(g.id) : [];
   let foot = "";
-  if (rf.total) foot = `<button class="gfoot" data-act="goSec" data-key="talkoot|${esc(secName(g))}"><span>Talkoovuorot ${rf.filled}/${rf.total}</span>
-      <span class="bar"><i style="width:${Math.round(100 * rf.filled / rf.total)}%"></i></span><span>${talkooLocked(g) ? "🔒" : ""} ›</span></button>`;
+  const mine = Object.keys(g.roles).filter(r => isMe(g.roles[r]));
+  if (rf.total) foot = `<button class="gfoot" data-act="goSec" data-key="talkoot|${esc(secName(g))}"><span>${mine.length ? `Sinun vuorosi: <b class="me">${esc(mine.join(", "))}</b>` : "Ottelun talkoovuorot"}</span><span style="margin-left:auto;">›</span></button>`;
   else if (g.rides) foot = `<button class="gfoot" data-act="tab" data-key="kyydit"><span>🚗 ${rides.length ? `${rides.length} ${rides.length === 1 ? "kyyti" : "kyytiä"} tarjolla` : "Ei vielä kyytejä"}</span><span style="margin-left:auto;">›</span></button>`;
   return `<div class="hero">${heroField()}
     <div class="glass">
@@ -609,25 +605,18 @@ function heroCard(g) {
 
 function talkooCard(t) {
   const past = isPast(t.date), today = t.date === todayIso();
-  const open = talkooOpen(t);
-  const key = `talkoo|${t.id}`;
   const time = t.time ? `klo ${esc(t.time)}${t.end ? "–" + esc(t.end) : ""}` : "";
-  const names = t.names.map(n => `<span class="pas">${esc(n)}${!past && !talkooLocked(t) ? `<button class="x" title="Poista" data-act="rmTalkoo" data-key="${esc(t.id + "|" + n)}">✕</button>` : ""}</span>`).join("");
-  let action = "";
-  if (editing && editing.key === key) action = `<div class="rrow">${inlineInput("Nimi")}</div>`;
-  else if (!past && open > 0 && talkooLocked(t)) action = `<div class="rrow"><span class="muted">${open} jakamatta</span></div>`;
-  else if (!past && open > 0) action = `<div class="rrow"><span class="open">${open} ${open === 1 ? "paikka" : "paikkaa"} vapaana</span>
-       <button class="btn sm" data-act="edit" data-key="${esc(key)}">Ilmoittaudu</button></div>`;
-  else if (open === 0) action = `<div class="rrow" style="color:var(--green);font-weight:700;font-size:12.5px;">✓ Täynnä</div>`;
+  const names = t.names.map(n => `<span class="pas ${isMe(n) ? "mine" : ""}">${esc(n)}</span>`).join("");
+  const missing = Math.max(t.need - t.names.length, 0);
   return `<div class="card ${past ? "past" : ""} ${today ? "today" : ""}">
     ${dateBox(t.date, "talkoo", "🙋")}
     <div class="cbody">
-      <div class="meta" style="color:var(--green);">${time}${t.event ? ` <span class="badge b-ser">${esc(t.event)}</span>` : ""}${today ? ` <span class="badge b-today">Tänään</span>` : ""}</div>
+      <div class="meta">${time}${t.event ? ` <span class="badge b-ser">${esc(t.event)}</span>` : ""}${today ? ` <span class="badge b-today">Tänään</span>` : ""}</div>
       <div class="title">${esc(t.task || "Talkoovuoro")}</div>
       ${t.place ? `<div class="sub">${placeHtml(t.place)}</div>` : ""}
       ${t.info ? `<div class="sub">${esc(t.info)}</div>` : ""}
-      <div class="roles"><div class="small muted" style="margin-top:3px;">Ilmoittautuneet ${t.names.length}/${t.need}</div>
-        <div>${names}</div>${action}</div>
+      <div class="roles"><div class="small muted" style="margin-top:3px;">Tekijät ${t.names.length}/${t.need}</div>
+        <div>${names}${missing ? `<span class="small muted" style="margin-left:2px;">${t.names.length ? "+ " : ""}${missing} jakamatta</span>` : ""}</div></div>
     </div></div>`;
 }
 
@@ -798,10 +787,7 @@ function sectionTile(s) {
   const t = todayIso();
   const items = allItems().filter(it => secName(it.ref) === s);
   const next = items.find(it => it.date >= t);
-  const st = secStatus(s);
-  const pill = !st.has ? "" : st.locked
-    ? `<span class="tp lock">${st.open ? `🔒 ${st.open} jakamatta` : "🔒 jaettu"}</span>`
-    : st.open ? `<span class="tp">${st.open} avointa</span>` : `<span class="tp ok">✓ täynnä</span>`;
+  const pill = "";
   const line = next
     ? `${esc(daysUntil(next.date) <= 1 ? relDay(next.date, next.time) : dayLabel(next.date))}${next.time && !relDay(next.date, next.time).startsWith("Alkaa") ? " klo " + esc(next.time) : ""} · ${esc(next.title)}`
     : items.length ? "Ei tulevaa ohjelmaa" : "Ei vielä ohjelmaa";
@@ -922,6 +908,15 @@ function myShifts(me, withPast) {
   });
   return out.sort(byWhen);
 }
+function nameSelect() {
+  const me = myName(), names = allNames();
+  if (me && !names.some(n => n.toLowerCase() === me.toLowerCase())) names.unshift(me);
+  return `<label class="small muted" for="meSel" style="font-weight:700;">Valitse nimesi</label>
+    <select id="meSel" class="inp wide" style="margin:3px 0 6px;">
+      <option value="">— valitse —</option>
+      ${names.map(n => `<option value="${esc(n)}" ${n.toLowerCase() === me.toLowerCase() ? "selected" : ""}>${esc(n)}</option>`).join("")}
+    </select>`;
+}
 function myBlock() {
   const me = myName(), names = allNames();
   if (me && !names.some(n => n.toLowerCase() === me.toLowerCase())) names.unshift(me);
@@ -962,28 +957,22 @@ function viewOttelut() {
 
 function viewTalkoot() {
   const t = todayIso();
-  let h = statusBanners() + seg("talkoot", [["avoimet", "Avoimet"], ["tulevat", "Tulevat"], ["menneet", "Menneet"]], F.talkoot);
-  const o = openTotals();
-  h += o.all === 0
-    ? `<div class="banner ok">✅ Kaikki tulevat talkoovuorot on täytetty — kiitos!</div>`
-    : `<div class="banner warn">Avoimia vuoroja <b>${o.all}</b> · otteluissa ${o.games}, muissa talkoissa ${o.talkoot}</div>`;
-  const sc = secChips([].concat(D.games.filter(g => Object.keys(g.roles).length), D.talkoot));
-  const lockedSecs = sectionList().filter(secLockedName).filter(x => !F.sec || x === F.sec);
-  if (lockedSecs.length && !locked()) h += `<div class="banner lock">🔒 ${esc(lockedSecs.join(", "))}: vuorot jakaa talkoovastaava. Ilmoittautuminen sivulla on suljettu — näet täältä oman vuorosi.</div>`;
-  h += sc;
-
+  let h = statusBanners() + seg("talkoot", [["tulevat", "Tulevat"], ["omat", "Omat"], ["menneet", "Menneet"]], F.talkoot);
+  h += secChips([].concat(D.games.filter(g => Object.keys(g.roles).length), D.talkoot));
   let items = [].concat(
-    D.games.filter(g => Object.keys(g.roles).length).map(g => ({ kind: "game", date: g.date, time: g.time, ref: g, open: gameOpen(g) })),
-    D.talkoot.map(x => ({ kind: "talkoo", date: x.date, time: x.time, ref: x, open: talkooOpen(x) }))
+    D.games.filter(g => Object.keys(g.roles).length).map(g => ({ kind: "game", date: g.date, time: g.time, ref: g, mine: Object.values(g.roles).some(isMe) })),
+    D.talkoot.map(x => ({ kind: "talkoo", date: x.date, time: x.time, ref: x, mine: x.names.some(isMe) }))
   ).filter(i => secOk(i.ref));
   if (F.talkoot === "menneet") items = items.filter(i => i.date < t).sort((a, b) => byWhen(b, a));
-  else {
-    items = items.filter(i => i.date >= t).sort(byWhen);
-    if (F.talkoot === "avoimet") items = items.filter(i => i.open > 0 || touched.has(i.ref.id));
+  else items = items.filter(i => i.date >= t).sort(byWhen);
+  if (F.talkoot === "omat") {
+    if (!myName()) return h + `<div class="box" style="padding:12px 14px;">${nameSelect()}<p class="small muted">Valitse nimesi, niin näet omat talkoovuorosi.</p></div>`;
+    items = items.filter(i => i.mine);
   }
+  h += `<p class="note">Talkoovuorot jakaa talkoovastaava. Jos et pääse vuoroosi, sovi vaihdosta talkoovastaavan kanssa.</p>`;
   h += items.length
     ? groupByMonth(items, i => i.kind === "game" ? gameCard(i.ref, { noRides: true }) : talkooCard(i.ref))
-    : `<p class="note">${F.talkoot === "avoimet" ? "Ei avoimia vuoroja. 🎉" : "Ei vuoroja tässä näkymässä."}</p>`;
+    : `<p class="note">${F.talkoot === "omat" ? `Ei tulevia talkoovuoroja nimellä ${esc(myName())}.` : "Ei vuoroja tässä näkymässä."}</p>`;
 
   // Talkootilasto: montako vuoroa kullakin nimellä kaudella
   const counts = {};
@@ -1111,7 +1100,7 @@ function viewLeiri() {
   h += `<div class="back"><button class="btn ghost sm" data-act="tab" data-key="leirit">← Leirit</button></div>`;
   h += `<div class="sec sec-${secColor(s)} camphead"><div class="sech"><div><div class="sect">${esc(campLabel(s) || s)}</div>
         <div class="secm">${esc(campRange(s))}${campLive(s) ? " · käynnissä" : c.start > t ? ` · alkaa ${daysUntil(c.start) === 1 ? "huomenna" : daysUntil(c.start) + " päivän päästä"}` : ""}</div></div>
-        ${st.has ? `<span class="secpill ${st.open && !st.locked ? "" : "ok"}">${st.locked ? (st.open ? `🔒 ${st.open} jakamatta` : "🔒 jaettu") : st.open ? `${st.open} avointa` : "✓ täynnä"}</span>` : ""}</div></div>`;
+        </div></div>`;
   if (days.length) h += chips("lday", days.map(d => [d, dayLabel(d) + (d === t ? " •" : "")]), F.lday);
   h += chips("lday", infoTabs, F.lday);
 
@@ -1135,7 +1124,7 @@ function viewLeiri() {
     h += names.length ? names.map(n => `<div class="card"><div class="cbody"><div class="title">${placeHtml(n)}</div></div></div>`).join("")
       : `<p class="note">Paikkoja ei ole vielä lisätty. Kirjoita paikka otteluun, tapahtumaan tai ruokalistaan, ja sen osoite Kentät-välilehdelle.</p>`;
   } else if (v === "talkoot") {
-    if (secLockedName(s) && !locked()) h += `<div class="banner lock">🔒 Leirin vuorot jakaa talkoovastaava.</div>`;
+    h += `<p class="note">Talkoovuorot jakaa talkoovastaava.</p>`;
     const items = [].concat(gamesWithRoles.map(g => ({ date: g.date, time: g.time, html: gameCard(g, { noRides: true }) })),
       talk.map(x => ({ date: x.date, time: x.time, html: talkooCard(x) }))).sort(byWhen);
     h += items.map(i => i.html).join("");
@@ -1177,7 +1166,7 @@ function viewLeirit() {
         ${btn("talkoot", "Talkoot", "people")}
         ${btn("info", "Info", "book")}
       </div>
-      ${st.has && !ended ? `<div class="lfoot">${st.locked ? `🔒 Talkoovuorot: ${st.open ? `${st.open} jakamatta` : "jaettu"}` : st.open ? `<span class="open">${st.open} avointa talkoovuoroa</span>` : "✓ Talkoovuorot täynnä"}</div>` : ""}
+
     </div>`;
   });
   return h;
@@ -1216,9 +1205,9 @@ function viewOhjeet() {
 
   h += `<div class="h2 navy">Näin sivu toimii</div><div class="box small" style="line-height:1.6;">
     <b>Minun tehtävät:</b> Valitse etusivulla nimesi, niin näet omat talkoovuorosi ja kyytisi paikkoineen. 📅-napilla saat ne kaikki kerralla kalenteriin.<br>
-    <b>Lukitut osiot (🔒):</b> Talkoovastaava jakaa vuorot, ja ne näkyvät sivulla. Muutoksista sovitaan talkoovastaavan kanssa.<br>
-    <b>Avoimet talkoot:</b> Paina vuoron kohdalla <i>Ilmoittaudu</i> ja kirjoita nimesi. Oman nimen voi vaihtaa tai poistaa (✕).<br>
-    <b>Kyydit:</b> Kyydit-välilehdellä kuljettaja tarjoaa paikkoja ja pelaajat liittyvät kyytiin. Vieraspeleissä ei ole talkoita, vaan niissä sovitaan kyydit.<br>
+    <b>Talkoovuorot:</b> Talkoovastaava jakaa vuorot ja kirjaa ne sivulle. Jos et pääse vuoroosi, sovi vaihdosta talkoovastaavan kanssa.<br>
+
+    <b>Kyydit:</b> Sivulla voi ilmoittautua vain kyyteihin. Kyydit-välilehdellä kuljettaja tarjoaa paikkoja ja pelaajat liittyvät kyytiin.<br>
     <b>ⓘ roolin vieressä:</b> avaa kyseisen tehtävän ohjeen.<br>
     <b>Kalenteri:</b> 📅-napilla saat tapahtuman puhelimen kalenteriin.</div>`;
 
@@ -1265,9 +1254,8 @@ function downloadIcs(items, filename) {
 
 // ─── Renderöinti ─────────────────────────────────────────────────────────
 function renderTabs() {
-  const o = D ? openTotals().all : 0;
   document.getElementById("tabs").innerHTML = TABS.map(([k, l, icon]) =>
-    `<button class="${k === tab || (k === "leirit" && tab === "leiri") ? "active" : ""}" data-act="tab" data-key="${k}" aria-label="${l}">${ic(icon)}<span class="lb">${l}</span>${k === "talkoot" && o ? `<span class="cnt">${o}</span>` : ""}</button>`).join("");
+    `<button class="${k === tab || (k === "leirit" && tab === "leiri") ? "active" : ""}" data-act="tab" data-key="${k}" aria-label="${l}">${ic(icon)}<span class="lb">${l}</span></button>`).join("");
   const fresh = D && (D.news || []).some(n => n.date && daysUntil(n.date) >= -7 && (!n.until || n.until >= todayIso()));
   document.getElementById("bellBtn").innerHTML = ic("bell") + (fresh ? `<span class="dot"></span>` : "");
   document.getElementById("menuBtn").innerHTML = ic("menu");
@@ -1417,7 +1405,7 @@ function makeDemo() {
   return {
     ok: true, locked: false, today: todayIso(),
     settings: { team: "Manse F-tytöt", season: "2027", homeTag: "Manse",
-                homeRoles: HOME_ROLES, awayRoles: [], sections: [AS, AL, VL], roleSection: AS, lockedSections: [AS], campDays: 14 },
+                homeRoles: HOME_ROLES, awayRoles: [], sections: [AS, AL, VL], roleSection: AS, campDays: 14 },
     // Yksi esimerkkiottelu per osio
     games: [
       { id: "o1", section: AS, rides: false, date: day(2), time: "18:00", teams: "Manse – Esimerkki PP", field: "Kotikenttä", series: AS, home: true,

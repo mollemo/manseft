@@ -15,7 +15,7 @@ Etusivu on jaettu osioihin (oletuksena **Aluesarja**, **Alueleiri** ja **Valtaku
 Rivin osio valitaan **Osio**-sarakkeesta Ottelut-, Talkoot- ja Tapahtumat-välilehdillä. Jos Osio on tyhjä, osio päätellään Sarja-/Tapahtuma-/Otsikko-tekstistä, ja muuten rivi näkyy kohdassa *Yleiset*.
 Ottelutalkoot (kotipelit) ja vieraspelien kyydit koskevat vain Asetusten *Ottelutalkoot osiossa* -kohdan osiota (oletus Aluesarja). Leirien talkoot kirjataan Talkoot-välilehdelle ja leirin kyydit Tapahtumat-riville (*Kyydit = Kyllä*).
 
-**Lukitut osiot** (Asetukset): näiden osioiden talkoovuoroihin ei voi ilmoittautua sivustolla. Talkoovastaava kirjoittaa nimet suoraan Sheetiin, ja sivu näyttää ne (avoimet vuorot näkyvät *Jakamatta*). Oletuksena lukittu on Aluesarja; leirit lukitaan lisäämällä ne samalle riville pilkulla erotettuna. Kyytejä voi sopia sivustolla aina. *Lukko = LUKITTU* sulkee edelleen koko sivuston muokkauksen, kyydit mukaan lukien.
+**Talkoovuorot** jakaa talkoovastaava: nimet kirjoitetaan suoraan Sheetiin (Ottelut-välilehden roolisarakkeet ja Talkoot-välilehden Nimet-sarake), ja sivu näyttää ne. Sivustolla voi ilmoittautua vain kyyteihin. *Lukko = LUKITTU* sulkee myös kyytien muokkauksen.
 
 ## Leirisivut
 Alueleirillä ja Valtakunnallisella leirillä on oma leirisivu (kuten erillisillä leirisivustoilla): päiväkohtainen ohjelma, ruokalista, paikat, talkoot, kyydit ja leirin info.
@@ -31,14 +31,14 @@ Leirit eivät ole yläpalkissa. Ne löytyvät **☰-valikosta** ja etusivun pain
 ## Sheetin välilehdet
 | Välilehti | Mitä sinne kirjoitetaan |
 |---|---|
-| **Ottelut** | Pvm, Klo, Joukkueet (esim. `Manse – Kiri`), Kenttä (pudotusvalikko), Sarja, Tulos, Pesistulokset-linkki. Roolisarakkeet (Kirjuri…) täyttyvät sivustolta. Koti/Vieras päätellään joukkueista, mutta sen voi myös valita itse. |
-| **Talkoot** | Muut talkoot: Pvm, Klo, Loppu, Tapahtuma, Tehtävä, Paikka, **Tarve** (montako tekijää). Nimet täyttyvät sivustolta. |
+| **Ottelut** | Pvm, Klo, Joukkueet (esim. `Manse – Kiri`), Kenttä (pudotusvalikko), Sarja, Tulos, Pesistulokset-linkki. Roolisarakkeisiin (Kirjuri…) talkoovastaava kirjoittaa nimet. Koti/Vieras päätellään joukkueista, mutta sen voi myös valita itse. |
+| **Talkoot** | Muut talkoot: Pvm, Klo, Loppu, Tapahtuma, Tehtävä, Paikka, **Tarve** (montako tekijää) ja **Nimet** (talkoovastaava kirjoittaa, pilkulla erotettuna). |
 | **Tapahtumat** | Harjoitukset, palaverit, turnaukset, leirit, juhlat. *Kyydit = Kyllä* tuo tapahtuman Kyydit-välilehdelle. Linkki-sarakkeeseen voi laittaa esim. leirisivun osoitteen. |
 | **Kyydit** | Täyttyy sivustolta. Valmentaja voi muokata tai poistaa rivejä. |
 | **Tiedotteet** | Näkyvät etusivulla *Näytä asti* -päivään saakka (tyhjä = aina). |
 | **Ohjeet** | Sivun Ohjeet-välilehdelle: Otsikko, Teksti (rivinvaihdot säilyvät), Linkki. Järjestys = rivien järjestys. Jos otsikko on sama kuin talkoorooli (esim. *Kirjuri* tai *Kioski*, joka kattaa Kioski 1 ja Kioski 2), roolin viereen tulee ⓘ-linkki ohjeeseen. |
 | **Kentät** | Ohjeet-välilehdelle. Kentän osoitteesta tulee karttalinkki kaikkialle, missä kenttää käytetään. |
-| **Asetukset** | Joukkueen nimi, kausi, **Osiot**, ottelutalkoiden osio, koti- ja vieraspelin talkooroolit sekä **Lukko** (AUKI / LUKITTU). |
+| **Asetukset** | Joukkueen nimi, kausi, **Osiot**, ottelutalkoiden osio, koti- ja vieraspelin talkooroolit sekä **Lukko** (AUKI / LUKITTU, koskee kyytejä). |
 
 ID-sarakkeen täyttää skripti itse, joten jätä se tyhjäksi. Päivämäärän voi kirjoittaa muodossa `16.5.` tai päivämääränä.
 Jos muutat talkoorooleja Asetuksissa, aja **Kausisivusto → Luo / korjaa välilehdet**, niin uudet roolisarakkeet syntyvät.
