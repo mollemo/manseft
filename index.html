@@ -122,8 +122,10 @@
   .seg { display: flex; border-bottom: 1px solid #D9DBD4; margin: 0 2px 14px; }
   .seg button { flex: 1; border: none; background: none; padding: 10px 4px 11px; font-size: 14.5px; color: var(--sub); cursor: pointer; position: relative; font-weight: 500; }
   .seg button.on { color: var(--text); }
-  .seg5 button { font-size: 14px; padding-left: 2px; padding-right: 2px; }
-  @media (max-width: 380px) { .seg5 button { font-size: 13px; } }
+  .seg5 { overflow-x: auto; scrollbar-width: none; }
+  .seg5::-webkit-scrollbar { display: none; }
+  .seg5 button { flex: 1 0 auto; font-size: 14px; padding-left: 6px; padding-right: 6px; white-space: nowrap; }
+  @media (max-width: 380px) { .seg5 button { font-size: 13px; padding-left: 4px; padding-right: 4px; } }
   .seg button.on::after { content: ""; position: absolute; left: 14%; right: 14%; bottom: -1px; height: 2.5px; border-radius: 2px; background: var(--ac); }
 
   .mini { display: flex; gap: 10px; align-items: center; padding: 10px 2px; border-bottom: 1px solid var(--border); font-size: 13.5px; }
@@ -268,7 +270,8 @@
   .ldays { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 12px 12px 2px; }
   .ldays::-webkit-scrollbar { display: none; }
   .ldays .chip { box-shadow: inset 0 0 0 1px var(--border); }
-  .lbtns { display: grid; grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); gap: 8px; padding: 12px; }
+  .lbtns { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; padding: 12px; }
+  .lbtns .lbtn { font-size: 11.5px; padding: 11px 2px 9px; }
   .lbtn { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 4px 10px; border: none; border-radius: 16px; background: var(--soft);
           color: var(--text); font-size: 12.5px; font-weight: 600; cursor: pointer; }
   .lbtn svg { width: 22px; height: 22px; color: var(--ac); }
@@ -579,7 +582,7 @@ function gameCard(g, opts) {
   const rel = opts.rel ? relDay(g.date, g.time) : "";
   const status = past ? (g.result ? "" : `<span class="badge b-away">Pelattu</span>`) : statusPill(g.date, g.time);
   // Sarja näytetään vain, kun lista ei ole jo suodatettu siihen osioon
-  const tag = (g.series || secName(g) !== OTHER) && !(tab === "ottelut" && F.sec) ? (g.series || secName(g)) : "";
+  const tag = (g.series || secName(g) !== OTHER) && !(tab === "ottelut" && F.sec) && !opts.noTag ? (g.series || secName(g)) : "";
   const f = g.field ? fieldByName(g.field) : null;
   const team = (n, side) => n ? `<div class="mteam">${teamAvatar(n)}<div class="tn">${esc(n)}</div><div class="ts">${isHomeTeam(n) ? (g.home ? "Koti" : "Vieras") : side}</div></div>` : `<div></div>`;
   let foot = "";
@@ -1039,7 +1042,7 @@ function viewLeiri() {
   const targets = rideTargets().filter(x => secName(x.ref) === s);
   const ohjeet = (D.ohjeet || []).filter(o => secName(o) === s);
   // F.lday on joko päivämäärä (Ohjelma-välilehti) tai välilehden avain. Vanha "paikat" ohjautuu Infoon.
-  const TABS_L = [["ohjelma", "Ohjelma"], ["ruoka", "Ruokalista"], ["talkoot", "Talkoot"], ["kyydit", "Kyydit"], ["info", "Info"]];
+  const TABS_L = [["ohjelma", "Ohjelma"], ["ottelut", "Ottelut"], ["ruoka", "Ruoka"], ["talkoot", "Talkoot"], ["kyydit", "Kyydit"], ["info", "Info"]];
   const defDay = days.includes(t) ? t : days.find(d => d >= t) || days[0] || "";
   if (F.lday === "paikat") F.lday = "info";
   if (F.lday === "ohjelma" || (!days.includes(F.lday) && !TABS_L.some(x => x[0] === F.lday))) F.lday = defDay || "info";
@@ -1056,6 +1059,10 @@ function viewLeiri() {
   if (days.includes(v)) {
     const rows = campDayRows(s, v);
     h += rows.length ? `<div class="box">${tlHtml(rows, v)}</div>` : `<p class="note">Tälle päivälle ei ole vielä ohjelmaa.</p>`;
+  } else if (v === "ottelut") {
+    const games = D.games.filter(g => secName(g) === s).sort(byWhen);
+    h += games.length ? groupByDay(games, g => gameCard(g, { date: false, noRides: true, noTag: true }))
+      : `<p class="note">Leirin otteluita ei ole vielä lisätty. Ne kirjoitetaan Sheetin Ottelut-välilehdelle (Osio = ${esc(s)}).</p>`;
   } else if (v === "ruoka") {
     if (!menu.length) h += `<p class="note">Ruokalista lisätään lähempänä leiriä. Se kirjoitetaan Sheetin Ruokalista-välilehdelle (Osio = ${esc(s)}).</p>`;
     const byDay = {};
@@ -1106,7 +1113,8 @@ function viewLeirit() {
       ${days.length ? `<div class="ldays">${days.map(d => `<button class="chip ${d === t ? "on" : ""}" data-act="openLeiri" data-key="${esc(s + "|" + d)}">${esc(dayLabel(d))}</button>`).join("")}</div>` : ""}
       <div class="lbtns">
         ${btn(days.includes(t) ? t : days[0] || "info", "Ohjelma", "cal")}
-        ${btn("ruoka", "Ruokalista", "food")}
+        ${btn("ottelut", "Ottelut", "ball")}
+        ${btn("ruoka", "Ruoka", "food")}
         ${btn("talkoot", "Talkoot", "people")}
         ${btn("info", "Info", "book")}
       </div>
