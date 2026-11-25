@@ -779,10 +779,11 @@ function viewKoti() {
   const next = D.games.filter(g => g.date >= t).sort(byWhen)[0];
   if (next) h += heroCard(next);
 
-  const news = (D.news || []).filter(n => !n.until || n.until >= t).sort((a, b) => (b.date || "").localeCompare(a.date || "")).slice(0, 2);
+  const unread = unreadNews().map(newsKey);
+  const news = activeNews().sort((a, b) => (b.date || "").localeCompare(a.date || "")).slice(0, 2);
   news.forEach(n => {
-    h += `<div class="card news"><div class="mic" style="background:#FCEAE8;color:var(--red);">${ic("bell")}</div><div class="cbody">
-      ${n.date ? `<div class="meta">${dayLabel(n.date)}</div>` : ""}
+    h += `<div class="card news" data-act="tab" data-key="tiedotteet" style="cursor:pointer;"><div class="mic" style="background:#FCEAE8;color:var(--red);">${ic("bell")}</div><div class="cbody">
+      <div class="meta">${n.date ? dayLabel(n.date) : ""}${unread.includes(newsKey(n)) ? ` <span class="badge b-now">Uusi</span>` : ""}</div>
       <div class="title">${esc(n.title)}</div>${n.text ? `<div class="sub">${esc(n.text)}</div>` : ""}</div></div>`;
   });
 
@@ -813,7 +814,17 @@ function statsBlock() {
     ${seats ? row("Kyytipaikat varattu", taken, seats) : ""}</div>`;
 }
 
+// Tiedotekello: piste näkyy, kun voimassa olevissa tiedotteissa on jokin, jota ei ole avattu tällä laitteella.
+const SEEN_KEY = "kausi_luetut_tiedotteet";
+function newsKey(n) { return (n.date || "") + "|" + (n.title || ""); }
+function seenNews() { try { return JSON.parse(localStorage.getItem(SEEN_KEY) || "[]"); } catch (e) { return []; } }
+function activeNews() { const t = todayIso(); return (D.news || []).filter(n => !n.until || n.until >= t); }
+function unreadNews() { const seen = seenNews(); return activeNews().filter(n => !seen.includes(newsKey(n))); }
+function markNewsSeen() {
+  try { const all = new Set(seenNews().concat((D.news || []).map(newsKey))); localStorage.setItem(SEEN_KEY, JSON.stringify([...all].slice(-200))); } catch (e) {}
+}
 function viewTiedotteet() {
+  markNewsSeen();
   const news = (D.news || []).slice().sort((a, b) => (b.date || "").localeCompare(a.date || ""));
   return statusBanners() + (news.length ? news.map(n => `<div class="card news"><div class="mic" style="background:#FCEAE8;color:var(--red);">${ic("bell")}</div><div class="cbody">
       ${n.date ? `<div class="meta">${dayLabel(n.date)}</div>` : ""}<div class="title">${esc(n.title)}</div>${n.text ? `<div class="sub">${esc(n.text)}</div>` : ""}</div></div>`).join("")
@@ -1210,7 +1221,7 @@ function downloadIcs(items, filename) {
 function renderTabs() {
   document.getElementById("tabs").innerHTML = TABS.map(([k, l, icon]) =>
     `<button class="${k === tab || (k === "leirit" && tab === "leiri") ? "active" : ""}" data-act="tab" data-key="${k}" aria-label="${l}">${ic(icon)}<span class="lb">${l}</span></button>`).join("");
-  const fresh = D && (D.news || []).some(n => n.date && daysUntil(n.date) >= -7 && (!n.until || n.until >= todayIso()));
+  const fresh = D && tab !== "tiedotteet" && unreadNews().length > 0;
   document.getElementById("bellBtn").innerHTML = ic("bell") + (fresh ? `<span class="dot"></span>` : "");
   document.getElementById("menuBtn").innerHTML = ic("menu");
   document.getElementById("menuBtn").classList.toggle("on", MENU_PAGES.some(t => t[0] === tab));
@@ -1223,11 +1234,13 @@ function renderClock() {
     const when = campLive(F.leiri) ? "käynnissä nyt" : c.end && c.end < t ? "päättynyt" : d === null ? "" : d === 1 ? "alkaa huomenna" : `alkaa ${d} pv päästä`;
     const rng = c.start ? (c.start === c.end ? dayLabel(c.start) : `${dayLabel(c.start)} – ${dayLabel(c.end)}`) : "";
     document.getElementById("clock").textContent = [F.leiri, rng, when].filter(Boolean).join(" · ");
+    document.getElementById("clock").hidden = false;
     return;
   }
-  document.getElementById("clock").textContent =
-    `${WD[n.getDay()]} ${n.getDate()}.${n.getMonth() + 1}. klo ${String(n.getHours()).padStart(2, "0")}:${String(n.getMinutes()).padStart(2, "0")}`
-;
+  const el = document.getElementById("clock");
+  el.textContent = tab === "koti"
+    ? `${WD[n.getDay()]} ${n.getDate()}.${n.getMonth() + 1}. klo ${String(n.getHours()).padStart(2, "0")}:${String(n.getMinutes()).padStart(2, "0")}` : "";
+  el.hidden = !el.textContent;
 }
 function render() {
   const team = D && D.settings && D.settings.team ? D.settings.team : "Manse";
