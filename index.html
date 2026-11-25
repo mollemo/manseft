@@ -509,7 +509,7 @@ async function saveEdit() {
     setMyName(v); editing = null;
     await act({ action: "talkoo_add", id, name: v });
   } else if (type === "join") {
-    editing = null;
+    editing = null; markAdded(id, v);
     await act({ action: "ride_join", id, name: v });
   }
 }
@@ -642,6 +642,16 @@ function eventCard(e) {
     </div></div>`;
 }
 
+// Kyytien muokkausoikeus ilman kirjautumista: nimi valittuna tällä laitteella (Minun tehtävät).
+// Kuljettaja voi poistaa oman kyytinsä ja sen kyytiläisiä; kyytiläisen voi poistaa myös se laite, jolla hänet lisättiin.
+const ADDED_KEY = "kausi_lisatyt_kyytiin";
+function addedHere() { try { return JSON.parse(localStorage.getItem(ADDED_KEY) || "[]"); } catch (e) { return []; } }
+function markAdded(rideId, name) {
+  try { const a = addedHere(); a.push(rideId + "|" + String(name).trim().toLowerCase()); localStorage.setItem(ADDED_KEY, JSON.stringify(a.slice(-200))); } catch (e) {}
+}
+function canRemoveRide(r) { return isMe(r.driver); }
+function canRemovePassenger(r, p) { return isMe(p) || isMe(r.driver) || addedHere().includes(r.id + "|" + String(p).trim().toLowerCase()); }
+
 function rideBlock(target) {
   const past = isPast(target.date);
   const rides = ridesFor(target.id);
@@ -649,16 +659,16 @@ function rideBlock(target) {
   let html = rides.map(r => {
     const free = Math.max(r.seats - r.passengers.length, 0);
     const jkey = `join|${r.id}`;
-    const pas = r.passengers.map(p => `<span class="pas">${esc(p)}${canEdit ? `<button class="x" title="Poista kyydistä" data-act="leave" data-key="${esc(r.id + "|" + p)}">✕</button>` : ""}</span>`).join("");
+    const pas = r.passengers.map(p => `<span class="pas ${isMe(p) ? "mine" : ""}">${esc(p)}${canEdit && canRemovePassenger(r, p) ? `<button class="x" title="Poista kyydistä" data-act="leave" data-key="${esc(r.id + "|" + p)}">✕</button>` : ""}</span>`).join("");
     let join = "";
     if (editing && editing.key === jkey) join = `<div class="rrow">${inlineInput("Pelaajan nimi")}</div>`;
     else if (canEdit && free > 0) join = `<div class="rrow"><button class="btn navy sm" data-act="edit" data-key="${esc(jkey)}" data-val="">Liity kyytiin</button></div>`;
     return `<div class="ride">
-      <div class="rh"><strong>🚗 ${esc(r.driver)}</strong><span class="seats ${free ? "" : "full"}">${free ? `${free} vapaana / ${r.seats}` : "Täynnä"}</span></div>
+      <div class="rh"><strong>🚗 ${meTag(r.driver)}${isMe(r.driver) ? ` <span class="small muted" style="font-weight:500;">(sinun kyytisi)</span>` : ""}</strong><span class="seats ${free ? "" : "full"}">${free ? `${free} vapaana / ${r.seats}` : "Täynnä"}</span></div>
       ${r.depart ? `<div class="small muted">Lähtö: ${esc(r.depart)}</div>` : ""}
       ${r.info ? `<div class="small muted">${esc(r.info)}</div>` : ""}
       <div>${pas}</div>${join}
-      ${canEdit ? `<div style="text-align:right;margin-top:3px;"><button class="x small" style="font-size:11.5px;text-decoration:underline;" data-act="rmRide" data-key="${esc(r.id)}">Poista kyyti</button></div>` : ""}
+      ${canEdit && canRemoveRide(r) ? `<div style="text-align:right;margin-top:3px;"><button class="x small" style="font-size:11.5px;text-decoration:underline;" data-act="rmRide" data-key="${esc(r.id)}">Poista kyyti</button></div>` : ""}
     </div>`;
   }).join("");
   const fkey = `rideform|${target.id}`;
@@ -912,6 +922,7 @@ function viewKyydit() {
   const t = todayIso();
   let h = statusBanners();
   h += `<p class="note">Vieraspelien ja tapahtumien kyydit. Kuljettaja ilmoittaa vapaat paikat, ja pelaajat liittyvät kyytiin omalla nimellään.</p>`;
+  if (!myName()) h += `<div class="box" style="padding:12px 14px;">${nameSelect()}<p class="small muted">Valitse nimesi, niin voit muokata ja poistaa omia kyytejäsi.</p></div>`;
   h += secChips(rideTargets().filter(x => x.date >= t).map(x => x.ref));
   const targets = rideTargets().filter(x => x.date >= t && secOk(x.ref));
   if (!targets.length) return h + `<p class="note"><em>Ei tulevia vieraspelejä tai kyytitapahtumia.</em></p>`;
@@ -1259,10 +1270,16 @@ const ACTIONS = {
   },
   leave(k) {
     const i = k.indexOf("|"), id = k.slice(0, i), name = k.slice(i + 1);
+    const r = (D.rides || []).find(x => x.id === id);
+    if (!r || !canRemovePassenger(r, name)) { toast("Valitse ensin nimesi etusivun Minun tehtävät -kohdasta"); return; }
     if (!confirm(`Poistetaanko ${name} kyydistä?`)) return;
     act({ action: "ride_leave", id, name });
   },
-  rmRide(k) { if (confirm("Poistetaanko koko kyytitarjous?")) act({ action: "ride_remove", id: k }); },
+  rmRide(k) {
+    const r = (D.rides || []).find(x => x.id === k);
+    if (!r || !canRemoveRide(r)) { toast("Vain kuljettaja voi poistaa kyydin"); return; }
+    if (confirm("Poistetaanko koko kyytitarjous?")) act({ action: "ride_remove", id: k });
+  },
   rideSubmit(k) { submitRide(k); },
   filter(k) {
     const [g, v] = k.split("|");
