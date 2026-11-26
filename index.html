@@ -108,6 +108,7 @@
   .open { color: var(--red); font-weight: 600; }
   .btn { font-size: 12.5px; font-weight: 600; color: #fff; background: linear-gradient(180deg, var(--ac2), var(--ac)); border: none; border-radius: 999px;
          padding: 7px 15px; cursor: pointer; box-shadow: 0 3px 10px rgba(var(--acrgb),.25); }
+  a.btn { text-decoration: none; display: inline-block; }
   .btn.ghost { color: var(--text); background: #fff; box-shadow: inset 0 0 0 1px var(--border); }
   .btn.navy { background: var(--navy); box-shadow: none; }
   .btn.navy.ghost { color: var(--navy); background: #fff; box-shadow: inset 0 0 0 1px var(--border); }
@@ -268,6 +269,22 @@
   .tile .chev { color: #9EA199; display: grid; }
   .tile .chev svg { width: 16px; height: 16px; }
   .back { margin: 0 0 10px; }
+  .tap { cursor: pointer; }
+  .mmain.tap { position: relative; }
+  .mchev { position: absolute; right: 8px; top: 8px; color: #A9ACA4; display: grid; }
+  .mchev svg { width: 14px; height: 14px; }
+  .mmain.tap:active, .mini.tap:active { background: var(--soft); }
+  .gtap { cursor: pointer; }
+  .gd { background: #fff; border-radius: 24px; box-shadow: var(--sh); padding: 18px 14px 14px; margin-bottom: 12px; text-align: center; }
+  .gdteams { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 6px; }
+  .gdt .av { width: 60px; height: 60px; font-size: 18px; display: grid; margin: 0 auto 8px; }
+  .gdt .tn { font-size: 15px; font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
+  .gdt .ts { font-size: 12px; color: var(--sub); margin-top: 2px; }
+  .gdvs { font-size: 14px; color: var(--sub); font-weight: 500; }
+  .gdvs.res { font-size: 26px; color: var(--text); font-weight: 700; }
+  .gdwhen { margin-top: 14px; font-size: 16px; font-weight: 600; }
+  .gdpills { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .mini .chev { color: #9EA199; display: grid; } .mini .chev svg { width: 16px; height: 16px; }
   .welcome { background: #fff; border-radius: var(--r); box-shadow: var(--sh); padding: 16px; margin: 2px 0 14px; }
   .welcome .wt { font-size: 18px; font-weight: 600; letter-spacing: -.3px; line-height: 1.3; }
   .welcome .wl { list-style: none; }
@@ -414,10 +431,11 @@ function parseHash() {
   try { h = decodeURIComponent(h); } catch (e) {}
   if (h.startsWith("leiri=")) return { tab: "leiri", leiri: h.slice(6) };
   if (h.startsWith("osio=")) return { tab: "ottelut", sec: h.slice(5) };
+  if (h.startsWith("ottelu=")) return { tab: "ottelu", game: h.slice(7) };
   return { tab: TABS.some(t => t[0] === h) || MENU_PAGES.some(t => t[0] === h) ? h : "koti" };
 }
 let tab = parseHash().tab;
-const F = { leiri: parseHash().leiri || "", sec: parseHash().sec || "", lday: "", menu: false, ohje: "", games: "tulevat", talkoot: null, kal: "kaikki", kalPast: false, mePast: false };
+const F = { game: parseHash().game || "", leiri: parseHash().leiri || "", sec: parseHash().sec || "", lday: "", menu: false, ohje: "", games: "tulevat", talkoot: null, kal: "kaikki", kalPast: false, mePast: false };
 
 // ─── Apufunktiot ─────────────────────────────────────────────────────────
 const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -653,7 +671,7 @@ function gameCard(g, opts) {
   if (g.info) foot += `<div class="sub">${esc(g.info)}</div>`;
   if (g.link) foot += `<div class="sub"><a class="lnk" href="${esc(g.link)}" target="_blank" rel="noopener">📋 Pesistulokset</a></div>`;
   return `<div class="mcard ${past ? "past" : ""} ${today ? "today" : ""} ${opts.hero ? "hero" : ""}">
-    <div class="mmain">
+    <div class="mmain tap" data-act="openGame" data-key="${esc(g.id)}" role="button" aria-label="Avaa ottelu ${esc(g.teams)}"><span class="mchev">${ic("chev")}</span>
       <div>${opts.date === false ? "" : `<div class="mdate">${esc(dayLabel(g.date))}</div>`}
         <div class="mtime">${esc(g.time || "–")}</div>
         <div class="mplace">${g.field ? `<a href="${esc(mapUrl(f && f.address ? f.address : g.field))}" target="_blank" rel="noopener">${esc(g.field)}</a>` : ""}</div>
@@ -666,6 +684,50 @@ function gameCard(g, opts) {
 function heroField() {
   return `<img class="field" src="kentta.jpg" width="1400" height="763" alt="Pesäpallokenttä ja pelipaikat: lukkari, sieppari, vahdit, polttajat ja kopparit">`;
 }
+// ─── Ottelun oma näkymä: kaikki otteluun liittyvä yhdessä paikassa ──────
+const WDL = ["Sunnuntai", "Maanantai", "Tiistai", "Keskiviikko", "Torstai", "Perjantai", "Lauantai"];
+function viewOttelu() {
+  const g = D.games.find(x => x.id === F.game);
+  if (!g) return `<p class="note">Ottelua ei löytynyt. Se on ehkä poistettu ohjelmasta.</p><button class="btn ghost sm" data-act="tab" data-key="ottelut">Otteluohjelmaan</button>`;
+  const [ta, tb] = teamsOf(g), d = dOf(g.date), past = isPast(g.date);
+  const team = n => n ? `<div class="gdt">${teamAvatar(n)}<div class="tn">${esc(n)}</div><div class="ts">${isHomeTeam(n) ? (g.home ? "Koti" : "Vieras") : ""}</div></div>` : "<div></div>";
+  const f = g.field ? fieldByName(g.field) : null;
+  const camp = isCamp(secName(g));
+  let h = statusBanners();
+  h += `<div class="gd">
+    <div class="gdteams">${team(ta)}<div class="gdvs ${g.result ? "res" : ""}">${g.result ? esc(g.result) : "vs"}</div>${team(tb)}</div>
+    <div class="gdwhen">${WDL[d.getDay()]} ${d.getDate()}.${d.getMonth() + 1}.${d.getFullYear()}${g.time ? ` · klo ${esc(g.time)}` : ""}</div>
+    <div class="gdpills">${past ? (g.result ? "" : `<span class="badge b-away">Pelattu</span>`) : statusPill(g.date, g.time)}
+      ${g.series || secName(g) !== OTHER ? `<span class="badge b-ser">${esc(g.series || secName(g))}</span>` : ""}
+      <span class="badge ${g.home ? "b-home" : "b-away"}">${g.home ? "Kotipeli" : "Vieraspeli"}</span></div>
+  </div>`;
+
+  // Tiedot
+  const rows = [];
+  if (g.field) rows.push(`<div class="mini"><span class="mic">${ic("pin")}</span><span class="mt"><b>${esc(g.field)}</b>${f && f.address ? `<br><span class="small muted">${esc(f.address)}${f.surface ? " · " + esc(f.surface) : ""}</span>` : ""}</span>
+    <a class="btn ghost sm" href="${esc(mapUrl(f && f.address ? f.address : g.field))}" target="_blank" rel="noopener">Kartta</a></div>`);
+  if (g.info) rows.push(`<div class="mini"><span class="mic">${ic("book")}</span><span class="mt">${esc(g.info)}</span></div>`);
+  if (camp) rows.push(`<div class="mini tap" data-act="openLeiri" data-key="${esc(secName(g))}"><span class="mic">${ic("tent")}</span><span class="mt"><b>${esc(campLabel(secName(g)) || secName(g))}</b><br><span class="small muted">Leirin ohjelma, ruoka ja info</span></span><span class="chev">${ic("chev")}</span></div>`);
+  if (g.link) rows.push(`<div class="mini"><span class="mic">${ic("flag")}</span><span class="mt"><a class="lnk" href="${esc(g.link)}" target="_blank" rel="noopener">Ottelu Pesistuloksissa</a></span></div>`);
+  if (rows.length) h += `<div class="box">${rows.join("")}</div>`;
+  if (!past) h += `<button class="btn ghost dl" data-act="ics" data-key="${esc("game|" + g.id)}" style="margin:2px 0 6px;">${ic("calplus")}<span>Lisää kalenteriin</span></button>`;
+
+  // Talkoovuorot
+  const roles = Object.keys(g.roles);
+  if (roles.length) {
+    const mine = roles.filter(r => isMe(g.roles[r]));
+    h += `<div class="h2">Talkoovuorot</div>`;
+    if (mine.length) h += `<div class="banner ok">Perheesi vuoro: <b>${esc(mine.join(", "))}</b></div>`;
+    h += `<div class="box">${roles.map(r => roleRow(g, r)).join("")}<p class="small muted" style="margin:6px 0 4px;">Vuorot jakaa talkoovastaava.</p></div>`;
+  }
+  // Kyydit
+  if (g.rides) {
+    const tg = rideTargets().find(x => x.id === g.id);
+    h += `<div class="h2">Kyydit</div><div class="box" style="padding:8px 12px 12px;">${tg ? rideBlock(tg) : ""}</div>`;
+  }
+  return h;
+}
+
 function heroCard(g) {
   const [ta, tb] = teamsOf(g);
   const rel = relDay(g.date, g.time) || dayLabel(g.date);
@@ -677,10 +739,12 @@ function heroCard(g) {
   else if (g.rides) foot = `<button class="gfoot" data-act="tab" data-key="kyydit"><span>🚗 ${rides.length ? `${rides.length} ${rides.length === 1 ? "kyyti" : "kyytiä"} tarjolla` : "Ei vielä kyytejä"}</span><span style="margin-left:auto;">›</span></button>`;
   return `<div class="hero">${heroField()}
     <div class="glass">
+      <div class="gtap" data-act="openGame" data-key="${esc(g.id)}" role="button">
       <div class="gh">Seuraava ottelu <span class="badge ${g.date === todayIso() ? "b-now" : "b-up"}">${esc(rel)}</span>
         <span class="gp">${esc(g.field || "")}</span></div>
       <div class="grow">${teamAvatar(ta)}<span class="gn">${esc(ta)}${isHomeTeam(ta) ? `<small>${g.home ? "koti" : "vieras"}</small>` : ""}</span><span class="gv">${esc(g.time || "")}</span></div>
       <div class="grow" style="border-bottom:${foot ? "" : "none"}">${teamAvatar(tb)}<span class="gn">${esc(tb)}${isHomeTeam(tb) ? `<small>${g.home ? "koti" : "vieras"}</small>` : ""}</span><span class="gv"><small>${esc(dayLabel(g.date))}</small></span></div>
+      </div>
       ${foot}
     </div></div>`;
 }
@@ -781,7 +845,7 @@ function rideBlock(target) {
 
 function miniRow(it) {
   const icon = it.kind === "game" ? ic("ball") : it.kind === "talkoo" ? ic("people") : it.kind === "ride" ? ic("car") : `<span style="font-size:14px;">${eventIcon(it.ref)}</span>`;
-  return `<div class="mini"><span class="md">${dayLabel(it.date)}${it.time ? `<em>${esc(it.time)}</em>` : ""}</span><span class="mic">${icon}</span>
+  return `<div class="mini ${it.kind === "game" && it.ref && it.ref.id ? "tap" : ""}" ${it.kind === "game" && it.ref && it.ref.id ? `data-act="openGame" data-key="${esc(it.ref.id)}"` : ""}><span class="md">${dayLabel(it.date)}${it.time ? `<em>${esc(it.time)}</em>` : ""}</span><span class="mic">${icon}</span>
           <span class="mt">${esc(it.title)}${it.extra ? `<br><span class="small muted">${it.extra}</span>` : ""}</span></div>`;
 }
 
@@ -1345,7 +1409,7 @@ function downloadIcs(items, filename) {
 // ─── Renderöinti ─────────────────────────────────────────────────────────
 function renderTabs() {
   document.getElementById("tabs").innerHTML = TABS.map(([k, l, icon]) =>
-    `<button class="${k === tab || (k === "leirit" && tab === "leiri") ? "active" : ""}" data-act="tab" data-key="${k}" aria-label="${l}">${ic(icon)}<span class="lb">${l}</span></button>`).join("");
+    `<button class="${k === tab || (k === "leirit" && tab === "leiri") || (k === "ottelut" && tab === "ottelu") ? "active" : ""}" data-act="tab" data-key="${k}" aria-label="${l}">${ic(icon)}<span class="lb">${l}</span></button>`).join("");
   const fresh = D && tab !== "tiedotteet" && unreadNews().length > 0;
   document.getElementById("bellBtn").innerHTML = ic("bell") + (fresh ? `<span class="dot"></span>` : "");
   document.getElementById("menuBtn").innerHTML = ic("menu");
@@ -1375,7 +1439,7 @@ function render() {
   document.getElementById("teamTitle").textContent = team;
   document.title = team + " – kausi";
   renderTabs(); renderClock();
-  document.getElementById("ptitle").textContent = tab === "leiri" ? (D && F.leiri && sectionList().includes(F.leiri) ? campLabel(F.leiri) || F.leiri : F.leiri || "Leiri") : (tab === "koti" && D && D.settings && D.settings.season ? "Kausi " + D.settings.season : TITLES[tab] || team);
+  document.getElementById("ptitle").textContent = tab === "ottelu" ? "Ottelu" : tab === "leiri" ? (D && F.leiri && sectionList().includes(F.leiri) ? campLabel(F.leiri) || F.leiri : F.leiri || "Leiri") : (tab === "koti" && D && D.settings && D.settings.season ? "Kausi " + D.settings.season : TITLES[tab] || team);
   const v = document.getElementById("view");
   v.classList.toggle("busy", busy);
   if (!D) {
@@ -1385,7 +1449,7 @@ function render() {
     return;
   }
   renderMenu();
-  const views = { asenna: viewAsenna, leirit: viewLeirit, tiedotteet: viewTiedotteet, leiri: viewLeiri, koti: viewKoti, ottelut: viewOttelut, talkoot: viewTalkoot, kyydit: viewKyydit, kalenteri: viewKalenteri, ohjeet: viewOhjeet };
+  const views = { ottelu: viewOttelu, asenna: viewAsenna, leirit: viewLeirit, tiedotteet: viewTiedotteet, leiri: viewLeiri, koti: viewKoti, ottelut: viewOttelut, talkoot: viewTalkoot, kyydit: viewKyydit, kalenteri: viewKalenteri, ohjeet: viewOhjeet };
   v.innerHTML = views[tab]() + `<footer>${esc(team)} · kauden sivusto</footer>`;
 }
 
@@ -1417,6 +1481,10 @@ const ACTIONS = {
     if (has(D.games)) { tab = "ottelut"; F.games = "tulevat"; }
     else if (has(D.talkoot)) { tab = "talkoot"; F.talkoot = "tulevat"; }
     else { tab = "kalenteri"; F.kal = "kaikki"; }
+    go(); render(); window.scrollTo(0, 0);
+  },
+  openGame(k, el, ev) {
+    ev.preventDefault(); F.game = k; F.menu = false; tab = "ottelu"; editing = null;
     go(); render(); window.scrollTo(0, 0);
   },
   goSec(k, el, ev) {
@@ -1480,6 +1548,8 @@ const ACTIONS = {
   },
 };
 document.addEventListener("click", ev => {
+  const link = ev.target.closest("a[href]");
+  if (link && !link.dataset.act) return;   // kartta- ym. linkit toimivat omina linkkeinään
   const el = ev.target.closest("[data-act]");
   if (F.menu && !ev.target.closest("#menu") && !(el && el.dataset.act === "menu")) { F.menu = false; renderMenu(); }
   if (!el || (busy && el.dataset.act !== "tab")) return;
@@ -1496,8 +1566,8 @@ document.addEventListener("keydown", ev => {
   }
 });
 // ─── Selaimen historia: jokainen siirtymä on oma kohtansa, joten Takaisin/Eteenpäin toimivat ──
-function navState() { return { tab, sec: F.sec, leiri: F.leiri, lday: F.lday }; }
-function navHash() { return tab === "leiri" ? "#leiri=" + encodeURIComponent(F.leiri) : "#" + tab; }
+function navState() { return { tab, sec: F.sec, leiri: F.leiri, lday: F.lday, game: F.game }; }
+function navHash() { return tab === "leiri" ? "#leiri=" + encodeURIComponent(F.leiri) : tab === "ottelu" ? "#ottelu=" + encodeURIComponent(F.game) : "#" + tab; }
 function go() {
   const st = navState();
   if (history.state && JSON.stringify(history.state) === JSON.stringify(st)) return;
@@ -1509,10 +1579,11 @@ function restore(st) {
   if (st.sec !== undefined) F.sec = st.sec;
   if (st.leiri !== undefined) F.leiri = st.leiri;
   if (st.lday !== undefined) F.lday = st.lday;
+  if (st.game !== undefined) F.game = st.game;
   F.menu = false; editing = null;
   if (!same) { render(); window.scrollTo(0, 0); }
 }
-window.addEventListener("popstate", ev => restore(ev.state || Object.assign({ sec: F.sec, leiri: F.leiri, lday: "" }, parseHash())));
+window.addEventListener("popstate", ev => restore(ev.state || Object.assign({ sec: F.sec, leiri: F.leiri, lday: "", game: F.game }, parseHash())));
 history.replaceState(navState(), "", navHash());
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && !editing && !busy) load(); });
 
