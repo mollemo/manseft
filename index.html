@@ -230,6 +230,7 @@
   .mfoot .ride:first-child { margin-top: 2px; }
   .rdrv { display: inline-flex; align-items: center; gap: 6px; }
   .rdrv svg { width: 17px; height: 17px; color: var(--acd); flex: none; }
+  .rtools { display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-top: 6px; }
   .ride.rform { background: #fff; box-shadow: inset 0 0 0 1.5px var(--border); }
   @media (max-width: 370px) { .imain { grid-template-columns: 64px 1fr; } }
 
@@ -817,12 +818,22 @@ function rideBlock(target) {
     if (editing && editing.key === jkey) join = `<div class="rrow"><select id="inl" class="inp" style="flex:1;min-width:150px;">${nameOptions(myName(), "— valitse pelaaja —")}</select>
           <button class="btn" data-act="save">Liity</button><button class="btn ghost" data-act="cancel">Peruuta</button></div>`;
     else if (canEdit && free > 0) join = `<div class="rrow"><button class="btn sm" data-act="edit" data-key="${esc(jkey)}" data-val="">Liity kyytiin</button></div>`;
+    const ekey = `rideedit|${r.id}`;
+    if (editing && editing.key === ekey) return `<div class="ride rform">
+      <strong>Muokkaa kyytiä</strong>
+      <div class="form">
+        <div><label for="eSeats">Vapaita paikkoja pelaajille${r.passengers.length ? ` (kyydissä nyt ${r.passengers.length})` : ""}</label><br>
+          <input id="eSeats" class="inp" style="width:80px;" type="number" min="${Math.max(r.passengers.length, 1)}" max="8" value="${r.seats}"></div>
+        <div><label for="eDepart">Lähtö (paikka ja aika)</label><br><input id="eDepart" class="inp wide" maxlength="80" value="${esc(r.depart || "")}" placeholder="esim. Kaupin kenttä klo 8.30"></div>
+        <div><button class="btn" data-act="rideEditSave" data-key="${esc(r.id)}">Tallenna</button> <button class="btn ghost" data-act="cancel">Peruuta</button></div>
+      </div></div>`;
     return `<div class="ride">
       <div class="rh"><strong class="rdrv">${ic("car")} ${meTag(r.driver)}${isMe(r.driver) ? ` <span class="small muted" style="font-weight:500;">(sinun kyytisi)</span>` : ""}</strong><span class="seats ${free ? "" : "full"}">${free ? `${free} vapaana / ${r.seats}` : "Täynnä"}</span></div>
       ${r.depart ? `<div class="small muted">Lähtö: ${esc(r.depart)}</div>` : ""}
       ${r.info ? `<div class="small muted">${esc(r.info)}</div>` : ""}
       <div>${pas}</div>${join}
-      ${canEdit && canRemoveRide(r) ? `<div style="text-align:right;margin-top:3px;"><button class="x small" style="font-size:11.5px;text-decoration:underline;" data-act="rmRide" data-key="${esc(r.id)}">Poista kyyti</button></div>` : ""}
+      ${canEdit && canRemoveRide(r) ? `<div class="rtools"><button class="btn ghost sm" data-act="edit" data-key="${esc(ekey)}" data-val="">Muokkaa</button>
+        <button class="x small" style="font-size:11.5px;text-decoration:underline;" data-act="rmRide" data-key="${esc(r.id)}">Poista kyyti</button></div>` : ""}
     </div>`;
   }).join("");
   const fkey = `rideform|${target.id}`;
@@ -1527,6 +1538,16 @@ const ACTIONS = {
     if (confirm("Poistetaanko koko kyytitarjous?")) act({ action: "ride_remove", id: k });
   },
   rideSubmit(k) { submitRide(k); },
+  async rideEditSave(k) {
+    const r = (D.rides || []).find(x => x.id === k);
+    if (!r || !canRemoveRide(r)) { toast("Vain kuljettaja voi muokata kyytiä"); return; }
+    const seats = parseInt((document.getElementById("eSeats") || {}).value, 10);
+    const depart = ((document.getElementById("eDepart") || {}).value || "").trim();
+    if (!seats || seats < 1) { toast("Anna vapaiden paikkojen määrä"); return; }
+    if (seats < r.passengers.length) { toast(`Kyydissä on jo ${r.passengers.length} – paikkoja ei voi olla vähemmän`); return; }
+    editing = null;
+    await act({ action: "ride_edit", id: k, seats: Math.min(seats, 8), depart });
+  },
   filter(k) {
     const [g, v] = k.split("|");
     if (g === "kalPast") F.kalPast = !F.kalPast;
@@ -1668,6 +1689,10 @@ function demoHandle(b) {
   if (b.action === "ride_add") { D.rides.push({ id: "k" + Date.now(), target: b.target, driver: b.driver, seats: b.seats, passengers: [], depart: b.depart || "", info: "" }); return { ok: true }; }
   const r = D.rides.find(y => y.id === b.id); if (!r) return { ok: false, error: "Kyytiä ei löytynyt." };
   if (b.action === "ride_remove") { D.rides = D.rides.filter(y => y !== r); return { ok: true }; }
+  if (b.action === "ride_edit") {
+    if (b.seats < r.passengers.length) return { ok: false, error: "Kyydissä on jo enemmän pelaajia." };
+    r.seats = b.seats; r.depart = b.depart || ""; return { ok: true };
+  }
   if (b.action === "ride_join") {
     if (r.passengers.length >= r.seats) return { ok: false, error: "Kyyti ehti juuri täyttyä." };
     if (!r.passengers.some(n => n.toLowerCase() === name.toLowerCase())) r.passengers.push(name); return { ok: true };

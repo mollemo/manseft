@@ -425,6 +425,15 @@ function handle_(b, s) {
 
   if (b.action === "ride_remove") { ksh.deleteRow(krow); return { ok: true }; }
 
+  if (b.action === "ride_edit") {           // { id, seats, depart } – kyytiläiset säilyvät
+    var cur = splitList_(ksh.getRange(krow, khm["Kyytiläiset"] + 1).getValue());
+    var newSeats = Math.min(Math.max(parseInt(b.seats, 10) || 1, 1), 8);
+    if (newSeats < cur.length) return { ok: false, error: "Kyydissä on jo " + cur.length + " pelaajaa, paikkoja ei voi olla vähemmän." };
+    ksh.getRange(krow, khm["Paikat"] + 1).setValue(newSeats);
+    ksh.getRange(krow, khm["Lähtö"] + 1).setValue(str_(b.depart).slice(0, 80));
+    return { ok: true };
+  }
+
   if (b.action === "ride_join" || b.action === "ride_leave") {   // { id, name }
     if (!name) return { ok: false, error: "Nimi puuttuu." };
     var pc = ksh.getRange(krow, khm["Kyytiläiset"] + 1);
