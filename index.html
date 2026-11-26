@@ -944,22 +944,24 @@ function viewKoti() {
   return h;
 }
 
+// Perheen kausi: henkilökohtainen yhteenveto, kun pelaaja on valittu. Ilman valintaa korttia ei näytetä.
 function statsBlock() {
+  const me = myName();
+  if (!me) return "";
   const t = todayIso();
-  const played = D.games.filter(g => g.date < t).length, all = D.games.length;
-  const upG = D.games.filter(g => g.date >= t), upT = D.talkoot.filter(x => x.date >= t);
-  const need = upG.reduce((n, g) => n + rolesFilled(g).total, 0) + upT.reduce((n, x) => n + x.need, 0);
-  const got = upG.reduce((n, g) => n + rolesFilled(g).filled, 0) + upT.reduce((n, x) => n + Math.min(x.names.length, x.need), 0);
+  const all = myShifts(me, true).filter(x => x.kind !== "ride");
+  const done = all.filter(x => x.date < t).length, coming = all.length - done;
   const tg = rideTargets().filter(x => x.date >= t).map(x => x.id);
   const rides = (D.rides || []).filter(r => tg.includes(r.target));
-  const seats = rides.reduce((n, r) => n + r.seats, 0), taken = rides.reduce((n, r) => n + Math.min(r.passengers.length, r.seats), 0);
-  const row = (label, a, b) => `<div class="srow"><span>${label}</span><b>${a}/${b}${b ? ` <span class="muted" style="font-weight:500;">(${Math.round(100 * a / b)} %)</span>` : ""}</b>
-    <div class="bar"><i style="width:${b ? Math.round(100 * a / b) : 0}%"></i></div></div>`;
-  if (!all && !need && !seats) return "";
-  return `<div class="h2">Kauden tilanne</div><div class="box stats">
-    ${all ? row("Ottelut pelattu", played, all) : ""}
-    ${need ? row("Tulevat talkoovuorot täytetty", got, need) : ""}
-    ${seats ? row("Kyytipaikat varattu", taken, seats) : ""}</div>`;
+  const driving = rides.filter(r => isMe(r.driver)).length;
+  const riding = rides.filter(r => r.passengers.some(isMe)).length;
+  const played = D.games.filter(g => g.date < t).length, games = D.games.length;
+  const row = (label, value, pct) => `<div class="srow"><span>${label}</span><b>${value}</b>${pct === null ? "" : `<div class="bar"><i style="width:${pct}%"></i></div>`}</div>`;
+  return `<div class="h2">Perheen kausi</div><div class="box stats">
+    ${row("Talkoovuorot tällä kaudella", all.length ? `${all.length} <span class="muted" style="font-weight:500;">(${done} tehty, ${coming} tulossa)</span>` : "ei vielä vuoroja", all.length ? Math.round(100 * done / all.length) : null)}
+    ${row("Tulevat kyydit", driving || riding ? [driving ? `kuljettajana ${driving}` : "", riding ? `kyydissä ${riding}` : ""].filter(Boolean).join(", ") : "ei sovittuja kyytejä", null)}
+    ${games ? row("Kauden ottelut", `${played}/${games} pelattu`, Math.round(100 * played / games)) : ""}
+  </div>`;
 }
 
 // Tiedotekello: piste näkyy, kun voimassa olevissa tiedotteissa on jokin, jota ei ole avattu tällä laitteella.
