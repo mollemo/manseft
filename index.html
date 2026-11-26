@@ -1158,15 +1158,6 @@ function viewTalkoot() {
           <button class="btn ghost sm" data-act="filter" data-key="talkoot|tulevat" style="margin-top:8px;">Näytä kaikki tulevat vuorot</button></div>`
       : `<p class="note">Ei vuoroja tässä näkymässä.</p>`;
 
-  // Talkootilasto: montako vuoroa kullakin nimellä kaudella
-  const counts = {};
-  D.games.forEach(g => Object.values(g.roles).forEach(n => { if (n) counts[n] = (counts[n] || 0) + 1; }));
-  D.talkoot.forEach(x => x.names.forEach(n => { counts[n] = (counts[n] || 0) + 1; }));
-  const rows = Object.entries(counts).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "fi"));
-  if (rows.length) {
-    h += `<div class="h2 navy">Kauden talkoovuorot</div><div class="box">
-      ${rows.map(([n, c]) => `<div class="mini"><span class="mt">${esc(n)}</span><strong>${c}</strong></div>`).join("")}</div>`;
-  }
   return h;
 }
 
