@@ -329,6 +329,19 @@
   .lbtn:active { background: var(--acs); }
   .lfoot { border-top: 1px solid var(--border); padding: 10px 16px 12px; font-size: 13px; color: var(--sub); }
 
+  /* Ohjeikkuna: nousee alhaalta, sulkeutuu Sulje-napista, taustasta, Esc:llä tai Takaisin-eleellä */
+  .sheet { border: 0; padding: 0; margin: auto auto 0; width: 100%; max-width: 560px; max-height: 82vh; border-radius: 22px 22px 0 0; background: var(--card); color: var(--text); box-shadow: 0 -10px 40px rgba(30,35,25,.25); overflow: hidden; }
+  .sheet[open] { display: flex; flex-direction: column; animation: sheetUp .22s ease-out; }
+  .sheet::backdrop { background: rgba(20,24,18,.45); }
+  @keyframes sheetUp { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .sheet[open] { animation: none; } }
+  .sheet .grab { width: 40px; height: 4px; border-radius: 4px; background: var(--border); margin: 10px auto 0; flex: none; }
+  .sheet .shead { display: flex; align-items: center; gap: 10px; padding: 12px 20px 6px; flex: none; }
+  .sheet .shead h2 { margin: 0; font-size: 19px; flex: 1; }
+  .sheet .sbody { padding: 4px 20px 8px; overflow-y: auto; white-space: pre-line; line-height: 1.55; font-size: 15px; }
+  .sheet .sfoot { display: flex; gap: 10px; padding: 12px 20px calc(16px + env(safe-area-inset-bottom)); border-top: 1px solid var(--border); flex: none; }
+  .sheet .sfoot .btn { flex: 1; justify-content: center; }
+  @media (min-width: 600px) { .sheet { margin: auto; border-radius: 22px; } }
   .menu { position: absolute; right: 16px; top: 64px; background: #fff; border-radius: 18px; box-shadow: 0 14px 36px rgba(30,35,25,.22); min-width: 250px; z-index: 30; overflow: hidden; }
   .menu button { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 12px 16px; border: none; border-bottom: 1px solid var(--border); background: #fff; color: var(--text); font-weight: 500; font-size: 14.5px; cursor: pointer; }
   .menu button:last-child { border-bottom: none; }
@@ -397,6 +410,7 @@
 <main id="view"></main>
 <nav class="bnav" id="tabs" aria-label="Päävalikko"></nav>
 <div id="toast"></div>
+<dialog class="sheet" id="sheet" aria-labelledby="sheetTitle"></dialog>
 
 <script>
 // ═════════════════════════════════════════════════════════════════════════
@@ -1371,6 +1385,30 @@ function ohjeCard(o) {
     ${o.link ? `<div class="sub" style="margin-top:6px;"><a class="lnk" href="${esc(o.link)}" target="_blank" rel="noopener">🔗 Lisätiedot</a></div>` : ""}
   </details>`;
 }
+let sheetOpener = null;
+function openSheet(o, opener) {
+  const d = document.getElementById("sheet");
+  if (!d || typeof d.showModal !== "function") return false;
+  d.innerHTML = `<div class="grab" aria-hidden="true"></div>
+    <div class="shead"><h2 id="sheetTitle">${esc(o.title || "Ohje")}</h2></div>
+    <div class="sbody">${esc(o.text || "")}${o.link ? `\n\n<a class="lnk" href="${esc(o.link)}" target="_blank" rel="noopener">🔗 Lisätiedot</a>` : ""}</div>
+    <div class="sfoot"><button class="btn ghost" data-act="allOhjeet" data-key="${esc(o.title)}">Kaikki ohjeet</button>
+      <button class="btn" data-act="sheetClose" autofocus>Sulje</button></div>`;
+  sheetOpener = opener || null;
+  d.showModal();
+  d.querySelector(".sbody").scrollTop = 0;
+  history.pushState(Object.assign(navState(), { sheet: 1 }), "", location.hash);
+  return true;
+}
+// Sulkee ikkunan. Jos ikkuna lisäsi historiaan oman kohdan, se perutaan, jotta Takaisin toimii kuten ennen.
+function closeSheet() {
+  const d = document.getElementById("sheet");
+  if (!d || !d.open) return;
+  d.close();
+  if (history.state && history.state.sheet) history.back();
+  if (sheetOpener && document.body.contains(sheetOpener)) sheetOpener.focus({ preventScroll: true });
+  sheetOpener = null;
+}
 function ohjeFor(role) {
   const r = String(role || "").toLowerCase();
   return generalOhjeet().find(o => o.title && (o.title.toLowerCase() === r || r.startsWith(o.title.toLowerCase() + " "))) || null;
@@ -1387,7 +1425,7 @@ function viewOhjeet() {
     <b>Minun tehtävät:</b> Valitse etusivulla oma pelaajasi, niin näet perheesi talkoovuorot ja kyydit paikkoineen. Vuorot ja kyydit kirjataan aina pelaajan nimellä. <i>Omat kalenteriin</i> -napilla saat ne kerralla puhelimen kalenteriin.<br>
     <b>Talkoovuorot:</b> Talkoovastaava jakaa vuorot ja kirjaa ne sivulle. Jos et pääse vuoroosi, sovi vaihdosta talkoovastaavan kanssa.<br>
     <b>Kyydit:</b> Sivulla voi ilmoittautua vain kyyteihin. Kuljettaja tarjoaa paikkoja, ja kyytiin liitytään valitsemalla pelaaja listalta. Perheen kyytiä voi muokata, kun oma pelaaja on valittuna.<br>
-    <b>ⓘ roolin vieressä:</b> avaa kyseisen tehtävän ohjeen.<br>
+    <b>ⓘ roolin vieressä:</b> avaa tehtävän ohjeen ikkunaan. Sulje-napista palaat samaan kohtaan.<br>
     <b>Leirit:</b> Alapalkin Leirit-kohdasta löytyy kummankin leirin ohjelma, ottelut, ruoka, talkoot, kyydit ja info.<br>
     <b>Kalenteri:</b> Yläreunan kalenterinapista näet koko kauden. Rivin kalenterikuvakkeella saat tapahtuman puhelimen kalenteriin.</div>`;
 
@@ -1477,8 +1515,19 @@ function render() {
 const ACTIONS = {
   tab(k, el, ev) { ev.preventDefault(); F.menu = false; tab = k; editing = null; touched.clear(); go(); render(); window.scrollTo(0, 0); },
   ohje(k, el, ev) {
-    ev.preventDefault(); F.ohje = k; tab = "ohjeet"; editing = null;
-    go(); render();
+    ev.preventDefault();
+    const o = generalOhjeet().find(x => x.title === k);
+    if (o) openSheet(o, el); else ACTIONS.allOhjeet(k, el, ev);
+  },
+  sheetClose(k, el, ev) { ev.preventDefault(); closeSheet(); },
+  allOhjeet(k, el, ev) {
+    ev.preventDefault();
+    const d = document.getElementById("sheet"), fromSheet = d && d.open;
+    if (fromSheet) { d.close(); sheetOpener = null; }
+    F.ohje = k; F.menu = false; tab = "ohjeet"; editing = null;
+    // Ikkunan historiakohta korvataan Ohjeet-sivulla, jolloin Takaisin vie suoraan sinne, missä oltiin.
+    if (fromSheet && history.state && history.state.sheet) history.replaceState(navState(), "", navHash()); else go();
+    render();
     const el2 = document.getElementById("ohje-" + k); if (el2) el2.scrollIntoView({ block: "start" }); else window.scrollTo(0, 0);
   },
   async install() {
@@ -1589,6 +1638,11 @@ document.addEventListener("click", ev => {
 document.addEventListener("change", ev => {
   if (ev.target.id === "meSel") { setMyName(ev.target.value); F.talkoot = null; render(); }
 });
+{
+  const d = document.getElementById("sheet");
+  d.addEventListener("click", ev => { if (ev.target === d) closeSheet(); });   // napautus tummaan taustaan
+  d.addEventListener("cancel", ev => { ev.preventDefault(); closeSheet(); });   // Esc
+}
 document.addEventListener("keydown", ev => {
   if (ev.target.id === "inl") {
     if (ev.key === "Enter") { ev.preventDefault(); ACTIONS.save(); }
@@ -1613,7 +1667,13 @@ function restore(st) {
   F.menu = false; editing = null;
   if (!same) { render(); window.scrollTo(0, 0); }
 }
-window.addEventListener("popstate", ev => restore(ev.state || Object.assign({ sec: F.sec, leiri: F.leiri, lday: "", game: F.game }, parseHash())));
+window.addEventListener("popstate", ev => {
+  const d = document.getElementById("sheet");
+  if (d && d.open) { d.close(); if (sheetOpener && document.body.contains(sheetOpener)) sheetOpener.focus({ preventScroll: true }); sheetOpener = null; return; }
+  if (ev.state && ev.state.sheet) { history.back(); return; }
+  restoreFrom(ev);
+});
+function restoreFrom(ev) { restore(ev.state || Object.assign({ sec: F.sec, leiri: F.leiri, lday: "", game: F.game }, parseHash())); }
 history.replaceState(navState(), "", navHash());
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && !editing && !busy) load(); });
 
