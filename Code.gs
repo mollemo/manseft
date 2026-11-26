@@ -118,6 +118,8 @@ function setup() {
   var maxRows = Math.max(ott.getMaxRows() - 1, 1);
   ott.getRange(2, hm["Kenttä"] + 1, maxRows, 1).setDataValidation(
     SpreadsheetApp.newDataValidation().requireValueInRange(kentat.getRange("A2:A"), true).setAllowInvalid(true).build());
+  // Tulos tekstinä, ettei Sheets muuta "2-1":tä päivämääräksi
+  ott.getRange(2, hm["Tulos"] + 1, maxRows, 1).setNumberFormat("@");
   ott.getRange(2, hm["Koti/Vieras"] + 1, maxRows, 1).setDataValidation(
     SpreadsheetApp.newDataValidation().requireValueInList(["Koti", "Vieras"], true).setAllowInvalid(true).build());
   var tap = ss.getSheetByName("Tapahtumat");
@@ -163,6 +165,15 @@ function ensureHeaders_(sh, headers) {
 }
 
 // ─── Lukeminen ───────────────────────────────────────────────────────────
+// Jos Tulos ehti muuttua päivämääräksi (2-1 → 2.1.), palautetaan se muotoon 2–1
+function resultStr_(v) {
+  if (v instanceof Date) {
+    var us = /^en_US/.test(SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetLocale());   // US: kuukausi ensin
+    return us ? (v.getMonth() + 1) + "–" + v.getDate() : v.getDate() + "–" + (v.getMonth() + 1);
+  }
+  return str_(v).replace(/\s*-\s*/g, "–");
+}
+
 function headerMap_(sh) {
   var lastCol = Math.max(sh.getLastColumn(), 1);
   var hdr = sh.getRange(1, 1, 1, lastCol).getValues()[0];
@@ -310,7 +321,7 @@ function buildPayload_() {
     return {
       id: str_(r["ID"]), section: section, rides: !home && applies, date: fmtDate_(r["Pvm"], year), time: fmtTime_(r["Klo"]),
       teams: teams, field: str_(r["Kenttä"]), series: str_(r["Sarja"]), home: !!home,
-      result: str_(r["Tulos"]), link: str_(r["Pesistulokset"]), info: str_(r["Lisätiedot"]),
+      result: resultStr_(r["Tulos"]), link: str_(r["Pesistulokset"]), info: str_(r["Lisätiedot"]),
       roles: roles
     };
   }).filter(function (g) { return g.id && g.date; });
