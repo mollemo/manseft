@@ -99,8 +99,8 @@
   .b-today, .b-now { background: linear-gradient(180deg, #F0C25A, #DDA531); color: #fff; }
   .b-up   { background: linear-gradient(180deg, var(--ac2), var(--ac)); color: #fff; }
   .b-res  { background: var(--text); color: #fff; font-size: 12px; }
-  a.lnk { color: var(--acd); font-weight: 600; text-decoration: none; border-bottom: 1px solid rgba(var(--acrgb),.28); }
-  a.lnk.navy { color: var(--navy); border-bottom-color: rgba(56,67,47,.25); }
+  a.lnk { color: var(--acd); font-weight: 600; text-decoration: underline; text-decoration-color: rgba(var(--acrgb),.35); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  a.lnk.navy { color: var(--navy); text-decoration-color: rgba(56,67,47,.3); }
 
   .roles { margin-top: 10px; border-top: 1px solid var(--border); padding-top: 4px; }
   .rrow { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; padding: 5px 0; font-size: 13.5px; }
@@ -510,13 +510,24 @@ function fieldByName(name) {
   const n = String(name || "").trim().toLowerCase();
   return n ? (D.fields || []).find(f => f.name.toLowerCase() === n) || null : null;
 }
-function mapUrl(q) { return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(q); }
+// Karttalinkki avautuu puhelimen omaan karttasovellukseen: iPhonella Apple Kartat, muilla Google Maps.
+// Jos Kentät-välilehdellä on Karttalinkki (esim. Google Mapsista jaettu tarkka nasta), käytetään sitä.
+const IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+function mapUrl(q) {
+  return IOS ? "https://maps.apple.com/?q=" + encodeURIComponent(q)
+             : "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(q);
+}
+function placeUrl(name) {
+  const f = fieldByName(name);
+  if (f && /^https?:\/\//i.test(f.link || "")) return f.link;
+  return mapUrl(f && f.address ? f.address : name);
+}
 function placeHtml(name) {
   if (!name) return "";
   const f = fieldByName(name);
   const addr = f && f.address ? f.address : name;
   const extra = f ? [f.address, f.surface].filter(Boolean).join(" · ") : "";
-  return `📍 <a class="lnk" href="${esc(mapUrl(addr))}" target="_blank" rel="noopener">${esc(name)}</a>`
+  return `📍 <a class="lnk" href="${esc(placeUrl(name))}" target="_blank" rel="noopener">${esc(name)}</a>`
        + (extra && extra !== name ? `<br><span class="small">${esc(extra)}</span>` : "");
 }
 
@@ -705,7 +716,7 @@ function gameCard(g, opts) {
     <div class="mmain tap" data-act="openGame" data-key="${esc(g.id)}" role="button" aria-label="Avaa ottelu ${esc(g.teams)}"><span class="mchev">${ic("chev")}</span>
       <div>${opts.date === false ? "" : `<div class="mdate">${esc(dayLabel(g.date))}</div>`}
         <div class="mtime">${esc(g.time || "–")}</div>
-        <div class="mplace">${g.field ? `<a href="${esc(mapUrl(f && f.address ? f.address : g.field))}" target="_blank" rel="noopener">${esc(g.field)}</a>` : ""}</div>
+        <div class="mplace">${g.field ? `<a href="${esc(placeUrl(g.field))}" target="_blank" rel="noopener">${esc(g.field)}</a>` : ""}</div>
         ${status}</div>
       <div>${tag ? `<div class="mtag"><span class="badge b-ser">${esc(tag)}</span></div>` : ""}
         <div class="mteams">${team(ta, "Koti")}<div class="vs ${g.result ? "res" : ""}">${g.result ? esc(g.result) : "vs"}</div>${team(tb, "Vieras")}</div></div>
@@ -736,7 +747,7 @@ function viewOttelu() {
   // Tiedot
   const rows = [];
   if (g.field) rows.push(`<div class="mini"><span class="mic">${ic("pin")}</span><span class="mt"><b>${esc(g.field)}</b>${f && f.address ? `<br><span class="small muted">${esc(f.address)}${f.surface ? " · " + esc(f.surface) : ""}</span>` : ""}</span>
-    <a class="btn ghost sm" href="${esc(mapUrl(f && f.address ? f.address : g.field))}" target="_blank" rel="noopener">Kartta</a></div>`);
+    <a class="btn ghost sm" href="${esc(placeUrl(g.field))}" target="_blank" rel="noopener">Kartta</a></div>`);
   if (g.info) rows.push(`<div class="mini"><span class="mic">${ic("book")}</span><span class="mt">${esc(g.info)}</span></div>`);
   if (camp) rows.push(`<div class="mini tap" data-act="openLeiri" data-key="${esc(secName(g))}"><span class="mic">${ic("tent")}</span><span class="mt"><b>${esc(campLabel(secName(g)) || secName(g))}</b><br><span class="small muted">Leirin ohjelma, ruoka ja info</span></span><span class="chev">${ic("chev")}</span></div>`);
   if (g.link) rows.push(`<div class="mini"><span class="mic">${ic("flag")}</span><span class="mt"><a class="lnk" href="${esc(g.link)}" target="_blank" rel="noopener">Ottelu Pesistuloksissa</a></span></div>`);
@@ -791,7 +802,7 @@ function statusPill(date, time) {
 function placeShort(name) {
   if (!name) return "";
   const f = fieldByName(name);
-  return `<a href="${esc(mapUrl(f && f.address ? f.address : name))}" target="_blank" rel="noopener">${esc(name)}</a>`;
+  return `<a href="${esc(placeUrl(name))}" target="_blank" rel="noopener">${esc(name)}</a>`;
 }
 function itemCard(o) {
   const past = isPast(o.date), today = o.date === todayIso();
@@ -1090,7 +1101,7 @@ function allNames() {
 function placeLink(name) {
   if (!name) return "";
   const f = fieldByName(name);
-  return `📍 <a class="lnk" href="${esc(mapUrl(f && f.address ? f.address : name))}" target="_blank" rel="noopener">${esc(name)}</a>`;
+  return `📍 <a class="lnk" href="${esc(placeUrl(name))}" target="_blank" rel="noopener">${esc(name)}</a>`;
 }
 function myShifts(me, withPast) {
   const q = String(me || "").trim().toLowerCase();

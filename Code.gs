@@ -27,7 +27,7 @@ var SHEETS = {
   "Leirit":       ["Osio", "Nimi", "Alkaa", "Päättyy", "Paikkakunta", "Lisätiedot", "Linkki"],
   "Ruokalista":   ["Osio", "Pvm", "Ateria", "Klo", "Ruoka", "Paikka"],
   "Ohjeet":       ["Osio", "Otsikko", "Teksti", "Linkki"],
-  "Kentät":       ["Nimi", "Osoite", "Pinta"],
+  "Kentät":       ["Nimi", "Osoite", "Pinta", "Karttalinkki"],
   "Pelaajat":     ["Pelaaja", "Lisätiedot"],
   "Asetukset":    ["Asetus", "Arvo", "Selite"]
 };
@@ -126,6 +126,12 @@ function setup() {
     SpreadsheetApp.newDataValidation().requireValueInList(["Harjoitus", "Turnaus", "Leiri", "Ohjelma", "Majoitus", "Palaveri", "Varainhankinta", "Juhla", "Muu"], true).setAllowInvalid(true).build());
   tap.getRange(2, th["Kyydit"] + 1, Math.max(tap.getMaxRows() - 1, 1), 1).setDataValidation(
     SpreadsheetApp.newDataValidation().requireValueInList(["Kyllä"], true).setAllowInvalid(true).build());
+  // Paikka-sarakkeisiin sama Kentät-lista, jotta nimi täsmää ja karttalinkki löytyy (muutakin saa kirjoittaa)
+  var placeRule = SpreadsheetApp.newDataValidation().requireValueInRange(kentat.getRange("A2:A"), true).setAllowInvalid(true).build();
+  ["Talkoot", "Tapahtumat", "Ruokalista"].forEach(function (name) {
+    var sh = ss.getSheetByName(name), h = headerMap_(sh);
+    if ("Paikka" in h) sh.getRange(2, h["Paikka"] + 1, Math.max(sh.getMaxRows() - 1, 1), 1).setDataValidation(placeRule);
+  });
   var osiot = splitList_(settings["Osiot"]);
   seedRows_(ss.getSheetByName("Leirit"), DEFAULT_CAMPS, ["Alkaa", "Päättyy"]);
   seedRows_(ss.getSheetByName("Talkoot"), DEFAULT_TALKOOT, ["Pvm"]);
@@ -356,7 +362,7 @@ function buildPayload_() {
   }).filter(function (m) { return m.date && (m.meal || m.food); });
   var names = readTable_("Pelaajat").map(function (r) { return str_(r["Pelaaja"]); }).filter(function (n) { return n; });
   var fields = readTable_("Kentät").map(function (r) {
-    return { name: str_(r["Nimi"]), address: str_(r["Osoite"]), surface: str_(r["Pinta"]) };
+    return { name: str_(r["Nimi"]), address: str_(r["Osoite"]), surface: str_(r["Pinta"]), link: str_(r["Karttalinkki"]) };
   }).filter(function (f) { return f.name; });
 
   return {
