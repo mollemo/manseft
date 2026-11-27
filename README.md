@@ -37,7 +37,7 @@ Sivu on asennettava verkkosovellus (`manifest.webmanifest`, kuvakkeet `icon-*.pn
 ## Sheetin välilehdet
 | Välilehti | Mitä sinne kirjoitetaan |
 |---|---|
-| **Ottelut** | Pvm, Klo, Joukkueet (esim. `Manse – Kiri`), Kenttä (pudotusvalikko), Sarja, Tulos (Joukkueet-sarakkeen järjestyksessä, esim. `2-1`, tasajaksoissa ratkaisu sulkuihin `1-1 (2-3)`; sivu päättelee voiton/tappion), Pesistulokset (ottelun linkki pesistulokset.fi:stä; pelatulla ottelulla näkyy Pöytäkirja-linkkinä). Roolisarakkeisiin (Kirjuri…) talkoovastaava kirjoittaa nimet. Koti/Vieras päätellään joukkueista, mutta sen voi myös valita itse. |
+| **Ottelut** | Pvm, Klo, Joukkueet (esim. `Manse – Kiri`), Kenttä (pudotusvalikko), Sarja, Pesistulokset (ottelun linkki pesistulokset.fi:stä, näkyy ottelun tiedoissa). Roolisarakkeisiin (Kirjuri…) talkoovastaava kirjoittaa nimet. Koti/Vieras päätellään joukkueista, mutta sen voi myös valita itse. |
 | **Talkoot** | Muut talkoot: Pvm, Klo, Loppu, Tapahtuma, Tehtävä, Paikka, **Tarve** (montako tekijää) ja **Nimet** (talkoovastaava kirjoittaa, pilkulla erotettuna). |
 | **Tapahtumat** | Harjoitukset, palaverit, turnaukset, leirit, juhlat. *Kyydit = Kyllä* tuo tapahtuman Kyydit-välilehdelle. Linkki-sarakkeeseen voi laittaa esim. leirisivun osoitteen. |
 | **Kyydit** | Täyttyy sivustolta. Valmentaja voi muokata tai poistaa rivejä. |
