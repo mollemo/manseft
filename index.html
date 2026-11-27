@@ -493,7 +493,13 @@ function relDay(iso, time) {
   return "";
 }
 function byWhen(a, b) { return (a.date + (a.time || "99")).localeCompare(b.date + (b.time || "99")); }
-function myName() { try { return localStorage.getItem("kausi_nimi") || ""; } catch (e) { return ""; } }
+function myName() {
+  let n = ""; try { n = localStorage.getItem("kausi_nimi") || ""; } catch (e) {}
+  // Jos nimeä ei enää ole Pelaajat-listalla (esim. esikatselusta siirrytty oikeaan listaan), valinta pyydetään uudelleen
+  const list = (typeof D === "object" && D && D.names) || [];
+  if (n && list.length && !list.some(x => x.toLowerCase() === n.toLowerCase())) return "";
+  return n;
+}
 function setMyName(n) { try { localStorage.setItem("kausi_nimi", n); } catch (e) {} }
 function toast(msg, ms) {
   const t = document.getElementById("toast");
@@ -1697,9 +1703,9 @@ function makeDemo() {
     // Yksi esimerkkiottelu per osio
     games: [
       { id: "o1", section: AS, rides: false, date: day(2), time: "18:00", teams: "Manse – Esimerkki PP", field: "Kotikenttä", series: AS, home: true,
-        link: "", info: "", roles: roles({ "Kirjuri": "Ella Esimerkki", "Kioski 1": "Venla Esimerkki" }) },
+        link: "", info: "", roles: roles({ "Kirjuri": "Virtanen", "Kioski 1": "Korhonen" }) },
       { id: "o2", section: AL, rides: false, date: "2027-06-12", time: "10:00", teams: "Manse – Esimerkki Joukkue", field: "Alueleirin kenttä", series: AL, home: true,
-        link: "", info: "", roles: { "Kirjuri": "Ella Esimerkki", "Tulostaulu": "" } },
+        link: "", info: "", roles: { "Kirjuri": "Virtanen", "Tulostaulu": "" } },
       { id: "o3", section: VL, rides: false, date: "2027-08-03", time: "10:00", teams: "Esimerkki Joukkue – Manse", field: "Leiripaikka", series: VL, home: false,
         link: "", info: "", roles: { "Kirjuri": "", "Tulostaulu": "" } },
     ],
@@ -1716,7 +1722,7 @@ function makeDemo() {
       { id: "e3", section: VL, date: "2027-08-02", time: "13:00", end: "", title: "Esimerkki: saapuminen leirille", type: "Majoitus", place: "Leiripaikka", info: "", link: "", rides: true },
     ],
     rides: [
-      { id: "k1", target: "e2", driver: "Aino Esimerkki", seats: 3, passengers: ["Iida Esimerkki"], depart: "Kotikenttä klo 15.00", info: "" },
+      { id: "k1", target: "e2", driver: "Nieminen", seats: 3, passengers: ["Mäkinen"], depart: "Kotikenttä klo 15.00", info: "" },
     ],
     news: [
       { date: day(-1), title: "Tervetuloa kauden sivustolle", text: "Täältä löydät ottelut, talkoot, kyydit ja leirit.", until: "" },
@@ -1733,7 +1739,7 @@ function makeDemo() {
       { title: "Kirjuri", text: EX + "tehtävän ohje kirjoitetaan Sheetin Ohjeet-välilehdelle.", link: "" },
       { section: VL, title: "Pakkauslista", text: EX + "leirin oma ohje (Osio = Valtakunnallinen leiri).", link: "" },
     ],
-    names: ["Aino Esimerkki", "Iida Esimerkki", "Ella Esimerkki", "Venla Esimerkki"],
+    names: ["Nieminen", "Mäkinen", "Virtanen", "Korhonen"],
     fields: [
       { name: "Kotikenttä", address: "Tampere", surface: "" },
       { name: "Alueleirin kenttä", address: "Loimaa", surface: "" },
