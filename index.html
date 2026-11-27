@@ -1440,8 +1440,12 @@ function subCalHtml(name) {
     Merkinnät päivittyvät itsestään, kun talkoovastaava lisää tai muuttaa vuoroja.</p>
     <div class="calbtns">${ANDROID ? google + apple : apple + google}
       <button class="btn ghost wide" data-act="copyCal" data-key="${esc(name)}">Kopioi kalenterin osoite <span class="bsub">Outlook ja muut</span></button></div>
+    <p class="small muted"><b>Muistutukset</b> tulevat päivää ja tuntia ennen jokaista merkintää.
+      <b>iPhone:</b> laita tilatessa kytkin <i>Poista hälytykset</i> pois päältä, muuten muistutukset jätetään pois.</p>
     <p class="small muted"><b>Google Kalenteri</b> avautuu selaimeen: vahvista lisäys Google-tililläsi. Kalenteri näkyy puhelimen Google Kalenterissa,
-      kun se on sovelluksen asetuksissa valittu näkyviin. Google päivittää tilatut kalenterit muutaman tunnin välein, Apple-kalenteri tiheämmin.</p>
+      kun se on sovelluksen asetuksissa valittu näkyviin. Google ei käytä tilatun kalenterin muistutuksia: aseta ne kerran Google Kalenterin
+      asetuksista (valitse tilattu kalenteri → <i>Tapahtumailmoitukset</i> → esim. 1 päivä ja 1 tunti ennen).
+      Google päivittää tilatut kalenterit muutaman tunnin välein, Apple-kalenteri tiheämmin.</p>
     <p class="small muted">Kalenterin voi poistaa milloin tahansa kalenterisovelluksen asetuksista.</p>
     <p class="small muted"><a class="lnk navy" href="#" data-act="icsMine">Tästä voit hakea kalenterimerkinnät</a>, jotka voi manuaalisesti viedä omaan kalenteriin
       (ei päivity mikäli merkintöihin tehdään muutoksia).</p>`;
@@ -1522,7 +1526,10 @@ function icsItem(it) {
     start = `DTSTART;VALUE=DATE:${d}`; end = `DTEND;VALUE=DATE:${isoOf(n).replace(/-/g, "")}`;
   }
   return ["BEGIN:VEVENT", "UID:" + uid, "DTSTAMP:" + new Date().toISOString().replace(/[-:]/g, "").slice(0, 15) + "Z",
-          start, end, "SUMMARY:" + clean(it.title), loc ? "LOCATION:" + clean(loc) : "", "END:VEVENT"].filter(Boolean).join("\r\n");
+          start, end, "SUMMARY:" + clean(it.title), loc ? "LOCATION:" + clean(loc) : "",
+          // muistutukset päivää ja tuntia ennen (koko päivän merkinnöissä edellisenä iltana)
+          ...(it.time ? ["-P1D", "-PT1H"] : ["-PT6H"]).map(t => `BEGIN:VALARM\r\nACTION:DISPLAY\r\nDESCRIPTION:${clean(it.title)}\r\nTRIGGER:${t}\r\nEND:VALARM`),
+          "END:VEVENT"].filter(Boolean).join("\r\n");
 }
 function fallbackCopy(text, done) {
   const t = document.createElement("textarea"); t.value = text; t.setAttribute("readonly", ""); t.style.position = "fixed"; t.style.opacity = "0";

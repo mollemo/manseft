@@ -577,11 +577,23 @@ function familyCalendar_(name) {
     lines.push("SUMMARY:" + icsText_(it.title));
     if (it.place) lines.push("LOCATION:" + icsText_(it.place));
     if (it.desc) lines.push("DESCRIPTION:" + icsText_(it.desc));
+    icsAlarms_(!!it.time, it.title).forEach(function (l) { lines.push(l); });
     lines.push("END:VEVENT");
   });
   lines.push("END:VCALENDAR");
   var body = lines.map(icsFold_).join("\r\n") + "\r\n";
   return ContentService.createTextOutput(body).setMimeType(ContentService.MimeType.ICAL);
+}
+
+// Muistutukset: päivää ja tuntia ennen alkua. Koko päivän merkinnöissä edellisenä iltana klo 18.
+// Apple-kalenteri käyttää näitä, Google Kalenteri ei (siellä tilaaja asettaa muistutuksen kalenterin asetuksista).
+function icsAlarms_(timed, title) {
+  var triggers = timed ? ["-P1D", "-PT1H"] : ["-PT6H"];
+  var out = [];
+  triggers.forEach(function (t) {
+    out.push("BEGIN:VALARM", "ACTION:DISPLAY", "DESCRIPTION:" + icsText_(title), "TRIGGER:" + t, "END:VALARM");
+  });
+  return out;
 }
 
 function icsText_(s) { return String(s || "").replace(/\\/g, "\\\\").replace(/[,;]/g, "\\$&").replace(/\r?\n/g, "\\n"); }
