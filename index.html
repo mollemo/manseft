@@ -586,7 +586,14 @@ function fmtStamp(ms) {
   const hm = String(d.getHours()).padStart(2, "0") + "." + String(d.getMinutes()).padStart(2, "0");
   return isoOf(d) === todayIso() ? "klo " + hm : `${WD[d.getDay()]} ${d.getDate()}.${d.getMonth() + 1}. klo ${hm}`;
 }
-if (!DEMO) { const c = readCache(); if (c) { D = c.data; cachedAt = c.at; } }
+// Linkkeinä näytetään vain oikeat verkko-osoitteet (ei esim. pelkkää linkkitekstiä "Naperoleiri")
+function cleanLinks(d) {
+  ["games", "events", "camps", "ohjeet", "fields"].forEach(k => (d[k] || []).forEach(x => {
+    if (x && x.link && !/^https?:\/\//i.test(x.link)) x.link = /^www\./i.test(x.link) ? "https://" + x.link : "";
+  }));
+  return d;
+}
+if (!DEMO) { const c = readCache(); if (c) { D = cleanLinks(c.data); cachedAt = c.at; } }
 
 async function load(silent) {
   if (DEMO) { if (!D) D = makeDemo(); render(); return; }
@@ -595,7 +602,7 @@ async function load(silent) {
     if (!res.ok) throw new Error("HTTP " + res.status);
     const data = await res.json();
     if (data.ok === false) throw new Error(data.error || "virhe");
-    D = data; loadError = false; cachedAt = 0; saveCache(data);
+    D = cleanLinks(data); loadError = false; cachedAt = 0; saveCache(data);
   } catch (err) {
     console.warn("Haku epäonnistui:", err);
     loadError = true;

@@ -192,15 +192,37 @@ function readTable_(name) {
   var sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(name);
   if (!sh || sh.getLastRow() < 2) return [];
   var hm = headerMap_(sh);
-  var values = sh.getRange(2, 1, sh.getLastRow() - 1, sh.getLastColumn()).getValues();
+  var range = sh.getRange(2, 1, sh.getLastRow() - 1, sh.getLastColumn());
+  var values = range.getValues();
+  // Linkkisarakkeissa osoite voi olla linkkitekstin takana (esim. "Naperoleiri") tai HYPERLINK-kaavassa
+  var linkHs = Object.keys(hm).filter(function (h) { return LINK_HEADERS.indexOf(h) !== -1; });
+  var rich = linkHs.length ? range.getRichTextValues() : null;
+  var formulas = linkHs.length ? range.getFormulas() : null;
   var out = [];
   values.forEach(function (r, i) {
     if (!r.some(function (v) { return v !== "" && v !== null; })) return;
     var o = { _row: i + 2 };
     Object.keys(hm).forEach(function (h) { o[h] = r[hm[h]]; });
+    linkHs.forEach(function (h) { o[h] = cellUrl_(r[hm[h]], rich[i][hm[h]], formulas[i][hm[h]]); });
     out.push(o);
   });
   return out;
+}
+
+var LINK_HEADERS = ["Linkki", "Pesistulokset", "Karttalinkki"];
+// Palauttaa solun verkko-osoitteen: kirjoitettu osoite, linkkitekstin takana oleva osoite tai HYPERLINK-kaavan osoite.
+function cellUrl_(value, richText, formula) {
+  var v = str_(value);
+  if (/^https?:\/\//i.test(v)) return v;
+  if (richText) {
+    var u = richText.getLinkUrl();
+    if (!u) richText.getRuns().some(function (run) { u = run.getLinkUrl(); return !!u; });
+    if (u) return u;
+  }
+  var m = String(formula || "").match(/HYPERLINK\(\s*"([^"]+)"/i);
+  if (m) return m[1];
+  if (/^www\./i.test(v)) return "https://" + v;
+  return "";
 }
 
 // Täyttää puuttuvat ID:t riveille, joilla on sisältöä.
