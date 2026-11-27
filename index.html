@@ -311,9 +311,6 @@
   .kal-tools { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin: 0 0 12px; }
   .btn.dl { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; }
   .btn.dl svg { width: 16px; height: 16px; color: var(--acd); }
-  .rowbtn { width: 42px; height: 42px; flex: none; border: none; border-radius: 50%; background: var(--soft); color: var(--acd); display: grid; place-items: center; cursor: pointer; }
-  .rowbtn svg { width: 18px; height: 18px; }
-  .rowbtn:active { background: var(--acs); }
   .inst-hero { display: flex; gap: 14px; align-items: center; padding: 14px; }
   .inst-hero img { border-radius: 16px; box-shadow: 0 2px 10px rgba(0,0,0,.12); flex: none; }
   .inst-hero b { font-size: 16px; }
@@ -1256,7 +1253,7 @@ function viewKalenteri() {
   h += seg("kal", [["kaikki", "Kaikki"], ["game", "Ottelut"], ["talkoo", "Talkoot"], ["event", "Tapahtumat"]], F.kal);
   h += secChips(allItems().map(x => x.ref));
   h += `<div class="kal-tools"><button class="chip ${F.kalPast ? "on" : ""}" data-act="filter" data-key="kalPast|x">Näytä menneet</button>
-        <button class="btn ghost sm dl" data-act="icsAll">${ic("download")}<span>Lataa kaikki kalenteriin</span></button></div>`;
+        ${API_URL ? `<button class="btn ghost sm dl" data-act="subCal">${ic("calplus")}<span>Tilaa kalenteriin</span></button>` : ""}</div>`;
   let items = allItems().filter(it => (F.kal === "kaikki" || it.kind === F.kal) && secOk(it.ref));
   if (!F.kalPast) items = items.filter(it => it.date >= t);
   if (!items.length) return h + `<p class="note">Ei tapahtumia.</p>`;
@@ -1264,8 +1261,7 @@ function viewKalenteri() {
   items.forEach(it => {
     const d = dOf(it.date), k = d.getFullYear() + "-" + d.getMonth();
     if (!months.length || months[months.length - 1].k !== k) months.push({ k, label: MONTHS[d.getMonth()] + " " + d.getFullYear(), rows: [] });
-    months[months.length - 1].rows.push(miniRow(it).replace(/<\/div>$/,
-      `<button class="rowbtn" title="Lisää kalenteriin" aria-label="Lisää kalenteriin" data-act="ics" data-key="${esc(it.kind + "|" + it.id)}">${ic("calplus")}</button></div>`));
+    months[months.length - 1].rows.push(miniRow(it));
   });
   months.forEach(m => h += `<div class="h3">${m.label}</div><div class="box">${m.rows.join("")}</div>`);
   return h;
@@ -1447,6 +1443,11 @@ function subCalHtml(name) {
     <p class="small muted">Kalenterin voi poistaa milloin tahansa kalenterisovelluksen asetuksista.
       <a class="lnk navy" href="#" data-act="icsMine">Lataa nykyiset tehtävät kertaalleen</a> (ei päivity).</p>`;
 }
+function subCalPick() {
+  return `<p>Valitse pelaaja, niin kalenteriin tulevat perheesi talkoovuorot, ottelujen talkooroolit ja kyydit omana kalenterinaan, joka päivittyy itsestään.</p>
+    <label class="small muted" for="sheetMe" style="font-weight:700;">Valitse pelaaja</label>
+    <select id="sheetMe" class="inp wide" style="margin:3px 0 10px;">${nameOptions("", "— valitse —")}</select>`;
+}
 let sheetOpener = null;
 function openSheet(o, opener) {
   const d = document.getElementById("sheet");
@@ -1489,8 +1490,8 @@ function viewOhjeet() {
     <b>Kyydit:</b> Sivulla voi ilmoittautua vain kyyteihin. Kuljettaja tarjoaa paikkoja, ja kyytiin liitytään valitsemalla pelaaja listalta. Perheen kyytiä voi muokata, kun oma pelaaja on valittuna.<br>
     <b>ⓘ roolin vieressä:</b> avaa tehtävän ohjeen ikkunaan. Sulje-napista palaat samaan kohtaan.<br>
     <b>Leirit:</b> Alapalkin Leirit-kohdasta löytyy kummankin leirin ohjelma, ottelut, ruoka, talkoot, kyydit ja info.<br>
-    <b>Kalenteri:</b> Yläreunan kalenterinapista näet koko kauden. Rivin kalenterikuvakkeella saat tapahtuman puhelimen kalenteriin.<br>
-    <b>Tilaa kalenteriin:</b> Etusivun Minun tehtävät -kohdasta saat perheesi talkoovuorot ja kyydit puhelimen kalenteriin omana kalenterinaan, joka päivittyy itsestään.</div>`;
+    <b>Kalenteri:</b> Yläreunan kalenterinapista näet koko kauden.<br>
+    <b>Tilaa kalenteriin:</b> Kalenteri-sivulta tai etusivun Minun tehtävät -kohdasta saat perheesi talkoovuorot ja kyydit puhelimen kalenteriin omana kalenterinaan, joka päivittyy itsestään.</div>`;
 
   if ((D.fields || []).length) {
     h += `<div class="h2">Kentät</div>`;
@@ -1685,8 +1686,8 @@ const ACTIONS = {
   },
   mePast() { F.mePast = !F.mePast; render(); },
   subCal(k, el, ev) {
-    const me = myName(); if (!me) { toast("Valitse ensin pelaaja"); return; }
-    openSheet({ title: "Tilaa perheen kalenteri", html: subCalHtml(me) }, el);
+    const me = myName();
+    openSheet({ title: "Tilaa perheen kalenteri", html: me ? subCalHtml(me) : subCalPick() }, el);
   },
   copyCal(k) {
     const u = calUrl(k);
@@ -1700,11 +1701,6 @@ const ACTIONS = {
     if (!items.length) { toast("Ei tulevia tehtäviä"); return; }
     downloadIcs(items, "omat-tehtavat.ics");
   },
-  icsAll() {
-    const t = todayIso(), items = allItems().filter(x => x.date >= t);
-    if (!items.length) { toast("Ei tulevia tapahtumia"); return; }
-    downloadIcs(items, "manse-kausi.ics");
-  },
 };
 document.addEventListener("click", ev => {
   const link = ev.target.closest("a[href]");
@@ -1717,6 +1713,10 @@ document.addEventListener("click", ev => {
 });
 document.addEventListener("change", ev => {
   if (ev.target.id === "meSel") { setMyName(ev.target.value); F.talkoot = null; render(); }
+  if (ev.target.id === "sheetMe" && ev.target.value) {   // pelaaja valittu kalenteri-ikkunassa
+    setMyName(ev.target.value); F.talkoot = null; render();
+    const b = document.querySelector("#sheet .sbody"); if (b) b.innerHTML = subCalHtml(ev.target.value);
+  }
 });
 {
   const d = document.getElementById("sheet");
