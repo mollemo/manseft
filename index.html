@@ -196,7 +196,7 @@
   .mdate { font-size: 11.5px; color: var(--sub); font-weight: 600; text-transform: uppercase; letter-spacing: .2px; }
   .mtime { font-size: 18px; font-weight: 500; letter-spacing: -.3px; line-height: 1.2; }
   .mplace { font-size: 11.5px; color: var(--sub); margin: 1px 0 6px; line-height: 1.3; word-break: break-word; }
-  .mplace a { color: inherit; text-decoration: none; }
+  .mplace a { color: var(--acd); font-weight: 600; text-decoration: underline; text-decoration-color: rgba(var(--acrgb),.35); text-decoration-thickness: 1px; text-underline-offset: 3px; }
   .mteams { display: grid; grid-template-columns: 1fr auto 1fr; align-items: stretch; gap: 4px; text-align: center; }
   .mteam { background: var(--soft); border-radius: 14px; padding: 8px 3px 7px; min-width: 0; }
   .mteam .av { width: 40px; height: 40px; margin: 0 auto 5px; font-size: 13px; display: grid; }
@@ -1165,10 +1165,10 @@ function myBlock() {
   h += nameSelect();
   const list = myShifts(me, F.mePast);
   const upcoming = F.mePast ? list.filter(x => x.date >= todayIso()) : list;
-  h += `<div class="chips" style="margin:2px 0 4px;"><button class="chip ${F.mePast ? "on" : ""}" data-act="mePast">Näytä myös menneet</button>
+  h += `<div class="chips wrap" style="margin:2px 0 4px;"><button class="chip ${F.mePast ? "on" : ""}" data-act="mePast">Näytä myös menneet</button>
         ${list.length ? `<button class="chip" data-act="icsMine">📅 Omat kalenteriin</button>` : ""}</div>`;
   if (!list.length) return h + `<p class="small muted">Ei ${F.mePast ? "" : "tulevia "}tehtäviä nimellä ${esc(me)}.</p></div>`;
-  h += `<div class="small" style="margin:4px 2px 2px;"><b>${upcoming.length}</b> tulevaa tehtävää${upcoming.length ? ` · seuraava ${relDay(upcoming[0].date, upcoming[0].time).toLowerCase() || dayLabel(upcoming[0].date)}` : ""}</div>`;
+  h += `<div class="small" style="margin:4px 2px 2px;"><b>${upcoming.length}</b> ${upcoming.length === 1 ? "tuleva tehtävä" : "tulevaa tehtävää"}${upcoming.length ? ` · seuraava ${relDay(upcoming[0].date, upcoming[0].time).toLowerCase() || dayLabel(upcoming[0].date)}` : ""}</div>`;
   h += list.map(it => miniRow(it).replace('<div class="mini">', `<div class="mini" style="${it.date < todayIso() ? "opacity:.5;" : ""}">`)).join("");
   return h + `</div>`;
 }
