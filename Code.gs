@@ -312,7 +312,9 @@ function todayIso_() { return Utilities.formatDate(new Date(), tz_(), "yyyy-MM-d
 function str_(v) { return v == null ? "" : String(v).trim(); }
 
 // ─── GET: kaikki sivuston data yhdellä haulla ────────────────────────────
-function doGet() {
+function doGet(e) {
+  // ?kalenteri=Sukunimi → perheen tilattava kalenteri (talkoovuorot, ottelujen talkooroolit, kyydit)
+  if (e && e.parameter && e.parameter.kalenteri) return familyCalendar_(e.parameter.kalenteri);
   var lock = LockService.getScriptLock();
   lock.waitLock(10000);
   try {
@@ -506,6 +508,85 @@ function findRowById_(sh, hm, id) {
   var ids = sh.getRange(2, hm["ID"] + 1, sh.getLastRow() - 1, 1).getValues();
   for (var i = 0; i < ids.length; i++) if (str_(ids[i][0]) === id) return i + 2;
   return 0;
+}
+
+// ─── Perheen tilattava kalenteri (.ics) ──────────────────────────────────
+// Sama sisältö kuin sivun "Minun tehtävät": talkoovuorot, ottelujen talkooroolit ja kyydit.
+// Merkinnöillä on pysyvä tunniste, joten kalenteri päivittää muuttuneet vuorot eikä tee kaksoiskappaleita.
+function familyCalendar_(name) {
+  var q = String(name || "").trim().toLowerCase();
+  var d = buildPayload_(), tz = tz_(), items = [];
+  var hit = function (n) { return String(n || "").trim().toLowerCase() === q; };
+  var fieldAddr = {};
+  d.fields.forEach(function (f) { fieldAddr[f.name.toLowerCase()] = f.address; });
+  var loc = function (p) { var a = p ? fieldAddr[String(p).toLowerCase()] : ""; return p ? (a ? p + ", " + a : p) : ""; };
+
+  d.games.forEach(function (g) {
+    Object.keys(g.roles).forEach(function (role) {
+      if (!hit(g.roles[role])) return;
+      items.push({ uid: "game-" + g.id + "-" + role, date: g.date, time: g.time, mins: 120, title: role + ": " + g.teams,
+        place: loc(g.field), desc: [g.section, g.info].filter(String).join("\n") });
+    });
+  });
+  d.talkoot.forEach(function (t) {
+    if (!t.names.some(hit)) return;
+    items.push({ uid: "talkoo-" + t.id, date: t.date, time: t.time, end: t.end, title: "Talkoot: " + (t.task || "Talkoovuoro") + (t.event ? " – " + t.event : ""),
+      place: loc(t.place), desc: [t.info, "Tekijät: " + t.names.join(", ")].filter(String).join("\n") });
+  });
+  var targets = {};
+  d.games.forEach(function (g) { if (g.rides) targets[g.id] = { date: g.date, time: g.time, title: g.teams, place: g.field }; });
+  d.events.forEach(function (ev) { if (ev.rides) targets[ev.id] = { date: ev.date, time: ev.time, title: ev.title, place: ev.place }; });
+  d.rides.forEach(function (r) {
+    var tg = targets[r.target];
+    if (!tg) return;
+    var dep = r.depart ? "Lähtö: " + r.depart : "";
+    if (hit(r.driver)) items.push({ uid: "ride-" + r.id, date: tg.date, time: tg.time, title: "Kuljettajana: " + tg.title, place: loc(tg.place),
+      desc: [dep, "Kyytiläiset: " + (r.passengers.join(", ") || "–") + " (" + r.passengers.length + "/" + r.seats + ")"].filter(String).join("\n") });
+    if (r.passengers.some(hit)) items.push({ uid: "ride-" + r.id + "-p-" + q, date: tg.date, time: tg.time, title: "Kyydissä: " + tg.title, place: loc(tg.place),
+      desc: [dep, "Kuljettaja: " + r.driver].filter(String).join("\n") });
+  });
+
+  var team = d.settings.team || "Manse";
+  var label = d.names.filter(hit)[0] || String(name).trim();   // nimi Pelaajat-listan kirjoitusasussa
+  var lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Manse//Kausi//FI", "CALSCALE:GREGORIAN", "METHOD:PUBLISH",
+    "X-WR-CALNAME:" + icsText_(team + " – " + label), "X-WR-TIMEZONE:" + tz,
+    "REFRESH-INTERVAL;VALUE=DURATION:PT1H", "X-PUBLISHED-TTL:PT1H"];
+  var stamp = Utilities.formatDate(new Date(), "UTC", "yyyyMMdd'T'HHmmss'Z'");
+  items.forEach(function (it) {
+    lines.push("BEGIN:VEVENT", "UID:" + it.uid.replace(/[^\w.-]/g, "_") + "@manse-kausi", "DTSTAMP:" + stamp);
+    if (it.time) {
+      var start = Utilities.parseDate(it.date + " " + it.time, tz, "yyyy-MM-dd HH:mm");
+      var end = it.end ? Utilities.parseDate(it.date + " " + it.end, tz, "yyyy-MM-dd HH:mm") : null;
+      if (!end || end <= start) end = new Date(start.getTime() + (it.mins || 90) * 60000);
+      lines.push("DTSTART:" + Utilities.formatDate(start, "UTC", "yyyyMMdd'T'HHmmss'Z'"),
+                 "DTEND:" + Utilities.formatDate(end, "UTC", "yyyyMMdd'T'HHmmss'Z'"));
+    } else {
+      var day = Utilities.parseDate(it.date, tz, "yyyy-MM-dd");
+      lines.push("DTSTART;VALUE=DATE:" + it.date.replace(/-/g, ""),
+                 "DTEND;VALUE=DATE:" + Utilities.formatDate(new Date(day.getTime() + 36 * 3600000), tz, "yyyyMMdd"));
+    }
+    lines.push("SUMMARY:" + icsText_(it.title));
+    if (it.place) lines.push("LOCATION:" + icsText_(it.place));
+    if (it.desc) lines.push("DESCRIPTION:" + icsText_(it.desc));
+    lines.push("END:VEVENT");
+  });
+  lines.push("END:VCALENDAR");
+  var body = lines.map(icsFold_).join("\r\n") + "\r\n";
+  return ContentService.createTextOutput(body).setMimeType(ContentService.MimeType.ICAL);
+}
+
+function icsText_(s) { return String(s || "").replace(/\\/g, "\\\\").replace(/[,;]/g, "\\$&").replace(/\r?\n/g, "\\n"); }
+
+// Kalenteririvit katkaistaan 75 tavun kohdalta (iCalendar-standardi), jatkorivit alkavat välilyönnillä
+function icsFold_(line) {
+  var out = [], cur = "", bytes = 0;
+  for (var i = 0; i < line.length; i++) {
+    var ch = line.charAt(i), b = encodeURIComponent(ch).replace(/%../g, "x").length;
+    if (bytes + b > (out.length ? 74 : 75)) { out.push(cur); cur = ""; bytes = 0; }
+    cur += ch; bytes += b;
+  }
+  out.push(cur);
+  return out.join("\r\n ");
 }
 
 function json_(obj) {

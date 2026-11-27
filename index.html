@@ -349,6 +349,11 @@
   .sheet .shead { display: flex; align-items: center; gap: 10px; padding: 12px 20px 6px; flex: none; }
   .sheet .shead h2 { margin: 0; font-size: 19px; flex: 1; }
   .sheet .sbody { padding: 4px 20px 8px; overflow-y: auto; white-space: pre-line; line-height: 1.55; font-size: 15px; }
+  .sheet .sbody.html { white-space: normal; }
+  .sheet .sbody.html p { margin: 6px 0 12px; }
+  .calbtns { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 14px; }
+  .calbtns .btn { display: flex; width: 100%; flex-direction: column; align-items: center; justify-content: center; gap: 1px; min-height: 54px; padding: 8px 16px; text-decoration: none; line-height: 1.2; }
+  .calbtns .bsub { display: block; font-size: 12px; font-weight: 500; opacity: .8; }
   .sheet .sfoot { display: flex; gap: 10px; padding: 12px 20px calc(16px + env(safe-area-inset-bottom)); border-top: 1px solid var(--border); flex: none; }
   .sheet .sfoot .btn { flex: 1; justify-content: center; }
   @media (min-width: 600px) { .sheet { margin: auto; border-radius: 22px; } }
@@ -1186,7 +1191,7 @@ function myBlock() {
   const list = myShifts(me, F.mePast);
   const upcoming = F.mePast ? list.filter(x => x.date >= todayIso()) : list;
   h += `<div class="chips wrap" style="margin:2px 0 4px;"><button class="chip ${F.mePast ? "on" : ""}" data-act="mePast">Näytä myös menneet</button>
-        ${list.length ? `<button class="chip" data-act="icsMine">📅 Omat kalenteriin</button>` : ""}</div>`;
+        ${API_URL ? `<button class="chip" data-act="subCal">📅 Tilaa kalenteriin</button>` : list.length ? `<button class="chip" data-act="icsMine">📅 Omat kalenteriin</button>` : ""}</div>`;
   if (!list.length) return h + `<p class="small muted">Ei ${F.mePast ? "" : "tulevia "}tehtäviä nimellä ${esc(me)}.</p></div>`;
   h += `<div class="small" style="margin:4px 2px 2px;"><b>${upcoming.length}</b> ${upcoming.length === 1 ? "tuleva tehtävä" : "tulevaa tehtävää"}${upcoming.length ? ` · seuraava ${relDay(upcoming[0].date, upcoming[0].time).toLowerCase() || dayLabel(upcoming[0].date)}` : ""}</div>`;
   h += list.map(it => miniRow(it).replace('<div class="mini">', `<div class="mini" style="${it.date < todayIso() ? "opacity:.5;" : ""}">`)).join("");
@@ -1427,15 +1432,30 @@ function ohjeCard(o) {
     ${o.link ? `<div class="sub" style="margin-top:6px;"><a class="lnk" href="${esc(o.link)}" target="_blank" rel="noopener">🔗 Lisätiedot</a></div>` : ""}
   </details>`;
 }
+// Perheen tilattava kalenteri: Apps Script palauttaa ?kalenteri=Sukunimi -osoitteesta .ics-kalenterin, joka päivittyy itsestään
+function calUrl(name) { return API_URL + "?kalenteri=" + encodeURIComponent(name); }
+function subCalHtml(name) {
+  const https = calUrl(name), webcal = https.replace(/^https:/i, "webcal:");
+  const apple = `<a class="btn wide ${IOS || !ANDROID ? "" : "ghost"}" href="${esc(webcal)}">Apple-kalenteri <span class="bsub">iPhone, iPad, Mac</span></a>`;
+  const google = `<a class="btn wide ${ANDROID ? "" : "ghost"}" href="${esc("https://calendar.google.com/calendar/render?cid=" + encodeURIComponent(webcal))}" target="_blank" rel="noopener">Google Kalenteri <span class="bsub">Android, selain</span></a>`;
+  return `<p>Perheen <b>${esc(name)}</b> talkoovuorot, ottelujen talkooroolit ja kyydit tulevat puhelimen kalenteriin omana kalenterinaan.
+    Merkinnät päivittyvät itsestään, kun talkoovastaava lisää tai muuttaa vuoroja.</p>
+    <div class="calbtns">${ANDROID ? google + apple : apple + google}
+      <button class="btn ghost wide" data-act="copyCal" data-key="${esc(name)}">Kopioi kalenterin osoite <span class="bsub">Outlook ja muut</span></button></div>
+    <p class="small muted"><b>Google Kalenteri</b> avautuu selaimeen: vahvista lisäys Google-tililläsi. Kalenteri näkyy puhelimen Google Kalenterissa,
+      kun se on sovelluksen asetuksissa valittu näkyviin. Google päivittää tilatut kalenterit muutaman tunnin välein, Apple-kalenteri tiheämmin.</p>
+    <p class="small muted">Kalenterin voi poistaa milloin tahansa kalenterisovelluksen asetuksista.
+      <a class="lnk navy" href="#" data-act="icsMine">Lataa nykyiset tehtävät kertaalleen</a> (ei päivity).</p>`;
+}
 let sheetOpener = null;
 function openSheet(o, opener) {
   const d = document.getElementById("sheet");
   if (!d || typeof d.showModal !== "function") return false;
   d.innerHTML = `<div class="grab" aria-hidden="true"></div>
     <div class="shead"><h2 id="sheetTitle">${esc(o.title || "Ohje")}</h2></div>
-    <div class="sbody">${esc(o.text || "")}${o.link ? `\n\n<a class="lnk" href="${esc(o.link)}" target="_blank" rel="noopener">🔗 Lisätiedot</a>` : ""}</div>
-    <div class="sfoot"><button class="btn ghost" data-act="allOhjeet" data-key="${esc(o.title)}">Kaikki ohjeet</button>
-      <button class="btn" data-act="sheetClose" autofocus>Sulje</button></div>`;
+    ${o.html ? `<div class="sbody html">${o.html}</div>` : `<div class="sbody">${esc(o.text || "")}${o.link ? `\n\n<a class="lnk" href="${esc(o.link)}" target="_blank" rel="noopener">🔗 Lisätiedot</a>` : ""}</div>`}
+    <div class="sfoot">${o.html ? "" : `<button class="btn ghost" data-act="allOhjeet" data-key="${esc(o.title)}">Kaikki ohjeet</button>`}
+      <button class="btn ${o.html ? "ghost" : ""}" data-act="sheetClose" autofocus>Sulje</button></div>`;
   sheetOpener = opener || null;
   d.showModal();
   d.querySelector(".sbody").scrollTop = 0;
@@ -1469,7 +1489,8 @@ function viewOhjeet() {
     <b>Kyydit:</b> Sivulla voi ilmoittautua vain kyyteihin. Kuljettaja tarjoaa paikkoja, ja kyytiin liitytään valitsemalla pelaaja listalta. Perheen kyytiä voi muokata, kun oma pelaaja on valittuna.<br>
     <b>ⓘ roolin vieressä:</b> avaa tehtävän ohjeen ikkunaan. Sulje-napista palaat samaan kohtaan.<br>
     <b>Leirit:</b> Alapalkin Leirit-kohdasta löytyy kummankin leirin ohjelma, ottelut, ruoka, talkoot, kyydit ja info.<br>
-    <b>Kalenteri:</b> Yläreunan kalenterinapista näet koko kauden. Rivin kalenterikuvakkeella saat tapahtuman puhelimen kalenteriin.</div>`;
+    <b>Kalenteri:</b> Yläreunan kalenterinapista näet koko kauden. Rivin kalenterikuvakkeella saat tapahtuman puhelimen kalenteriin.<br>
+    <b>Tilaa kalenteriin:</b> Etusivun Minun tehtävät -kohdasta saat perheesi talkoovuorot ja kyydit puhelimen kalenteriin omana kalenterinaan, joka päivittyy itsestään.</div>`;
 
   if ((D.fields || []).length) {
     h += `<div class="h2">Kentät</div>`;
@@ -1496,6 +1517,12 @@ function icsItem(it) {
   }
   return ["BEGIN:VEVENT", "UID:" + uid, "DTSTAMP:" + new Date().toISOString().replace(/[-:]/g, "").slice(0, 15) + "Z",
           start, end, "SUMMARY:" + clean(it.title), loc ? "LOCATION:" + clean(loc) : "", "END:VEVENT"].filter(Boolean).join("\r\n");
+}
+function fallbackCopy(text, done) {
+  const t = document.createElement("textarea"); t.value = text; t.setAttribute("readonly", ""); t.style.position = "fixed"; t.style.opacity = "0";
+  (document.querySelector("dialog[open]") || document.body).appendChild(t); t.select();
+  try { document.execCommand("copy"); done(); } catch (e) { toast("Kopiointi ei onnistunut"); }
+  t.remove();
 }
 function downloadIcs(items, filename) {
   const body = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Manse//Kausi//FI", "CALSCALE:GREGORIAN"]
@@ -1657,7 +1684,18 @@ const ACTIONS = {
     if (it) downloadIcs([it], (it.title || "tapahtuma").replace(/[^\wåäöÅÄÖ -]/g, "").slice(0, 40) + ".ics");
   },
   mePast() { F.mePast = !F.mePast; render(); },
-  icsMine() {
+  subCal(k, el, ev) {
+    const me = myName(); if (!me) { toast("Valitse ensin pelaaja"); return; }
+    openSheet({ title: "Tilaa perheen kalenteri", html: subCalHtml(me) }, el);
+  },
+  copyCal(k) {
+    const u = calUrl(k);
+    const done = () => toast("Kalenterin osoite kopioitu");
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(u).then(done, () => fallbackCopy(u, done));
+    else fallbackCopy(u, done);
+  },
+  icsMine(k, el, ev) {
+    if (ev) ev.preventDefault();
     const items = myShifts(myName(), false).map(x => Object.assign({}, x, { title: x.icsTitle || x.title }));
     if (!items.length) { toast("Ei tulevia tehtäviä"); return; }
     downloadIcs(items, "omat-tehtavat.ics");

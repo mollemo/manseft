@@ -28,6 +28,9 @@ Leirit eivät ole yläpalkissa. Ne löytyvät **☰-valikosta** ja etusivun pain
 - **Leirin ohjeet** (esim. pakkauslista): Ohjeet-välilehdelle, Osio = leirin nimi. Ne näkyvät vain leirisivulla.
 - Ruokalan, majoituksen ym. osoitteet Kentät-välilehdelle, niin niistä tulee karttalinkit.
 
+## Perheen tilattava kalenteri
+Etusivun Minun tehtävät -kohdan **Tilaa kalenteriin** -napista perhe saa omat talkoovuoronsa, ottelujen talkooroolinsa ja kyytinsä puhelimen kalenteriin erillisenä kalenterina, joka päivittyy itsestään. Kalenterin tekee Apps Script osoitteesta `…/exec?kalenteri=Sukunimi`. Apple-kalenteri päivittää tilatun kalenterin tiheästi, Google Kalenteri muutaman tunnin välein.
+
 ## Toimii myös heikossa verkossa
 Sivu tallentaa viimeksi haetut kauden tiedot puhelimeen (muutamia kymmeniä kilotavuja) ja `sw.js` sivun omat tiedostot (sivu, logo, kenttäkuva). Sivu aukeaa heti ja toimii ilman verkkoa; ylhäällä kerrotaan, milloin tiedot on haettu. Tuoreet tiedot haetaan aina, kun yhteys on olemassa. Kyytien tallentaminen vaatii verkon.
 
