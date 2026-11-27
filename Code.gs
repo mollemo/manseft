@@ -1,8 +1,8 @@
 /**
  * Manse – kauden sivuston rajapinta (Google Apps Script)
  * ------------------------------------------------------
- * Yksi Google Sheet hoitaa koko kauden: ottelut + ottelutalkoot, muut talkoot,
- * tapahtumat, kyydit, tiedotteet, yhteystiedot, kentät ja asetukset.
+ * Yksi Google Sheet hoitaa koko kauden: ottelut ja ottelutalkoot, muut talkoot,
+ * leirien ohjelma ja ruokalistat, kyydit, tiedotteet, ohjeet, kentät, pelaajat ja asetukset.
  *
  * KÄYTTÖÖNOTTO
  * 1. Luo uusi Google Sheet ja avaa Laajennukset → Apps Script.
@@ -123,7 +123,7 @@ function setup() {
   var tap = ss.getSheetByName("Tapahtumat");
   var th = headerMap_(tap);
   tap.getRange(2, th["Tyyppi"] + 1, Math.max(tap.getMaxRows() - 1, 1), 1).setDataValidation(
-    SpreadsheetApp.newDataValidation().requireValueInList(["Harjoitus", "Turnaus", "Leiri", "Ohjelma", "Majoitus", "Palaveri", "Varainhankinta", "Juhla", "Muu"], true).setAllowInvalid(true).build());
+    SpreadsheetApp.newDataValidation().requireValueInList(["Ohjelma", "Matka", "Majoitus", "Muu"], true).setAllowInvalid(true).build());
   tap.getRange(2, th["Kyydit"] + 1, Math.max(tap.getMaxRows() - 1, 1), 1).setDataValidation(
     SpreadsheetApp.newDataValidation().requireValueInList(["Kyllä"], true).setAllowInvalid(true).build());
   // Paikka-sarakkeisiin sama Kentät-lista, jotta nimi täsmää ja karttalinkki löytyy (muutakin saa kirjoittaa)
