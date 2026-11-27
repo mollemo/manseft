@@ -226,6 +226,15 @@ function cellUrl_(value, richText, formula) {
 }
 
 // Täyttää puuttuvat ID:t riveille, joilla on sisältöä.
+// ID täyttyy heti, kun Ottelut-, Talkoot- tai Tapahtumat-välilehdelle kirjoitetaan uusi rivi
+var ID_PREFIX = { "Ottelut": "o", "Talkoot": "t", "Tapahtumat": "e" };
+function onEdit(e) {
+  try {
+    var name = e && e.range ? e.range.getSheet().getName() : "";
+    if (ID_PREFIX[name] && e.range.getRow() > 1) ensureIds_(name, ID_PREFIX[name]);
+  } catch (err) {}
+}
+
 function ensureIds_(name, prefix) {
   var sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(name);
   if (!sh || sh.getLastRow() < 2) return;
@@ -234,11 +243,13 @@ function ensureIds_(name, prefix) {
   var n = sh.getLastRow() - 1;
   var vals = sh.getRange(2, 1, n, sh.getLastColumn()).getValues();
   var idCol = hm["ID"];
-  var changed = false;
+  var changed = false, seen = {};
   var ids = vals.map(function (r) {
     var id = String(r[idCol] || "").trim();
     var hasContent = r.some(function (v, i) { return i !== idCol && v !== "" && v !== null; });
-    if (!id && hasContent) { id = prefix + Utilities.getUuid().slice(0, 8); changed = true; }
+    // Puuttuva ID luodaan. Kopioidun rivin samanlainen ID vaihdetaan uuteen, jotta jokainen rivi on oma merkintänsä.
+    if ((!id || seen[id]) && hasContent) { id = prefix + Utilities.getUuid().slice(0, 8); changed = true; }
+    if (id) seen[id] = true;
     return [id];
   });
   if (changed) sh.getRange(2, idCol + 1, n, 1).setValues(ids);
@@ -314,14 +325,12 @@ function str_(v) { return v == null ? "" : String(v).trim(); }
 // ─── GET: kaikki sivuston data yhdellä haulla ────────────────────────────
 function doGet(e) {
   // ?kalenteri=Sukunimi → perheen tilattava kalenteri (talkoovuorot, ottelujen talkooroolit, kyydit)
-  if (e && e.parameter && e.parameter.kalenteri) return familyCalendar_(e.parameter.kalenteri);
   var lock = LockService.getScriptLock();
   lock.waitLock(10000);
   try {
-    ensureIds_("Ottelut", "o");
-    ensureIds_("Talkoot", "t");
-    ensureIds_("Tapahtumat", "e");
+    Object.keys(ID_PREFIX).forEach(function (name) { ensureIds_(name, ID_PREFIX[name]); });
   } finally { lock.releaseLock(); }
+  if (e && e.parameter && e.parameter.kalenteri) return familyCalendar_(e.parameter.kalenteri);
   return json_(buildPayload_());
 }
 
