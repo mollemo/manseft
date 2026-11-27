@@ -1,4 +1,9 @@
 /**
+ * @OnlyCurrentDoc
+ * Rajaa oikeudet vain tähän yhteen Sheet-tiedostoon (ei muita tiedostoja, ei jakamista).
+ */
+
+/**
  * Manse – kauden sivuston rajapinta (Google Apps Script)
  * ------------------------------------------------------
  * Yksi Google Sheet hoitaa koko kauden: ottelut ja ottelutalkoot, muut talkoot,
