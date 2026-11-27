@@ -1442,8 +1442,9 @@ function subCalHtml(name) {
       <button class="btn ghost wide" data-act="copyCal" data-key="${esc(name)}">Kopioi kalenterin osoite <span class="bsub">Outlook ja muut</span></button></div>
     <p class="small muted"><b>Google Kalenteri</b> avautuu selaimeen: vahvista lisäys Google-tililläsi. Kalenteri näkyy puhelimen Google Kalenterissa,
       kun se on sovelluksen asetuksissa valittu näkyviin. Google päivittää tilatut kalenterit muutaman tunnin välein, Apple-kalenteri tiheämmin.</p>
-    <p class="small muted">Kalenterin voi poistaa milloin tahansa kalenterisovelluksen asetuksista.
-      <a class="lnk navy" href="#" data-act="icsMine">Lataa nykyiset tehtävät kertaalleen</a> (ei päivity).</p>`;
+    <p class="small muted">Kalenterin voi poistaa milloin tahansa kalenterisovelluksen asetuksista.</p>
+    <p class="small muted"><a class="lnk navy" href="#" data-act="icsMine">Tästä voit hakea kalenterimerkinnät</a>, jotka voi manuaalisesti viedä omaan kalenteriin
+      (ei päivity mikäli merkintöihin tehdään muutoksia).</p>`;
 }
 // Sama perheen kalenterin tilaus etusivulla, Otteluissa, Talkoissa ja Kalenterissa
 function subCalBtn() { return API_URL ? `<button class="btn ghost sm dl" data-act="subCal">${ic("calplus")}<span>Tilaa kalenteriin</span></button>` : ""; }
