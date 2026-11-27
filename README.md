@@ -15,7 +15,7 @@ Etusivu on jaettu osioihin (oletuksena **Aluesarja**, **Alueleiri** ja **Valtaku
 Rivin osio valitaan **Osio**-sarakkeesta Ottelut-, Talkoot- ja Tapahtumat-välilehdillä. Jos Osio on tyhjä, osio päätellään Sarja-/Tapahtuma-/Otsikko-tekstistä, ja muuten rivi näkyy kohdassa *Muut talkoot* (seuran yhteiset talkoot, esim. Sappee ja lipunmyynti edustusjoukkueen peleissä).
 Ottelutalkoot (kotipelit) ja vieraspelien kyydit koskevat vain Asetusten *Ottelutalkoot osiossa* -kohdan osiota (oletus Aluesarja). Leirien talkoot kirjataan Talkoot-välilehdelle ja leirin kyydit Tapahtumat-riville (*Kyydit = Kyllä*).
 
-**Talkoovuorot** jakaa talkoovastaava: nimet kirjoitetaan suoraan Sheetiin (Ottelut-välilehden roolisarakkeet ja Talkoot-välilehden Nimet-sarake) pelaajien niminä Pelaajat-listalta, ja sivu näyttää ne. Sivustolla voi ilmoittautua vain kyyteihin. *Lukko = LUKITTU* sulkee myös kyytien muokkauksen.
+**Talkoovuorot** jakaa talkoovastaava: nimet kirjoitetaan suoraan Sheetiin (Ottelut-välilehden roolisarakkeet ja Talkoot-välilehden Nimi 1–6 -sarakkeet) pelaajien niminä Pelaajat-listalta, ja sivu näyttää ne. Sivustolla voi ilmoittautua vain kyyteihin. *Lukko = LUKITTU* sulkee myös kyytien muokkauksen.
 
 ## Leirisivut
 Alueleirillä ja Valtakunnallisella leirillä on oma leirisivu (kuten erillisillä leirisivustoilla): päiväkohtainen ohjelma, ruokalista, paikat, talkoot, kyydit ja leirin info.
@@ -38,12 +38,12 @@ Sivu on asennettava verkkosovellus (`manifest.webmanifest`, kuvakkeet `icon-*.pn
 | Välilehti | Mitä sinne kirjoitetaan |
 |---|---|
 | **Ottelut** | Pvm, Klo, Joukkueet (esim. `Manse – Kiri`), Kenttä (pudotusvalikko), Sarja, Pesistulokset (ottelun linkki pesistulokset.fi:stä, näkyy ottelun tiedoissa). Roolisarakkeisiin (Kirjuri…) talkoovastaava kirjoittaa nimet. Koti/Vieras päätellään joukkueista, mutta sen voi myös valita itse. |
-| **Talkoot** | Muut talkoot: Pvm, Klo, Loppu, Tapahtuma, Tehtävä, Paikka, **Tarve** (montako tekijää) ja **Nimet** (talkoovastaava kirjoittaa, pilkulla erotettuna). |
+| **Talkoot** | Muut talkoot: Pvm, Klo, Loppu, Tapahtuma, Tehtävä, Paikka, **Tarve** (montako tekijää) ja **Nimi 1–6** (talkoovastaava valitsee pudotusvalikosta, yksi nimi per sarake; lisää tarvittaessa Nimi 7 jne. ja aja setup uudelleen). |
 | **Tapahtumat** | Harjoitukset, palaverit, turnaukset, leirit, juhlat. *Kyydit = Kyllä* tuo tapahtuman Kyydit-välilehdelle. Linkki-sarakkeeseen voi laittaa esim. leirisivun osoitteen. |
 | **Kyydit** | Täyttyy sivustolta. Valmentaja voi muokata tai poistaa rivejä. |
 | **Tiedotteet** | Näkyvät etusivulla *Näytä asti* -päivään saakka (tyhjä = aina). |
 | **Ohjeet** | Sivun Ohjeet-välilehdelle: Otsikko, Teksti (rivinvaihdot säilyvät), Linkki. Järjestys = rivien järjestys. Jos otsikko on sama kuin talkoorooli (esim. *Kirjuri* tai *Kioski*, joka kattaa Kioski 1 ja Kioski 2), roolin viereen tulee ⓘ-linkki ohjeeseen. |
-| **Pelaajat** | Joukkueen pelaajat, yksi rivi per pelaaja (esim. *Ella Virtanen*). Vuorot ja kyydit kirjataan pelaajan nimellä, eli nimi edustaa pelaajan perhettä. Sivun valinnat (Valitse pelaaja, kyydin kuljettaja ja kyytiläinen) käyttävät tätä listaa, ja Sheetin roolisarakkeissa ja kyytien kuljettajasarakkeessa on sama lista pudotusvalikkona. Kun lista on täytetty, kyytejä voi tarjota ja niihin liittyä vain listan nimillä. |
+| **Pelaajat** | Joukkueen pelaajat, yksi rivi per pelaaja (esim. *Ella Virtanen*). Vuorot ja kyydit kirjataan pelaajan nimellä, eli nimi edustaa pelaajan perhettä. Sivun valinnat (Valitse pelaaja, kyydin kuljettaja ja kyytiläinen) käyttävät tätä listaa, ja Sheetissä sama lista on pudotusvalikkona Ottelut-välilehden roolisarakkeissa, Talkoot-välilehden Nimi-sarakkeissa ja Kyydit-välilehden Kuljettaja-sarakkeessa. Kirjoita nimet samassa muodossa kuin haluat niiden näkyvän sivulla. Kun lista on täytetty, kyytejä voi tarjota ja niihin liittyä vain listan nimillä. |
 | **Kentät** | Nimi, Osoite, Pinta, Karttalinkki. Kirjoita osoite kokonaan (katu, postinumero, kaupunki). Siitä tulee karttalinkki kaikkialle, missä paikkaa käytetään, ja linkki avautuu puhelimen karttasovellukseen (iPhonella Apple Kartat, Androidilla Google Maps). Karttalinkki-sarakkeeseen voi liittää Google Mapsista jaetun linkin, jos osoite ei osu tarkasti oikeaan kohtaan (esim. iso urheilualue). Ottelujen Kenttä ja muiden välilehtien Paikka valitaan tämän listan nimistä. |
 | **Asetukset** | Joukkueen nimi, kausi, **Osiot**, ottelutalkoiden osio, koti- ja vieraspelin talkooroolit, **leiripelin talkooroolit** (leirien koti- ja vieraspelit) sekä **Lukko** (AUKI / LUKITTU, koskee kyytejä). |
 

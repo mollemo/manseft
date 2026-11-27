@@ -20,7 +20,7 @@
 
 var SHEETS = {
   "Ottelut":      ["ID", "Osio", "Pvm", "Klo", "Joukkueet", "Kenttä", "Sarja", "Koti/Vieras", "Pesistulokset", "Lisätiedot"],
-  "Talkoot":      ["ID", "Osio", "Pvm", "Klo", "Loppu", "Tapahtuma", "Tehtävä", "Paikka", "Tarve", "Nimet", "Lisätiedot"],
+  "Talkoot":      ["ID", "Osio", "Pvm", "Klo", "Loppu", "Tapahtuma", "Tehtävä", "Paikka", "Tarve", "Nimi 1", "Nimi 2", "Nimi 3", "Nimi 4", "Nimi 5", "Nimi 6", "Lisätiedot"],
   "Tapahtumat":   ["ID", "Osio", "Pvm", "Klo", "Loppu", "Otsikko", "Tyyppi", "Paikka", "Lisätiedot", "Linkki", "Kyydit"],
   "Kyydit":       ["ID", "KohdeID", "Kuljettaja", "Paikat", "Kyytiläiset", "Lähtö", "Lisätiedot"],
   "Tiedotteet":   ["Pvm", "Otsikko", "Teksti", "Näytä asti"],
@@ -115,6 +115,11 @@ function setup() {
   });
   var kyy = ss.getSheetByName("Kyydit"), kh = headerMap_(kyy);
   kyy.getRange(2, kh["Kuljettaja"] + 1, Math.max(kyy.getMaxRows() - 1, 1), 1).setDataValidation(nameRule);
+  // Talkoot-välilehden Nimi 1, Nimi 2 … -sarakkeet (lisää tarvittaessa Nimi 7 jne. ja aja setup uudelleen)
+  var tal = ss.getSheetByName("Talkoot"), tlh = headerMap_(tal);
+  Object.keys(tlh).forEach(function (h) {
+    if (/^Nimi \d+$/.test(h)) tal.getRange(2, tlh[h] + 1, Math.max(tal.getMaxRows() - 1, 1), 1).setDataValidation(nameRule);
+  });
   var maxRows = Math.max(ott.getMaxRows() - 1, 1);
   ott.getRange(2, hm["Kenttä"] + 1, maxRows, 1).setDataValidation(
     SpreadsheetApp.newDataValidation().requireValueInRange(kentat.getRange("A2:A"), true).setAllowInvalid(true).build());
@@ -227,6 +232,14 @@ function findSettingRow_(sh, key) {
   return 0;
 }
 
+// Talkoovuoron tekijät Nimi 1, Nimi 2 … -sarakkeista (ja vanhasta Nimet-sarakkeesta, jos sellainen on)
+function talkooNames_(r) {
+  var cols = Object.keys(r).filter(function (h) { return /^Nimi \d+$/.test(h); })
+    .sort(function (a, b) { return parseInt(a.slice(5), 10) - parseInt(b.slice(5), 10); });
+  var a = cols.map(function (h) { return str_(r[h]); }).concat(splitList_(r["Nimet"]));
+  return a.filter(function (x, i) { return x && a.indexOf(x) === i; });
+}
+
 function splitList_(s) {
   return String(s || "").split(",").map(function (x) { return x.trim(); }).filter(function (x) { return x; });
 }
@@ -320,7 +333,7 @@ function buildPayload_() {
       id: str_(r["ID"]), section: sectionOf_(r["Osio"], r["Tapahtuma"], sections),
       date: fmtDate_(r["Pvm"], year), time: fmtTime_(r["Klo"]), end: fmtTime_(r["Loppu"]),
       event: str_(r["Tapahtuma"]), task: str_(r["Tehtävä"]), place: str_(r["Paikka"]),
-      need: Math.max(parseInt(r["Tarve"], 10) || 1, 1), names: splitList_(r["Nimet"]), info: str_(r["Lisätiedot"])
+      need: Math.max(parseInt(r["Tarve"], 10) || 1, 1), names: talkooNames_(r), info: str_(r["Lisätiedot"])
     };
   }).filter(function (t) { return t.id && t.date; });
 
