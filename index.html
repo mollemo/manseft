@@ -308,6 +308,7 @@
   .hello .hb { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; font-size: 13px; color: var(--sub); }
   .hello .hb b { font-size: 15.5px; color: var(--text); font-weight: 600; }
   .hello .chev { color: #9EA199; display: grid; } .hello .chev svg { width: 16px; height: 16px; }
+  .kal-tools.end { justify-content: flex-end; }
   .kal-tools { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin: 0 0 12px; }
   .btn.dl { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; }
   .btn.dl svg { width: 16px; height: 16px; color: var(--acd); }
@@ -788,7 +789,6 @@ function viewOttelu() {
   if (g.link) rows.push(`<div class="mini"><span class="mic">${ic("flag")}</span><span class="mt"><b>Ottelu Pesistuloksissa</b><br><span class="small muted">pesistulokset.fi</span></span>
     <a class="btn ghost sm" href="${esc(g.link)}" target="_blank" rel="noopener">Avaa</a></div>`);
   if (rows.length) h += `<div class="box">${rows.join("")}</div>`;
-  if (!past) h += `<button class="btn ghost dl" data-act="ics" data-key="${esc("game|" + g.id)}" style="margin:2px 0 6px;">${ic("calplus")}<span>Lisää kalenteriin</span></button>`;
 
   // Talkoovuorot
   const roles = Object.keys(g.roles);
@@ -1200,6 +1200,7 @@ function viewOttelut() {
   let h = statusBanners();
   h += seg("games", [["tulevat", "Tulevat"], ["pelatut", "Pelatut"], ["kaikki", "Kaikki"]], F.games);
   h += secChips(D.games);
+  if (API_URL) h += `<div class="kal-tools end">${subCalBtn()}</div>`;
   let list = D.games.filter(secOk);
   if (F.games === "tulevat") list = list.filter(g => g.date >= t).sort(byWhen);
   else if (F.games === "pelatut") list = list.filter(g => g.date < t).sort((a, b) => byWhen(b, a));
@@ -1214,6 +1215,7 @@ function viewTalkoot() {
   const mode = F.talkoot || (myName() ? "omat" : "tulevat");
   let h = statusBanners() + seg("talkoot", [["tulevat", "Tulevat"], ["omat", "Omat"], ["menneet", "Menneet"]], mode);
   h += secChips([].concat(D.games.filter(g => Object.keys(g.roles).length), D.talkoot));
+  if (API_URL) h += `<div class="kal-tools end">${subCalBtn()}</div>`;
   let items = [].concat(
     D.games.filter(g => Object.keys(g.roles).length).map(g => ({ kind: "game", date: g.date, time: g.time, ref: g, mine: Object.values(g.roles).some(isMe) })),
     D.talkoot.map(x => ({ kind: "talkoo", date: x.date, time: x.time, ref: x, mine: x.names.some(isMe) }))
@@ -1253,7 +1255,7 @@ function viewKalenteri() {
   h += seg("kal", [["kaikki", "Kaikki"], ["game", "Ottelut"], ["talkoo", "Talkoot"], ["event", "Tapahtumat"]], F.kal);
   h += secChips(allItems().map(x => x.ref));
   h += `<div class="kal-tools"><button class="chip ${F.kalPast ? "on" : ""}" data-act="filter" data-key="kalPast|x">Näytä menneet</button>
-        ${API_URL ? `<button class="btn ghost sm dl" data-act="subCal">${ic("calplus")}<span>Tilaa kalenteriin</span></button>` : ""}</div>`;
+        ${subCalBtn()}</div>`;
   let items = allItems().filter(it => (F.kal === "kaikki" || it.kind === F.kal) && secOk(it.ref));
   if (!F.kalPast) items = items.filter(it => it.date >= t);
   if (!items.length) return h + `<p class="note">Ei tapahtumia.</p>`;
@@ -1443,6 +1445,8 @@ function subCalHtml(name) {
     <p class="small muted">Kalenterin voi poistaa milloin tahansa kalenterisovelluksen asetuksista.
       <a class="lnk navy" href="#" data-act="icsMine">Lataa nykyiset tehtävät kertaalleen</a> (ei päivity).</p>`;
 }
+// Sama perheen kalenterin tilaus etusivulla, Otteluissa, Talkoissa ja Kalenterissa
+function subCalBtn() { return API_URL ? `<button class="btn ghost sm dl" data-act="subCal">${ic("calplus")}<span>Tilaa kalenteriin</span></button>` : ""; }
 function subCalPick() {
   return `<p>Valitse pelaaja, niin kalenteriin tulevat perheesi talkoovuorot, ottelujen talkooroolit ja kyydit omana kalenterinaan, joka päivittyy itsestään.</p>
     <label class="small muted" for="sheetMe" style="font-weight:700;">Valitse pelaaja</label>
@@ -1679,10 +1683,6 @@ const ACTIONS = {
     if (g === "kalPast") F.kalPast = !F.kalPast;
     else F[g] = v;
     editing = null; render();
-  },
-  ics(k) {
-    const it = allItems().find(x => x.kind + "|" + x.id === k);
-    if (it) downloadIcs([it], (it.title || "tapahtuma").replace(/[^\wåäöÅÄÖ -]/g, "").slice(0, 40) + ".ics");
   },
   mePast() { F.mePast = !F.mePast; render(); },
   subCal(k, el, ev) {
